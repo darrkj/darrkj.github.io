@@ -8,15 +8,15 @@ output: html_document
 
 ## Introduction
 
-In a previous [post](http://darrkj.github.io/home/blog/apr042014/NBA%20Margin%20of%20Victory) I investigated the wins of an NBA team over the course of a season. I used calendar heat maps to see if there were any interesting features or types of seasons. I want to look at wins over a season on a more micro level though. How did the win occur, was it a *come from behind victory*, a *shootout* or a *blowout*? I spent some time thinking about this and realized I could compare the actual time series of points over a given game to see how a particular win looked. I next needed some machinery to work with a lot of these time series objects, normal methods of comparisons start to break down due to the curse of dimensionality. I remembered a Tech Talk we had at work from a couple of years back about a method that achieves this, [Symbolic Aggregate approXimation](http://homepages.abdn.ac.uk/yaji.sripada/pages/teaching/CS4031/information/SAX.pdf) ([SAX](http://www.cs.ucr.edu/~eamonn/SAX.htm)). The talk was given by one of the SAX creators, [Jessica Lin](http://www.cs.gmu.edu/~jessica/) from the George Mason University.
+In a previous [post](http://darrkj.github.io/blog/apr042014/NBA%20Margin%20of%20Victory) I investigated the wins of an NBA team over the course of a season. I used calendar heat maps to see if there were any interesting features or types of seasons. I want to look at wins over a season on a more micro level though. How did the win occur, was it a *come from behind victory*, a *shootout* or a *blowout*? I spent some time thinking about this and realized I could compare the actual time series of points over a given game to see how a particular win looked. I next needed some machinery to work with a lot of these time series objects, normal methods of comparisons start to break down due to the curse of dimensionality. I remembered a Tech Talk we had at work from a couple of years back about a method that achieves this, [Symbolic Aggregate approXimation](http://homepages.abdn.ac.uk/yaji.sripada/pages/teaching/CS4031/information/SAX.pdf) ([SAX](http://www.cs.ucr.edu/~eamonn/SAX.htm)). The talk was given by one of the SAX creators, [Jessica Lin](http://www.cs.gmu.edu/~jessica/) from the George Mason University.
 
 
-I wrote some code to implement this methodology. There seems to be a few versions out there but I really like to see how things work and the best way I have found to do this is to create them myself. You can find a copy of this code [here](https://github.com/darrkj/home/blob/gh-pages/analysis/MicroWins/R/sax.R), which is better documented than the code contained in this post as it is setup to create help files.
+I wrote some code to implement this methodology. There seems to be a few versions out there but I really like to see how things work and the best way I have found to do this is to create them myself. You can find a copy of this code [here](https://github.com/darrkj/blob/gh-pages/analysis/MicroWins/R/sax.R), which is better documented than the code contained in this post as it is setup to create help files.
 
 You can also run it remotely by executing the following.
 
 ```{r, eval = F}
-devtools::source_url('https://raw.githubusercontent.com/darrkj/home/gh-pages/analysis/MicroWins/R/sax.R')
+devtools::source_url('https://raw.githubusercontent.com/darrkj/gh-pages/analysis/MicroWins/R/sax.R')
 ```
 
 It may be more enlightening to walk through what SAX does and the actual code though.
@@ -174,7 +174,7 @@ require(XML)
 require(plyr)
 require(devtools)
 
-devtools::source_url('https://raw.githubusercontent.com/darrkj/home/gh-pages/analysis/MicroWins/R/game.R')
+devtools::source_url('https://raw.githubusercontent.com/darrkj/gh-pages/analysis/MicroWins/R/game.R')
 ```
 
 

@@ -126,7 +126,7 @@ for (i in 1:nrow(net)) {
 <pre class="r"><code>q &lt;- 'MATCH (a)-[r:hates]-&gt;(b)&lt;-[s:likes]-(c), (a)-[t:hates]-&gt;(c) 
       return a.aka, b.aka, c.aka;'
 tri &lt;- cypher(graph, query = q)</code></pre>
-<pre class="r"><code>devtools::source_url('http://darrkj.github.io/home/rcode/d3plot.R')
+<pre class="r"><code>devtools::source_url('http://darrkj.github.io/rcode/d3plot.R')
 
 triples &lt;- rbind(data.frame(Source = tri[, 1], Target = tri[, 2]),
            data.frame(Source = tri[, 1], Target = tri[, 3]),
@@ -136,7 +136,7 @@ triples &lt;- rbind(data.frame(Source = tri[, 1], Target = tri[, 2]),
 d3plot(triples, 700, 600)</code></pre>
 
 
-<div style="text-align:center;"> <iframe src="http://darrkj.github.io/home/blog/july042014/terrorNet" width="600" height="700"></iframe></div>
+<div style="text-align:center;"> <iframe src="http://darrkj.github.io/blog/july042014/terrorNet" width="600" height="700"></iframe></div>
 
 
 <h3>Conclusion</h3>

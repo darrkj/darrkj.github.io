@@ -79,7 +79,7 @@ tri <- cypher(graph, query = q)
 
 
 ```{r eval = FALSE}
-devtools::source_url('http://darrkj.github.io/home/rcode/d3plot.R')
+devtools::source_url('http://darrkj.github.io/rcode/d3plot.R')
 
 triples <- rbind(data.frame(Source = tri[, 1], Target = tri[, 2]),
            data.frame(Source = tri[, 1], Target = tri[, 3]),
