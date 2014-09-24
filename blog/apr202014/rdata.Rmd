@@ -1,0 +1,251 @@
+---
+title: "I Second the Notion"
+output:
+  html_document: default
+---
+
+I recently read a [blog](http://www.econometricsbysimulation.com/2014/03/it-is-time-for-rdata-files-to-become.html) with some [support](http://davegiles.blogspot.com/2014/03/data-transfer-advice-from-francis-smart.html) that got me thinking. I thought it was an interesting idea that seems valid, but there are other problems with data transmission in general that this method could help to solve. The three issues that R solved were all valid:
+
+* The storage mechanism is effiencint
+* The platform is open source
+* Various functions and data can be bundled together
+
+The potential really lies in the last item. Aside from a standalone data file you can add comments and metadata to this file to explain to the recipeint what they are actually getting. You can also include functions that operate on the data or were used preprocessing and cleaning of the data.
+
+I created a function, which is still in its infancy, to capture some of this idea. I was hoping to get other insights on how this could be useful. The notes part was added since it is hard to catpure input calling it from knitr, not really a part of the function. Some functionality would also be useful to allow it to only save out a subset of the workspace.
+
+```{r}
+library(plyr)
+
+write.manifest <- function(hist = F, file = stop("'file' must be specified")) {
+  loc <- setdiff(ls(envir = .GlobalEnv), c('read.manifest', 'write.manifest'))
+  evl <- function(x) eval(parse(text = x))
+  print('Comments: ')
+  notes <- scan(what = character(), quiet = T)
+  if (length(notes) == 0) notes <- 'These are the notes you would have typed to explain the data.'
+
+  manifest <- list(summary = ldply(loc, function(a) c(name = a, 
+                                                      class = class(evl(a)), 
+                                                      type = typeof(evl(a)), 
+                                                      mode = mode(evl(a)), 
+                                                      size = object.size(evl(a)))),
+                   session = sessionInfo(),
+                   time = Sys.time(),
+                   createdby = Sys.getenv()[['USER']],
+                   notes = paste(notes, collapse = ' '))
+  
+  manifest$history <- if (hist) readLines('.RHistory') else NULL
+  
+  loc <- c(loc, 'manifest')
+  save(list = loc, file = file)
+}
+
+```
+
+
+Now to show how this would work lets create some simple data.
+
+
+```{r}
+x <- 1
+y <- 2
+z <- 3
+
+myData <- cars
+
+myData$date <- Sys.Date() + sample(1:10, nrow(myData), replace = TRUE)
+
+myData2 <- myData[myData$date > Sys.Date()+1, ]
+
+myData2$rand <- sample(c(x, y, z), nrow(myData2), replace = TRUE)
+```
+
+We now have three variables in our workspace. If I were to send this data out to someone it would not make much sense. Instead of using the save method lets create the output using the manifest. Ignore the comments, it makes more sense when you are running interactively.
+
+```{r}
+write.manifest(file = 'x.RData')
+```
+
+
+Now let's act like we are the recipients of this data.
+
+
+```{r}
+# Clear our workspace.
+rm(list = ls())
+ls()
+
+read.manifest <- function(file) {
+  load(file, envir = .GlobalEnv)
+  disp <- paste('The file ' , file, ' was created by ', manifest$createdby, 
+                ' on ', manifest$time, '.', sep = '')
+  message(disp)
+  cat('\n')
+  message(manifest$notes)
+  cat('\n')
+  manifest['summary']
+}
+
+
+
+read.manifest('x.RData')
+ls()
+manifest$summary
+```
+
+You can also see the session that was used to build the data.
+
+```{r}
+manifest$session
+```
+
+There were other things I thought that would be useful to add to this train of thought as well, it would be nice to check for comments on every R object being written to this file. If there are no comments it should prompt you to explain what the object is. If you have never used comments before they are pretty easy to grasp.
+
+```{r}
+value <- 1
+value
+
+comment(value)
+comment(value) <- 'This value is not useful but the example may be.'
+
+value
+
+comment(value)
+```
+
+### Changning Directions
+
+At the onset this was what I thought would be very useful. As with any learning experience or solving any problem you usually end up facing a greater learning experience or a larger problem yet to solve but slightly more capable. When I got to this point I thought it would be useful to see more about the data than just some comments, size and type. My first idea was to add a list of each variable that has some informative summary to display, the comment above would be the first go. I think I know how to go about this and it should not bring much difficulty. After thinking more about it though, I thought it would be really useful to capture how the data was created, this way you could recreate the data yourself, or at least inspect how it was done, maybe even modify it at some intermediate point.
+
+One interesting feature of R is that it captures the history of what you do inside its interpreter. The one downside I still need to figure out is how to get it to write to the .Rhistory file real time instead of storing it and writing once the session closes. (Atleast I think this is what it is doing, I still need to do some exploration)
+
+Once the .Rhistory file has been created we can read it in.
+
+```{r}
+read.hist <- function() {
+  hist <- readLines('.Rhistory')
+
+  # Comments id
+  comments_index <- gregexpr('^#', hist, perl = T) == 1
+  comments <- hist[comments_index]
+  hist <- hist[!comments_index]
+
+  # Does not account for for loops
+
+  # Break the code up into assignments
+  assignments <- grep('<-', hist, value = TRUE)
+  assignments <- grep("'<-'", assignments, value = TRUE, invert = TRUE)
+  assignments <- grep('"<-"', assignments, value = TRUE, invert = TRUE)
+  assignments <- strsplit(assignments, '<-')
+
+  history <- list(code = hist, comments = comments, 
+                  name = lapply(assignments, `[`, 1),
+                  value = lapply(assignments, `[`, 2))
+  
+  # Need better cleaning of leading and trailing spaces
+  last <- function(str) substr(str, nchar(str), nchar(str))
+  first <- function(str) substr(str, 1, 1)
+  
+  history$name <- ifelse(last(history$name) == ' ', 
+                         substr(history$name, 1, nchar(history$name) - 1), 
+                         history$name)
+  history$value <- ifelse(first(history$value) == ' ', 
+                          substr(history$value, 2, nchar(history$value)), 
+                          history$value)
+  history$name <- unlist(history$name)
+  history$value <- unlist(history$value)
+  history
+}
+
+history <- read.hist()
+```
+
+You can now use this histoy to create the history of any data element. I had the sense that you could use attach the code for this purpose. However most of the time I realize that parts of the code may have been added via the command line as a quick fix. This may be a problem with some of the idioms around R, check out this [blog](http://shape-of-code.coding-guidelines.com/2013/02/22/does-native-r-usage-exist/) for more info. A script is kind of like a claim that this was the process, it can, but should't, be fudged. The history cannot be fudged. 
+
+To get the history of a variable (value, list, data frame, etc) we need to construct more machinery to process the history file.
+
+Can we recreate how we arrived at the small analysis above? The final data set under consideration was data2. How did it come to be?
+
+
+```{r}
+origin <- function(var, all = F) {
+  name <- lapply(strsplit(history$name, split = '$', fixed = T), `[`, 1)
+  x <- which(var == name)
+  if( length(x) == 0) return(c())
+  if (all) {
+    unique(paste(history$name[x], '<-', history$value[x]))
+  } else { 
+    head(paste(history$name[x], '<-', history$value[x]), 1)
+  }
+}
+
+
+origin('myData2')
+```
+
+We can see its origin or also trace it's history.
+
+```{r}
+origin('myData2', T)
+```
+
+This piece of data stems from another peice of data though. We can see its origins by running the same code on this set but it would be useful if there was a recurisve way to do this.
+
+```{r}
+origin('myData')
+origin('myData', T)
+```
+
+```{r}
+condense <- function(str) {
+  if(is.null(origin(str))) return(str)
+  # Just take the first and call recursively.
+  elem <- gregexpr('$', str, fixed = T)[[1]][1]
+  if (elem > 0) {
+    chars <- strsplit(str, NULL)[[1]]
+    ind <- chars %in% c(letters, LETTERS, as.character(0:9))
+    # The plus one is to offset the dollar sign
+    ind[1:elem] <- TRUE
+    str <- paste(chars[c(1:(elem-1), min(which(!ind)):nchar(str))], collapse = '')
+  }
+  str
+}
+
+# Adds infix functions predicate, eg(<-, <<-, +)
+is.func <- function(str) {
+  if (exists(str)) {
+    eval(parse(text = paste('is.function(`', str, '`)', sep = '')))
+  } else {
+    FALSE
+  }
+}
+
+
+#rm(myData, myData2)
+
+depends <- function(str) {
+  x <- condense(origin(str))
+  if(!is.null(x)) {
+    x <- all.names(parse(text = x), unique = TRUE)
+    x <- setdiff(x, str)
+    x <- x[!unlist(lapply(x, is.func))]
+    if (length(x) > 0) unique(c(x, depends(x))) else x
+  } else {
+    str
+  }
+}
+```
+
+Now lets try this out.
+
+```{r}
+depends('myData2')
+```
+
+
+There are some major problems starting to appear. Having to close R to persist the session's history to the .Rhistory file is a real burden, it means you can't work with an objects history interactively. You are forced to close everything up before writing utilizing any of this, while it would be very useful for interactiveness, tracing back through your current analysis. There is also a lot of intelligent code needed to read through all of the R code and determine what is really part of the object's history, did you run something twice becuase you wanted to walk back through it all or does it recurse on itself, things like loops also become a big deal here. R is a very complicated lanuguage (or it gives you the freedom to do some very strange things that are hard to deal with in this manner). 
+
+I realized after writing a few more functions that I was basically creating a layer to sit on top and analysis all of my code, reparsing the whole language is not the path I want to go down. So I think parts of this may be useful but the overall desing needs some thought. I would enjoy hearing if anyone else has ever doen this or has any ideas of how implement this or requirements that may be useful. I do think that the early portion of adding metadata to your output files is pretty sound though.
+
+
+

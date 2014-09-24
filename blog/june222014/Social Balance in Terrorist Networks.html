@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<!-- saved from url=(0014)about:internet -->
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+<meta http-equiv="x-ua-compatible" content="IE=9" >
+
+<title>Terrorist Networks</title>
+
+<link rel="stylesheet" type="text/css" href="../../stylesheets/blog.css">
+
+<!-- Styles for R syntax highlighter -->
+<style type="text/css">
+   pre .operator,
+   pre .paren {
+     color: rgb(104, 118, 135)
+   }
+
+   pre .literal {
+     color: rgb(88, 72, 246)
+   }
+
+   pre .number {
+     color: rgb(0, 0, 205);
+   }
+
+   pre .comment {
+     color: rgb(76, 136, 107);
+   }
+
+   pre .keyword {
+     color: rgb(0, 0, 255);
+   }
+
+   pre .identifier {
+     color: rgb(0, 0, 0);
+   }
+
+   pre .string {
+     color: rgb(3, 106, 7);
+   }
+</style>
+
+    <link rel="stylesheet" type="text/css" href="../../stylesheets/stylesheet.css" media="screen" />
+    <link rel="stylesheet" type="text/css" href="../../stylesheets/pygment_trac.css" media="screen" />
+    <link rel="stylesheet" type="text/css" href="../../stylesheets/print.css" media="print" />
+
+<!-- R syntax highlighter -->
+<script src="../../javascripts/r.js"></script>
+
+
+</head>
+
+<body>
+
+<div class="container">
+
+
+    <header>
+      <div class="container">
+        <h1>Social Balance in Terrorist Networks</h1>
+        <h2></h2>
+
+<h4 class="author"><em>Kenny Darrell</em></h4>
+<h4 class="date"><em>June 22, 2014</em></h4>
+        </section>
+      </div>
+    </header>
+
+<div id="introduction" class="section level3">
+<h3>Introduction</h3>
+<p>I am interested in exploring some features of a social network, mainly that of social balance. Many of my past blog post have been dependent on data that I have had to scrape from the web, this one is no different. I want to do a few things here. First I want to illustrate how easy this is to do if you find some data that you are interested in, I can now do this type of thing in about an hour, so I have actually included the code for this instead of starting at the data.</p>
+<p>First and foremost I want to emphasize that before starting down this path, examine the source to see if they have an easier way to provide the data, either an API or a direct download. Second make sure that they are okay with you scraping the data. If they allow you to do this are there any constraints or permissions of use.</p>
+<p>The source of interest is the <a href="http://www.start.umd.edu/tops/">data</a>.</p>
+<p>To get started always turn stringsAsFactors to FALSE when doing this type of work or you will hit many walls where things appear to be easy but do not work. There are two main packages I use for this purpose, <a href="http://cran.fhcrc.org/web/packages/httr/index.html">httr</a> and <a href="http://cran.fhcrc.org/web/packages/XML/index.html">XML</a>. It depends on how the data is structured as to which one is better suited. Here we will be using the httr package. We should also load a few other packages as well as some utility code for the rest of this effort. Some of these functions in this gist are part of my refactoring attempts, can I get to some basic pattern for crawling and supply source specific functions for detail level. This is a more long term effort though as there is so much variety in webpages.</p>
+<pre class="r"><code>library(httr)
+library(igraph)
+library(d3Network)
+library(devtools, warn.conflicts = F)
+options(stringsAsFactors = FALSE)
+source_url('http://darrkj.github.io/home/blog/june222014/terrorNet.R')</code></pre>
+<pre><code>## SHA-1 hash of file is f4cab73da5244b0413cd2108409faa95abccc58e</code></pre>
+</div>
+<div id="getting-the-data" class="section level3">
+<h3>Getting the Data</h3>
+<p>Now we need to define our site of interest and actually crawl all of the links and scrape the data of interest. This basically results in one loop for each case, the first will gather all of the URLs we are interested in, while the second will pull data from each of these pages.</p>
+<pre class="r"><code># Base website
+base &lt;- 'http://www.start.umd.edu/tops/'
+# Query string for alphabetical search
+site &lt;- 'terrorist_organizations_by_alpha.asp?q='
+
+# These are the sites to search
+site &lt;- paste(base, site, LETTERS, sep = '')
+
+# Initialze data frame.
+group &lt;- data.frame(ID = NA, name = NA)
+
+for (i in site) {
+  # Pull data for each letter.
+  page &lt;- cleanOrg(strsplit(as.character(GET(i)), '\n')[[1]])
+  group &lt;- rbind(group, page)
+}
+# Remove first inited row
+group &lt;- group[-1, ]
+
+# Clean up workspace
+rm(i, site, page)
+
+
+# The scraping loop
+details &lt;- list()
+
+for (i in 1:nrow(group)) {
+  # Create url
+  url &lt;- paste(base, group[i, 1], sep = '')[1]
+
+  x &lt;- cleanDet(url)
+  net &lt;- x[[1]]
+  x &lt;- x[[2]]
+
+  details[[group[i, 2]]] &lt;- list(name = group[i, 2], ID = group[i, 1], 
+                                 net = net
+}
+
+# clean up
+rm(group, base, url, i, x, cleanDet, cleanOrg, net)</code></pre>
+<p>Now we have all of the information on each terrorist organization. We need to do some cleanup and create a network structure in the process.</p>
+
+You can download the data up to this point below.
+<p><a href="terror.RData">Terrorism Data</a></p>
+</div>
+<div id="cleaning-the-data" class="section level3">
+<h3>Cleaning The Data</h3>
+
+<p>I pulled a lot of extra stuff here for things that may or may not be interesting later. We need to clean some of this out and pull what is needed into an edge list. Here each of the organizations may turn into many edges as each has a list of other organizations and there type of relationship attached.</p>
+<pre class="r"><code># Initialze the network edge list
+net &lt;- data.frame(from = NA, fromn = NA, to = NA, ton = NA, type = NA)
+
+# Loop through all of the detail info and pull out individual edges
+for (i in seq(details)) {
+  cur &lt;- details[[i]]
+  # Get the ID (4324) for the current org
+  cur$ID &lt;- ID(cur$ID)
+
+  # Add the ID to the edge list
+  if (!is.null(cur$net$ID)) {
+    cur$net$from &lt;- cur$ID 
+    cur$net$fromn &lt;- cur$name
+    cur$net$to &lt;- ID(cur$net$ID)
+  
+    # Clean up the edge list, add name connection type
+    tmp &lt;- strsplit(cur$net$name, ' -- ')
+    cur$net$ton &lt;- unlist(lapply(tmp, `[`, 1))
+    cur$net$type &lt;- unlist(lapply(tmp, `[`, 2))
+    # remove original fields
+    cur$net &lt;- cur$net[, 3:7]
+    net &lt;- rbind(net, cur$net)
+  } 
+}
+net &lt;- net[-1, ]
+rm(cur, i, tmp, ID, clean)
+</code></pre>
+
+<p>This is more or less the end of the web crawling and cleaning of the data. The portion I was really interested in comes next. Determining whether terrorist organizations follow the rules from social network analysis pertaining to social balance.</p>
+
+<p>Here is what are our current network looks like. This looks very different than most social networks. It will be interesting to see of the rules that apply as far as social balance are concerned still hold.</p>
+
+<pre class="r"><code>x &lt;- graph.data.frame(net[, c(2, 4)])
+d3plot(x, 700, 1300)</code></pre>
+</div>
+
+
+
+
+<div style="text-align:center;"> <iframe src="http://darrkj.github.io/home/blog/june222014/terrorGraph" width="730" height="550"></iframe></div>
+
+
+
+<div id="social-balance-analysis" class="section level3">
+<h3>Social Balance Analysis</h3>
+
+
+
+<p>The <a href="http://www.start.umd.edu/tops/">Social Balance Theory</a> lays out some rules for social network relationships. These pertain to rules similar to if A like B and B likes C then A will like C. All permutations of like and dislike can be boiled down to two rules. In any triadic relationship either all three like each other or two dislike edges and one like. This <a href="http://cs.stanford.edu/people/jure/pubs/triads-chi10.pdf">paper</a> does a much better job of going into all of the specifics. As a common rule if we think about it as a signed network, any triadic relationship's edges must have a positive product. 
+</p>
+
+<p>The first thing we must do is devise a way to find all triangles in the network. This turns into a search for each pair of adjacent vertices that share a similar adjacent vertex. We result in list where each items is a set of three vertices, which form a triangle or 3-clique. We also have to do some interpretation of what each edge type is. This boils down to who likes who and who dislikes who. We can then use these to turn the the network into a signed network where positive means like and negative means dislike.</p>
+<pre class="r"><code>
+
+# Turn suspected allys into allies
+ally &lt;- c(&quot;Ally&quot;, 'Ally (Suspected)', 'Armed Wing', 'Founding Group', 
+          'Founding Group (Suspected)', 'Founding Group and Faction', 
+          'General Command (PFLP-GC)', &quot;Political Wing&quot;, 'Successor', 
+          'Suspected Alias/Ally', &quot;Shared Members&quot;, 'Other Affiliation', 
+          'Supported Cause', 'Umbrella Organization',
+          &quot;Umbrella Organization (Suspected)&quot;, &quot;Other Affiliation&quot;)
+
+
+enemy &lt;- c(&quot;Competing Faction&quot;, &quot;Enemy&quot;, &quot;Faction&quot;, &quot;Rival&quot;, 
+           &quot;Rival and Ally&quot;, &quot;Splinter Group&quot;,
+           &quot;Splinter Group (Suspected)&quot;) 
+
+net$conn &lt;- ifelse(net$type %in% ally, 1, -1)
+
+# For social balance each edge in a triangle must add to an even number.
+nodes &lt;- unique(net$from)
+
+tri &lt;- data.frame(n1 = NA, n2 = NA, n3 = NA)
+
+for (i in nodes) {
+  n2 &lt;- net[net$from == i, ]$to
+  if ( length(n2) &gt; 1) {
+    for (j in n2) {
+      n3 &lt;- net[net$from == j, ]$to
+      n &lt;- intersect(n2, n3)
+      if ( length(n) &gt; 0 ) {
+        tri &lt;- rbind(tri, data.frame(n1 = i, n2 = j, n3 = n))
+      }
+    }
+  }
+}
+tri &lt;- tri[-1, ]
+</code></pre>
+
+Now with the search out of the way we just need to determine which triangles do not follow the social balance rules. Since the product of all of the edges must be positive we have only a few options.
+The cases with (1, 1, 1) and (1, -1, -1) agree with the rule disregarding order. The cases with (-1, -1, -1) and (1, 1, -1) do not agree.
+
+<pre class="r"><code>
+SocImbal &lt;- data.frame(tri = NA, fromn = NA, ton = NA, type = NA, conn = NA, prod = NA)
+
+for(i in 1:nrow(tri)) {
+  a &lt;- net[net$from == tri[i, 1] &amp; net$to == tri[i, 2, ], c(2, 4:6)]
+  b &lt;- net[net$from == tri[i, 1] &amp; net$to == tri[i, 3, ], c(2, 4:6)]
+  c &lt;- net[net$from == tri[i, 2] &amp; net$to == tri[i, 3, ], c(2, 4:6)]
+  
+  prod &lt;- a$conn * b$conn * c$conn
+  if (prod &lt; 0) {
+    SocImbal &lt;- rbind(SocImbal, 
+                      data.frame(tri = i, a, prod),
+                      data.frame(tri = i, b, prod),
+                      data.frame(tri = i, c, prod))
+  }
+}
+
+SocImbal &lt;- SocImbal[-1, ]
+
+SocImbal$color &lt;- ifelse(SocImbal$conn == 1, 'blue', 'red')</code></pre>
+<pre class="r"><code>Imbal &lt;- unique(SocImbal$tri)
+length(Imbal)</code></pre>
+<pre><code>## [1] 339</code></pre>
+<pre class="r"><code>for (i in Imbal[1:4]) {
+  x &lt;- SocImbal[SocImbal$tri == i, c(2, 3, 4, 7)]
+  y &lt;- graph.data.frame(x[, 1:2])
+  E(y)$label &lt;- x$type
+  plot(y, edge.color = x$color)
+}</code></pre>
+
+<p>We have a quite a few cases which do not follow the rules. I need to do some further checks still to make sure that I have eliminated each graph automorphism, so it could actually be half of this number.</p>
+
+<img src="ib1.png" height="200" width="350" align="middle">
+<img src="ib2.png" height="200" width="350" align="middle">
+<img src="ib3.png" height="200" width="350" align="middle">
+<img src="ib4.png" height="200" width="350" align="middle">
+
+<p>This is very interesting as it means that so terrorist groups are at odds with groups who there allies are allies with. I guess that there is also a lot more that could be happening here a well since some relationships could have changed over time and this data goes back to the 1960's. It could be that the current snapshot is inaccurate as some organizations no longer exist, but we have there last known feelings towards others. As times changes their allies could start to be enemies. There is also the possibility that they have no reason to follow this sort of logic, or any logic at all. I would be much more interested in the temporal case, especially seeing how and when they turned on each other and how that propagates through the rest of the network.</p>
+
+
+</div>
+
+
+</div>
+
+<script>
+
+// add bootstrap table styles to pandoc tables
+$(document).ready(function () {
+  $('tr.header').parent('thead').parent('table').addClass('table table-condensed');
+});
+
+</script>
+
+<!-- dynamically load mathjax for compatibility with --self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://c328740.ssl.cf1.rackcdn.com/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>

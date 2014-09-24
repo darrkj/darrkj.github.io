@@ -1,0 +1,142 @@
+Lifespan of an NBA Player
+========================================================
+
+### Data Loading
+
+Looking at the lifespan of an NBA player. The first thing is to load the data for each player into the workspace and get and understanding of its contents. I will try to make this data available but I am in the middle of determining which of multiple sources is the most robust and the cleanest, so I have multiple versions with various differences. The `head` and `str` functions are used to get a representation of what the data looks like.
+
+
+```{r}
+library(plyr)
+library(survival)
+
+# Load data
+load("~/Desktop/r/hoops/player_detail.RData")
+
+str(player)
+head(player)
+```
+
+### Data Creation
+
+The next step would typically be cleaning. I have already done lots of cleaning to this data to get it the stage that it is at though. Maybe that will be another post. The step after cleaning is often using the raw data to create variables of interest for the analytics task at hand. For survival analysis it is necessary to have variables that describe the lifespan of players as well as when they started. Next we will aggregate some of the raw data down into a more tidy format, one row per player as opposed to one row per player per season per team, how the source is formatted.
+
+
+```{r}
+# Before we can start grouping rows by player we need a unique identifier.
+# Players may have a common name, so lets create a manner to step 
+# around that. 
+player$bday <- player$Season - player$Age
+puid <- unique(player[, c('name', 'bday')])
+puid$guid <- 1:nrow(puid)
+player <- merge(player, puid)
+head(player)
+
+# Need to do some data aggrations to create some needed varaibles.
+
+# How long a player lasted in the NBA.
+span <- ddply(player, .(guid), summarise, span = max(Age) - min(Age))
+head(span)
+
+# A players first season
+rookie <- ddply(player, .(guid), summarise, rookie = min(Season))
+head(rookie)
+
+# The number of games a player played there first year.
+games <- ddply(player, .(guid), summarise, games = sum(G))
+head(games)
+
+# Join these data sets together to form one data set.
+res <- unique(player[c('name', 'positon', 'guid')])
+res <- merge(res, rookie, by = 'guid')
+res <- merge(res, span, by = 'guid')
+res <- merge(res, games, by = 'guid')
+
+# Cleanup the workspace
+rm(span, rookie, games, puid, player)
+
+head(res)
+```
+
+
+### Data Cleanup
+
+This is now starting to look like tidy data. We have one row per player, along with how long they played, the first year they played and two descriptive variables about their fist season.
+
+We will still push this further. Just a few nit picky things as well as creating some variables to answer a few questions later on. Also we need to think about what to do about players that are still playing?
+
+
+```{r}
+# The count is off by one.
+res$span <- res$span + 1
+
+# Average games per season
+res$avgGam <- res$games / res$span
+
+# Do you play a lot of games, binary
+res$gamBin <- ifelse(res$avgGam > 50, 'a', 'b')
+
+# Clean up data frame.
+res$games <- NULL
+
+# A few players have no age in the data
+res <- res[complete.cases(res), ]
+
+# Order by players with a longer history
+res <- res[order(res$span, decreasing = T), ]
+
+# Create the year they retired
+res$retire <- res$span + res$rookie
+
+# If that's before 2014 they retired, otherwise the data is censored in time. 
+res$event <- ifelse(res$retire < 2014, 1, 0)
+```
+
+### Survival Analysis
+
+The data is now ready to run a survival analysis. We can run one with a constant to determine the most likely lifespans.
+
+
+```{r}
+kms <- survfit(Surv(res$span, res$event) ~ 1)
+summary(kms)
+```
+  
+ 
+```{r fig.width=6, fig.height=6}
+plot(kms, xlab = 'Seasons', ylab = 'Survival Probability')
+```
+
+This is pretty interesting, there is a big drop off in the first year. This seems plan out, thus experience is good. That sounds a bit odd though. Lets add a players position to see if they are all similar.
+
+```{r}
+kms <- survfit(Surv(res$span, res$event) ~ res$positon)
+summary(kms)
+```
+
+```{r fig.width=6, fig.height=6}
+plot(kms, xlab = 'Seasons', ylab = 'Survival Probability')
+
+```
+
+This is very interesting. Centers have a noticeably longer lifespan than either a guard or forward. Is this because there is more of a need. New shooting guards come out of college every year. Very tall centers are more rare. Could it also be point guards and forwards are running around more thus a younger faster player will be better, whereas height is centers real advantage. I have no idea but this is very interesting. 
+
+What about the number of games you average in a season?
+
+
+```{r}
+kms <- survfit(Surv(res$span, res$event) ~ res$gamBin)
+summary(kms)
+```
+
+```{r fig.width=6, fig.height=6}
+plot(kms, xlab = 'Seasons', ylab = 'Survival Probability')
+```
+
+This is not as surprising. If you play a lot of games in a season you can expect to have a larger chance of playing next year. But it does verify what my thoughts would have been. Plenty of times looking at data I see things I would expect to be true end up being nowhere near correct, it is usually in those times when you learn something useful as well. 
+
+### Final thoughts
+
+I think this was interesting from the standpoint of NBA players but also refreshing myself to survival analysis. I want to look at points and playoffs as a next step but need some more time gather and clean data. I also want to look at two different types of outcomes in a player's lifespan, can we see when a player is traded compared to no longer playing in general.
+
+

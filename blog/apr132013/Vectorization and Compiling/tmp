@@ -1,0 +1,150 @@
+
+
+
+
+Thinking through what is happening here leaves me to wonder if all of these methods are bad.  In the cases where we use indexing we are getting beat up by the copy on modify, every time we add new rows we copy the whole data frame due to immutability.  The naive rbind approach is always looking for larger sections of contiguous memory.  Thus in the beginning it is small copying every increasing sets around just keeps building up though.  The do.call and rbind.fill method seem to be very close to pre-allocation time, I want to see what they are doing under the hood though before I say anything about them.  I would imagine that a divide and conquer approach would work here.  We can use the naive rbind but never have to carry the whole data frame, actually only half one time, a quarter twice, etc., which is why it’s so slow. R deals with recursion by adding the environment to the call stack.  In a normal function you don’t worry about cleaning the local environment before you leave it because it will be destroyed when only moving the return object.  In the case of recursion though we add the whole environment to the stack then jump to the next iteration.  Do to the log nature of the divide and conquer we don't have to worry about going infinitely deep but we do have to worry about copying a lot of useless data at every new level of depth.  Let’s clean the environment except what we actually care about.
+
+```{r, recur}
+
+# Recursive row binding, you don't carry huge sets around,
+# has divide and conquer on memory usage, large set only appear
+# at the top level of the recursion.
+recurBind <- function(dList) {
+  len <- length(dList) / 2
+  # Preallocate list for small improvement.
+  data <- vector("list", len)
+  j <- 1
+  for (i in seq(len)) {
+    # Merge each set of two sequential data sets together.
+    data[[j]] <- rbind(dList[[(i*2)-1]], dList[[i*2]])
+    j <- j + 1
+  }
+  # In case length was odd, just add last set to the end.
+  if (floor(len) != len) {
+    data[[j]] <- dList[[len*2]]
+  }
+    # Less data to store on the stack, tail call optimization would be nice here.
+  rm(dList, len, j)
+  # Recursive call.
+  if (length(data) > 1) {
+    data <- recurBind(data)
+  }
+  return(data)
+}
+
+# Apply the recursive method.
+M5 <- function() {
+  # Initialize list that will store each loaded file.
+  g <- vector("list", length(files))
+  # Initialize the index.
+  j <- 1
+  # Loop over all of the files.
+  for (i in files) {
+    g[[j]] <- read.csv(i, na.strings = "")
+    j <- j + 1
+  }
+  games <- recurBind(g)[[1]]
+  return(games)
+}
+files <- fileList[1:100]
+#Rprof("recursive.out")
+system.time(games5 <- M5())[3]
+#Rprof(NULL)
+#summaryRprof('recursive.out')[c(2,4)]
+```
+
+It's faster than all the other methods, but I was actually thinking that it would be slower for this small case and would only be asymptotically faster once we take the rest of the files into consideration.  Let's run the above test again and see how good it fares.
+
+
+```{r, test2}
+# Time the first 500
+files <- fileList[1:500]
+
+# Run a side by side comparison of each method.
+benchmark(replications = rep(1, 1),
+          M1(), M2(), M3(), M4(), M5(),
+          columns=c('test', 'replications', 'elapsed'))
+
+# Check that each method works.
+all(all(games1 == games2, na.rm = TRUE),
+all(games2 == games3, na.rm = TRUE),
+all(games3 == games4, na.rm = TRUE),
+all(games4 == games5, na.rm = TRUE))
+
+```
+
+It seems I was right. The first two methods are performing very poorly.  We can safely ignore them from here on out.  How do the remaining methods fair against the whole collection of files.
+
+```{r, test3}
+# Time whole set
+files <- fileList
+benchmark(replications=rep(1, 1),
+          M3(), M4(), M5(),
+          columns=c('test', 'replications', 'elapsed'))
+```
+
+To me this is a very interesting result; we used in what is reality the slowest approach possible, rbind, in a clever manner to get the fastest approach. What if we apply some of the faster methods inside the recursion, or even get rid of the recursion altogether by smart looping in a manner that is equivalent to recursion but never has to recreate the local environment recursively.  Is there a way that we can mimic tail call optimization or even compile this?  I am sure there are even faster ways of doing this.  What was all of this for again, oh yeah Basketball.
+
+```{r, basketball}
+files <- fileList
+games <- M5()
+made <- games[, c("team", "player", 
+                   "etype", "result", "x", "y")]
+made <- made[made$etype == "shot",]
+made <- made[made$result == "made",]
+made <- made[,c("result", "x", "y")]
+made <- made[complete.cases(made),]
+made$result <- ifelse(made$result == "made", 1, 0)
+x <- tapply(made$result, made[,c("x", "y")], sum)
+x <- ifelse(is.na(x), 0, x)
+image(log(x), col = rainbow(30))
+
+missed <- games[, c("team", "player", 
+                    "etype", "result", "x", "y")]
+missed <- missed[missed$etype == "shot",]
+missed <- missed[missed$result == "missed",]
+missed <- missed[,c("result", "x", "y")]
+missed <- missed[complete.cases(missed),]
+missed$result <- ifelse(missed$result == "missed", 1, 0)
+y <- tapply(missed$result, missed[,c("x", "y")], sum)
+y <- ifelse(is.na(y), 0, x)
+image(log(y), col = rainbow(30))
+```
+
+
+Just to check how good this is lets run a few years.  This adds the prior season.
+
+```{r, multiyear}
+
+# Data for the year prior.
+url2 <- 
+  "http://www.basketballgeek.com/downloads/2007-2008.regular_season.zip"
+
+# Take the base of the file name at this loaction.
+file2 <- basename(url2)
+
+# Download the file from the internet.
+download.file(url2, file2)
+
+# Extract zipped contents to directory.
+unzip(file2, exdir = dir)
+
+# The list of unzipped files. 
+newList <- list.files(dir)
+
+# Only the csv data files.
+newList <- newList[grep(pattern = "csv", x = newList)]
+
+# Full location to the files.
+newList <- paste(dir, newList, sep = "/")
+
+length(fileList)
+length(newList)
+
+# Time larger set
+files <- newList
+system.time(games1 <- M3())[3]
+system.time(games1 <- M4())[3]
+system.time(games1 <- M5())[3]
+
+```

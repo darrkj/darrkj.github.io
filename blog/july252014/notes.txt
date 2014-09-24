@@ -1,0 +1,14 @@
+Goal: Can you cluster the time series of the score in an NBA game into certain
+  types of wins and losses. Come from behind wins, last second wins, blowouts,
+  shootouts, etc.
+
+Data: Need to scrape data from the web.
+
+
+Scape.R
+Clean.R
+Analysis.R
+
+Two problems have came about in the past. When scraping data I have had many ideas on the same type of data. The scrapers have been rewritten to collect the data just a little differently each time so that a new type of analysis can be done. This leads to a few problems. The biggest is that you can't go back and create the data again. It seems that it may be easier to break each piece into its own folder/project. Then the problem turns into having a large portion of code shared in many places with small tweakes to clean the data differently. What seems to be the root of the problem is collecting the data in a specific manner. Should collect it with no changes made, then in each area of use clean it for its specific purpose.
+
+Never create a variable without a good name, x, h and g are the worst names ever. Do not save data into a file with a bad name.

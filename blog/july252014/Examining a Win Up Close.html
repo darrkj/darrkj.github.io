@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<!-- saved from url=(0014)about:internet -->
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+<meta http-equiv="x-ua-compatible" content="IE=9" >
+
+<title>SAX</title>
+
+
+<link rel="stylesheet" type="text/css" href="../../stylesheets/blog.css">
+
+<!-- Styles for R syntax highlighter -->
+<style type="text/css">
+   pre .operator,
+   pre .paren {
+     color: rgb(104, 118, 135)
+   }
+
+   pre .literal {
+     color: rgb(88, 72, 246)
+   }
+
+   pre .number {
+     color: rgb(0, 0, 205);
+   }
+
+   pre .comment {
+     color: rgb(76, 136, 107);
+   }
+
+   pre .keyword {
+     color: rgb(0, 0, 255);
+   }
+
+   pre .identifier {
+     color: rgb(0, 0, 0);
+   }
+
+   pre .string {
+     color: rgb(3, 106, 7);
+   }
+</style>
+
+    <link rel="stylesheet" type="text/css" href="../../stylesheets/stylesheet.css" media="screen" />
+    <link rel="stylesheet" type="text/css" href="../../stylesheets/pygment_trac.css" media="screen" />
+    <link rel="stylesheet" type="text/css" href="../../stylesheets/print.css" media="print" />
+
+<!-- R syntax highlighter -->
+<script src="../../javascripts/r.js"></script>
+
+
+</head>
+
+<body>
+
+<div class="container">
+
+
+    <header>
+      <div class="container">
+        <h1>Examining a Win Up Close</h1>
+        <h2></h2>
+
+<h4 class="author"><em>Kenny Darrell</em></h4>
+<h4 class="date"><em>July 25, 2014</em></h4>
+        </section>
+      </div>
+    </header>
+
+
+
+<div id="introduction" class="section level2">
+<h2>Introduction</h2>
+<p>In a previous <a href="http://darrkj.github.io/home/blog/apr042014/NBA%20Margin%20of%20Victory">post</a> I investigated the wins of an NBA team over the course of a season. I used calendar heat maps to see if there were any interesting features or types of seasons. I want to look at wins over a season on a more micro level though. How did the win occur, was it a <em>come from behind victory</em>, a <em>shootout</em> or a <em>blowout</em>? I spent some time thinking about this and realized I could compare the actual time series of points over a given game to see how a particular win looked. I next needed some machinery to work with a lot of these time series objects, normal methods of comparisons start to break down due to the curse of dimensionality. I remembered a Tech Talk we had at work from a couple of years back about a method that achieves this, <a href="http://homepages.abdn.ac.uk/yaji.sripada/pages/teaching/CS4031/information/SAX.pdf">Symbolic Aggregate approXimation</a> (<a href="http://www.cs.ucr.edu/~eamonn/SAX.htm">SAX</a>). The talk was given by one of the SAX creators, <a href="http://www.cs.gmu.edu/~jessica/">Jessica Lin</a> from the George Mason University.</p>
+<p>I wrote some code to implement this methodology. There seems to be a few versions out there but I really like to see how things work and the best way I have found to do this is to create them myself. You can find a copy of this code <a href="https://github.com/darrkj/home/blob/gh-pages/blog/july252014/R/sax.R">here</a>, which is better documented than the code contained in this post as it is setup to create help files.</p>
+<p>You can also run it remotely by executing the following.</p>
+<pre class="r"><code>devtools::source_url('https://raw.githubusercontent.com/darrkj/home/gh-pages/blog/july252014/R/sax.R')</code></pre>
+<p>It may be more enlightening to walk through what SAX does and the actual code though.</p>
+<p>The first function constructed is breakPoints. In order to to create the symbolic representation of the time series we need regions to assign tokens. These are the points that break the values of the time series that produce equal sized areas under the Gaussian curve. This function takes a value, <em>n</em>, which is the number of regions that you desire, also the number of distinct tokens in your symbolic alphabet. If you want 4 regions you will get a result of 3 values that create these cutoffs. If this seems odd to not give it 3 have a look at the <a href="http://en.wikipedia.org/wiki/Off-by-one_error#Fencepost_error">fence post problem</a>.</p>
+<pre class="r"><code>breakPoints &lt;- function(n) {
+  if (n &lt; 2) stop(&quot;Input must be greater than one!&quot;)
+  if (n &gt; 26) stop(&quot;There are only 26 letters!&quot;)
+  # Create uniform splits from 0 to 1, take all but first.
+  x &lt;- seq(0, 1, length.out = (n + 1))[-1]
+  # Find the point which that has the above in area undeer CDF.
+  return(qnorm(x)[1:(n - 1)])
+}
+
+breakPoints(4)</code></pre>
+<pre><code>## [1] -0.6745  0.0000  0.6745</code></pre>
+<p>The next function to be constructed is the piecewise aggregate approximation. This is actually a more common calculation used in lots of other types of analysis. You basically take a span from a time series and represent that period by some aggregate over the span, here we use the mean. This function condenses a span of time from a given time series into the mean over that span of time. The result is a sequence that contains only n observations. This function has three arguments, but only one of p or n are required.</p>
+<ul>
+<li><em>sts</em> - The time series to condense</li>
+<li><em>n</em> - The number of piecewise sections to generate</li>
+<li><em>p</em> - Number of point in one aggregation, opposes n</li>
+</ul>
+<pre class="r"><code>paa &lt;- function(sts, n = 10, p = NA) {
+  # Create a sequence of 1 to length of series.
+  l &lt;- seq_along(sts)
+  # This will find the number of obs in order to have n groups. 
+  grp &lt;- length(l) / n
+  # This creates an index for the ts of which group the obs belongs to.
+  fac &lt;- floor((l / grp) - .0001)
+  # Allow mechanism for creating a period like week, 3 days.
+  if (!is.na(p)) fac = rep(0:(length(sts) / p), each = p)[l]
+  # Split the original ts into these groups.
+  pa &lt;- split(sts, fac)
+  # Find the mean for each group.
+  return(unlist(lapply(pa, mean)))
+}
+
+require(zoo)
+x.Date &lt;- as.Date(&quot;2003-02-01&quot;) + 0:5
+x &lt;- zoo(rnorm(6), x.Date)
+paa(x, 2)</code></pre>
+<pre><code>##       0       1 
+## -0.6455  0.6416</code></pre>
+<pre class="r"><code>all(c(mean(x[1:3]), mean(x[4:6])) == paa(x, 2))</code></pre>
+<pre><code>## [1] TRUE</code></pre>
+<p>Now we are starting to get to the meat of the methodology. We need to tokenize the piecewise aggregated approximate representation. We construct the <em>token</em> function to tokenize the PAA of a time series. This results with a sequence of strings as opposed to the aggregates.</p>
+<pre class="r"><code>token &lt;- function(sts, bp = 3) {
+  # Call to get the breakpoints.
+  bp &lt;- breakPoints(bp)
+  # Turn to numeric vector, faster and easier to work with.
+  sts &lt;- as.numeric(sts)
+  # Initialize the word to nothing.
+  word &lt;- NULL
+  # Set first for values under first threshold.
+  word[sts &lt; bp[1]] &lt;-  letters[1]
+  # Loop throught the rest.
+  for(i in seq(bp)) {
+    # If they are greater than breakpoint replace.
+    word[sts &gt;= bp[i]] &lt;- letters[i + 1]
+  }
+  return(word)
+}
+
+
+x.Date &lt;- as.Date(&quot;2003-02-01&quot;) + 0:5
+x &lt;- zoo(rnorm(6), x.Date)
+token(paa(x, 2), 3)</code></pre>
+<pre><code>## [1] &quot;c&quot; &quot;b&quot;</code></pre>
+<p>Now the central function, SAX. This function process the time series to the Gaussian representation, runs the piecewise aggregate approximation and tokenizes the result.</p>
+<pre class="r"><code>sax &lt;- function(ts, bp = 3, n = 10, plot = FALSE, p = NA) {
+  # This allows for plots to work, kludge.
+  index(ts) &lt;- 1:length(ts)
+  # Normalize the incoming time series.
+  ts &lt;- scale(ts)
+  # Create the piecewise aggregates.
+  x &lt;- paa(ts, n, p)
+  if (plot) {
+    # Create plot of normalized time series.
+    plot(ts) 
+    points(rep(x, each = (length(ts) / n) + 1))[1:length(ts)]
+    for(i in breakPoints(bp)) {
+      lines(1:length(ts), rep(i, length(ts)))
+    }
+  }
+  tokenTS &lt;- token(x, bp)
+  comment(tokenTS) &lt;- as.character(bp)
+  return(tokenTS)
+}
+
+x.Date &lt;- as.Date(&quot;2003-02-01&quot;) + 0:99
+x &lt;- zoo(rnorm(100), x.Date)
+sax(x)</code></pre>
+<pre><code>##  [1] &quot;c&quot; &quot;b&quot; &quot;a&quot; &quot;b&quot; &quot;b&quot; &quot;c&quot; &quot;a&quot; &quot;b&quot; &quot;c&quot; &quot;b&quot;</code></pre>
+<pre class="r"><code>sax(x, plot = TRUE)</code></pre>
+
+<div class="separator" style="clear: both; text-align: center;"><img src="img1.png" height="300" width="550"></a></div>
+
+
+<pre><code>##  [1] &quot;c&quot; &quot;b&quot; &quot;a&quot; &quot;b&quot; &quot;b&quot; &quot;c&quot; &quot;a&quot; &quot;b&quot; &quot;c&quot; &quot;b&quot;</code></pre>
+<p>We now have the ability to tokenize a time series. To do anything useful with this though we need to be able to compute the distance between these tokenized strings. First we have to create a lookup table.</p>
+<pre class="r"><code># Lookup table.
+lookUp &lt;- function(x) {
+  # Call to get the breakpoints.
+  d &lt;- breakPoints(x)
+  # Initialize matrix of zeros.
+  distM &lt;- matrix(0, nrow = x, ncol = x)
+  # Loop over each row and column.
+  for(i in seq(x)) {
+    for(j in seq(x)) {
+      # Check to make sure its greater than one.
+      if(abs(i - j) &gt; 1) {
+        # This comes from the paper for how it is created.
+        distM[i, j] &lt;- d[max(i, j) - 1] - d[min(i, j)]
+      }
+    }
+  }
+  return(distM)
+}
+
+
+distSAX &lt;- function(x, y) {
+  lx &lt;- as.numeric(comment(x))
+  ly &lt;- as.numeric(comment(y))
+  #if (lx != ly) stop(&quot;Time Series were not tokenized the same&quot;)
+  xx &lt;- NULL
+  lk &lt;- lookUp(lx)
+  for(i in seq_along(x)) {
+    a &lt;- which(letters %in% x[i])
+    b &lt;- which(letters %in% y[i])
+    xx &lt;- c(xx, lk[a, b] ^ 2)
+  }
+  return(sqrt(sum(xx)))
+}</code></pre>
+<p>Now we have everything we need to use this for some practical purpose.</p>
+<div id="getting-setup" class="section level3">
+<h3>Getting Setup</h3>
+<p>First set things up.</p>
+<pre class="r"><code>require(XML)
+require(plyr)
+require(devtools)
+
+devtools::source_url('https://raw.githubusercontent.com/darrkj/home/gh-pages/analysis/MicroWins/R/game.R')</code></pre>
+<p>We need to get data. This will get data from the 2013 season. This is all games from that season.</p>
+<pre class="r"><code>season &lt;- seasonify(2013)</code></pre>
+
+<p>This data can be downloaded <a href="season.RData">here</a>.</p>
+<pre class="r"><code>load('season.RData')
+head(season[, 1:5])</code></pre>
+<pre><code>##                       away                home       date  as  hs
+## 72          Boston Celtics          Miami Heat 2012-10-30 107 120
+## 269       Dallas Mavericks  Los Angeles Lakers 2012-10-30  99  91
+## 1303    Washington Wizards Cleveland Cavaliers 2012-10-30  84  94
+## 294       Dallas Mavericks           Utah Jazz 2012-10-31  94 113
+## 335         Denver Nuggets  Philadelphia 76ers 2012-10-31  75  84
+## 406  Golden State Warriors        Phoenix Suns 2012-10-31  87  85</code></pre>
+<p>Now we get the play by play data.</p>
+<pre class="r"><code># Init list
+gameObj &lt;- list()
+len &lt;- nrow(season)
+
+for (i in 1:len) {
+  print(i / len)
+  gameObj[[i]] &lt;- play_by_play(season[i, ])
+}</code></pre>
+<p>If we look at this data it does not appear to be in a form that we can readily use the SAX functionality on.</p>
+<pre class="r"><code>head(gameObj[[1]][, -2])</code></pre>
+<pre><code>##      time points score q           team t2
+## 3 12:00.0     NA   0-0 1           &lt;NA&gt;  0
+## 4 11:48.0     NA   0-0 1 Boston Celtics 12
+## 5 11:47.0     NA   0-0 1 Boston Celtics 13
+## 6 11:42.0     NA   0-0 1 Boston Celtics 18
+## 7 11:40.0     NA   0-0 1     Miami Heat 20
+## 8 11:26.0      3   0-3 1     Miami Heat 34</code></pre>
+<p>We need to turn the play by play into a time series of the score differential. Along with the code to scrape the data there is a function to process each game into this format.</p>
+<pre class="r"><code>deltaTS &lt;- llply(gameObj, gameScoreTS)</code></pre>
+<p>Once this has been cleaned we can see that data looks as we would expect, a time in seconds associated with value of the difference in score. One thing to note here is that this will always be the winning team’s score minus the losing team’s score.</p>
+<pre class="r"><code>head(deltaTS[[1]])</code></pre>
+<pre><code>##   time diff
+## 1    1    0
+## 2    2    0
+## 3    3    0
+## 4    4    0
+## 5    5    0
+## 6    6    0</code></pre>
+<p>We can now apply SAX to every game’s time series. A little bit exploration was used to determine the number of breakpoints and regions to aggregate upon. These values seemed to work and I assume that this is a mixture of art and science as to picking these.</p>
+<pre class="r"><code>gameSAX &lt;- lapply(deltaTS, function(x) sax(zoo(x$diff, x$time), 7, 25))</code></pre>
+<p>This looks like the strings we would expect to come out of the SAX implementation.</p>
+<pre class="r"><code>gameSAX[[1]]</code></pre>
+<pre><code>##  [1] &quot;b&quot; &quot;a&quot; &quot;a&quot; &quot;a&quot; &quot;b&quot; &quot;b&quot; &quot;d&quot; &quot;d&quot; &quot;c&quot; &quot;b&quot; &quot;c&quot; &quot;c&quot; &quot;e&quot; &quot;f&quot; &quot;d&quot; &quot;e&quot; &quot;e&quot;
+## [18] &quot;f&quot; &quot;g&quot; &quot;g&quot; &quot;g&quot; &quot;g&quot; &quot;g&quot; &quot;e&quot; &quot;d&quot;</code></pre>
+<p>It has taken a lot of work just to get to this point. The purpose here was to compare wins. In order to compare anything we have to have distances. This was the purpose of the <em>distSAX</em> function created above. We need to create a distance matrix that has the distance from every game to every other game.</p>
+<pre class="r"><code>len &lt;- length(gameSAX)
+gameDist &lt;- matrix(len * len, len, len)
+
+for (i in 1:(length(gameSAX)-1)) {
+  for (j in (i+1):length(gameSAX)) {
+    tmp &lt;- distSAX(gameSAX[[i]], gameSAX[[j]])
+    gameDist[i, j] &lt;- tmp
+    gameDist[j, i] &lt;- tmp
+  }
+  gameDist[i, i] &lt;- 0
+  print(i)
+}</code></pre>
+<p>To show how this works I am going to plot some games along with there closest match in green and least similar game in red.</p>
+<pre class="r"><code>plotGame &lt;- function(game) {
+  idx &lt;- order(gameDist[, game])
+  idx &lt;- setdiff(idx, game)
+  
+  a &lt;- deltaTS[[game]]
+  b &lt;- deltaTS[[idx[1]]]
+  c &lt;- deltaTS[[idx[length(idx)]]]
+  max &lt;- max(sapply(list(a, b, c), function(x) max(x$diff)))
+  min &lt;- min(sapply(list(a, b, c), function(x) min(x$diff)))
+  
+  print(season[game, 1:5])
+  par(mfrow = c(1, 1))
+  plot(a, type = 'l', ylim = c(min, max))
+  lines(b, col = 'green')
+  lines(c, col = 'red')
+}</code></pre>
+<p>I can’s say that these are completely random but they are also not just cherry picked. The results look pretty good from a visual perspective. Some looked worse that this but a majority look just as good.</p>
+<pre class="r"><code>plotGame(79)</code></pre>
+<pre><code>##           away           home       date as  hs
+## 1267 Utah Jazz Denver Nuggets 2012-11-09 84 104</code></pre>
+
+<div class="separator" style="clear: both; text-align: center;"><img src="img2.png" height="300" width="550"></a></div>
+
+<pre class="r"><code>plotGame(86)</code></pre>
+<pre><code>##              away      home       date as hs
+## 1054 Phoenix Suns Utah Jazz 2012-11-10 81 94</code></pre>
+
+<div class="separator" style="clear: both; text-align: center;"><img src="img3.png" height="300" width="550"></a></div>
+
+<pre class="r"><code>plotGame(95)</code></pre>
+<pre><code>##              away          home       date  as hs
+## 78 Boston Celtics Chicago Bulls 2012-11-12 101 95</code></pre>
+
+<div class="separator" style="clear: both; text-align: center;"><img src="img4.png" height="300" width="550"></a></div>
+
+</div>
+</div>
+<div id="conclusion" class="section level2">
+<h2>Conclusion</h2>
+<p>I really wanted to see if there were types of wins, which I still want to do, but I sense that this post is getting a bit long. It will take more effort to devise a method to cluster and validate the results so this stands as a jumping off point. Most of the work is done and the goal seems to be in sight but just out of reach here.</p>
+
+</div>
+
+
+</div>
+
+
+
+
+
+
+
+
+<script>
+
+// add bootstrap table styles to pandoc tables
+$(document).ready(function () {
+  $('tr.header').parent('thead').parent('table').addClass('table table-condensed');
+});
+
+</script>
+
+<!-- dynamically load mathjax for compatibility with --self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://c328740.ssl.cf1.rackcdn.com/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>
+

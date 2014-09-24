@@ -1,0 +1,145 @@
+<html>
+
+<head>
+<style type="text/css">.knitr.inline {
+  background-color: #f7f7f7;
+  border:solid 1px #B0B0B0;
+}
+.error {
+	font-weight: bold;
+	color: #FF0000;
+}, 
+.warning {
+	font-weight: bold;
+} 
+.message {
+	font-style: italic;
+} 
+.source, .output, .warning, .error, .message {
+	padding: 0em 1em;
+  border:solid 1px #F7F7F7;
+}
+.source {
+  background-color: #f7f7f7;
+}
+.rimage.left {
+  text-align: left;
+}
+.rimage.right {
+  text-align: right;
+}
+.rimage.center {
+  text-align: center;
+}
+
+.source {
+  color: #333333;
+}
+.background {
+  color: #F7F7F7;
+}
+
+.number {
+  color: #000000;
+}
+
+.functioncall {
+  color: #800054;
+  font-weight: bolder;
+}
+
+.string {
+  color: #9999FF;
+}
+
+.keyword {
+  font-weight: bolder;
+  color: black;
+}
+
+.argument {
+  color: #B04005;
+}
+
+.comment {
+  color: #2E9957;
+}
+
+.roxygencomment {
+  color: #707AB3;
+}
+
+.formalargs {
+  color: #B04005;
+}
+
+.eqformalargs {
+  color: #B04005;
+}
+
+.assignement {
+  font-weight: bolder;
+  color: #000000;
+}
+
+.package {
+  color: #96B525;
+}
+
+.slot {
+  font-style: italic;
+}
+
+.symbol {
+  color: #000000;
+}
+
+.prompt {
+  color: #333333;
+}
+</style>
+<title>Try Out Shiny</title>
+</head>
+
+<body>
+
+<p>I create an application of Elementary Cellular Automaton from Stephen Wolfram's book A New Kind of Science a while back.  This was done using the Manipulate package.  It allows you to have a very simple interactive interface within the RStudio IDE. 
+<br>
+<br>
+
+A little background before we dive in may be useful if you are not familiar with this concept.  The premise is that we have a two dimensional grid, each cell can be in one of two states, on or off.  The top row is initialized with the center cell being on and all other cells being off.  The state of each cell in a row is determined by the state of the cells in the row directly above that row. A given cell determines its state by looing at the the cell directly above it and the diagonal to it. Thus it is dependent on three cells. Since each of these three cells can be in one of two states, we have 2 to third power number of permutations or eight ways this child can determine its state based on its three parents. If we take each of these eight permutations as being able to define the alive or dead state of the child we end up will 2 raised to eight power of permutations or 256 different rules we can define. Each of these rules leads to very different outcomes. Below you can see one of these 256 sets of rules.</p>
+
+<div class="chunk" id="unnamed-chunk-1"><div class="rcode"><div class="source"><pre class="knitr r">cellEval &lt;- <span class="functioncall"><span class="keyword">function</span></span>(parents) {
+    <span class="functioncall"><span class="keyword">if</span></span> (<span class="functioncall">all</span>(parents == <span class="functioncall">c</span>(1, 1, 1))) {
+        child &lt;- 1
+    } <span class="keyword">else</span> <span class="functioncall"><span class="keyword">if</span></span> (<span class="functioncall">all</span>(parents == <span class="functioncall">c</span>(1, 1, 0))) {
+        child &lt;- 2
+    } <span class="keyword">else</span> <span class="functioncall"><span class="keyword">if</span></span> (<span class="functioncall">all</span>(parents == <span class="functioncall">c</span>(1, 0, 1))) {
+        child &lt;- 3
+    } <span class="keyword">else</span> <span class="functioncall"><span class="keyword">if</span></span> (<span class="functioncall">all</span>(parents == <span class="functioncall">c</span>(1, 0, 0))) {
+        child &lt;- 4
+    } <span class="keyword">else</span> <span class="functioncall"><span class="keyword">if</span></span> (<span class="functioncall">all</span>(parents == <span class="functioncall">c</span>(0, 1, 1))) {
+        child &lt;- 5
+    } <span class="keyword">else</span> <span class="functioncall"><span class="keyword">if</span></span> (<span class="functioncall">all</span>(parents == <span class="functioncall">c</span>(0, 1, 0))) {
+        child &lt;- 6
+    } <span class="keyword">else</span> <span class="functioncall"><span class="keyword">if</span></span> (<span class="functioncall">all</span>(parents == <span class="functioncall">c</span>(0, 0, 1))) {
+        child &lt;- 7
+    } <span class="keyword">else</span> <span class="functioncall"><span class="keyword">if</span></span> (<span class="functioncall">all</span>(parents == <span class="functioncall">c</span>(0, 0, 0))) {
+        child &lt;- 8
+    }
+    <span class="functioncall">return</span>(child)
+}
+<span class="functioncall">require</span>(compiler, quietly = T)
+<span class="comment"># Compile this functon <span class="keyword">for</span> speed.</span>
+ccEval &lt;- <span class="functioncall">cmpfun</span>(cellEval)
+</pre></div></div></div>
+
+
+<p>You can also embed plots, for example:</p>
+
+<div class="chunk" id="unnamed-chunk-2"><div class="rcode"><div class="source"><pre class="knitr r"><span class="functioncall">plot</span>(cars)
+</pre></div></div><div class="rimage default"><img src="figure/unnamed-chunk-2.png" title="plot of chunk unnamed-chunk-2" alt="plot of chunk unnamed-chunk-2" class="plot" /></div></div>
+
+
+</body>
+</html>

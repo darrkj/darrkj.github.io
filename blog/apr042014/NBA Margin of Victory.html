@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<!-- saved from url=(0014)about:internet -->
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+<meta http-equiv="x-ua-compatible" content="IE=9" >
+
+<title>Margin of Victory</title>
+
+<link rel="stylesheet" type="text/css" href="../../stylesheets/blog.css">
+
+<!-- Styles for R syntax highlighter -->
+<style type="text/css">
+   pre .operator,
+   pre .paren {
+     color: rgb(104, 118, 135)
+   }
+
+   pre .literal {
+     color: rgb(88, 72, 246)
+   }
+
+   pre .number {
+     color: rgb(0, 0, 205);
+   }
+
+   pre .comment {
+     color: rgb(76, 136, 107);
+   }
+
+   pre .keyword {
+     color: rgb(0, 0, 255);
+   }
+
+   pre .identifier {
+     color: rgb(0, 0, 0);
+   }
+
+   pre .string {
+     color: rgb(3, 106, 7);
+   }
+</style>
+
+    <link rel="stylesheet" type="text/css" href="../../stylesheets/stylesheet.css" media="screen" />
+    <link rel="stylesheet" type="text/css" href="../../stylesheets/pygment_trac.css" media="screen" />
+    <link rel="stylesheet" type="text/css" href="../../stylesheets/print.css" media="print" />
+
+<!-- R syntax highlighter -->
+<script src="../../javascripts/r.js"></script>
+
+
+</head>
+
+<body>
+
+<div class="container">
+
+
+    <header>
+      <div class="container">
+        <h1>NBA Margin of Victory</h1>
+        <h2></h2>
+
+<h4 class="author"><em>Kenny Darrell</em></h4>
+<h4 class="date"><em>April 4, 2014</em></h4>
+        </section>
+      </div>
+    </header>
+
+
+<p>I think it would be interesting to see how an NBA season looks for a given team from a higher level. Can we look down on a season and see slumps, can we see momentum start to build? Again you can see from some of my past posts, with any question we need data.</p>
+
+<h3>Getting setup</h3>
+
+<p>I have created some code, I don&#39;t know if I would call it an API as it needs much more work, to pull seasons of NBA data. You simply give it a year and it will pull all data related to that season. I have some stuff that will pull box scores and play-by-play but it is not really production ready yet. I am also interested in creating a dataset that is persisted on the web but this method works for now. The code exists in the form of a Gist, having devtools installed and loaded you can run the gist as follows.</p>
+
+<pre><code class="r">library(devtools)
+source_gist(8634787)
+</code></pre>
+
+<h3>Getting and yes, cleaning the data</h3>
+
+<p>Now you can create the data, assuming there are no package issues which I assume you can resolve. Lets pull a recent year. Call the seasonify function with a year, the season will be the year that the championship game took place, not the year the season started. The methods used to pull the data were done in a way to satisfy a few types of questions I was interested in looking at so a little cleaning needs to be done.</p>
+
+<pre><code class="r">
+# Get one season of data
+season &lt;- seasonify(2012)
+
+# The uniques teams in the season
+team &lt;- unique(c(season$away, season$home))
+
+# Break apart into two sets, since each game has two teams.
+home &lt;- season[, c(&quot;date&quot;, &quot;home&quot;, &quot;hs&quot;, &quot;as&quot;)]
+away &lt;- season[, c(&quot;date&quot;, &quot;away&quot;, &quot;as&quot;, &quot;hs&quot;)]
+
+# Give them a consistent name.
+names(home)[2] &lt;- &quot;team&quot;
+names(away)[2] &lt;- &quot;team&quot;
+
+# Create the margin varaible
+home$margin &lt;- home$hs - away$as
+away$margin &lt;- away$as - home$hs
+
+# Append the data together.
+scores &lt;- rbind(home, away)
+
+# Pull the scores realted to each team into a list tied to the given team
+final &lt;- lapply(team, function(x) scores[scores$team == x, c(&quot;date&quot;, &quot;margin&quot;)])
+names(final) &lt;- team
+
+# The manipulate tol doesn&#39;t work in this situation so you need to uncomment
+# it for your own use.  manipulate(cal.heatMap(final[[type]], &#39;margin&#39;),
+# type = picker(as.list(team)))
+</code></pre>
+
+<h3>And the outcome</h3>
+
+<p>This makes a simple interactive gui in manipulate that you can play with. If you have never played with the <a href="http://www.rstudio.com/ide/docs/advanced/manipulate">manipulate</a> package before it is very easy to wrap your function with a few hooks to make it interactive. You can add any combination of sliders, drop-downs and radio buttons. It comes with RStudio and it seems to have remained stable since it came out a few years ago. This may sound like a bad thing but it isn&#39;t, simple interfaces you built two years ago will still work even if you have updated RStudio. It is also like sliced bread, it is great for making sandwiches, it does not need an update. Any changes would over complicate its ease of use.</p>
+
+<p>The bad part is that it is hard to demonstrate in the browser. This portion of code has been commented out. You can uncomment it an play with the drop-down to see various teams. No worries though, I created a few standalone plots from the same codebase to show the results.</p>
+
+<pre><code class="r">cal.heatMap(final[[&quot;Chicago Bulls&quot;]], &quot;margin&quot;)
+</code></pre>
+
+<div class="separator" style="clear: both; text-align: center;"><img src="heat1.png" height="300" width="550"></a></div>
+
+
+<p>One interesting note here, the Bulls seem to have a lop sided margin they win by more that they lose. This would seem to indicate that they were a good team that year. The other thing to note is that there is a lot of orange meaning it&#39;s hard to tell whether they won or lost in all but the most extreme cases, like winning by 40. Thus it is hard to determine whether they are actually good team as far as wins and losses are concerned.</p>
+
+<p>We can change this to show wins and losses opposed to the margin of victory. </p>
+
+<pre><code class="r"># Binary win loss
+
+final2 &lt;- lapply(final, function(x) data.frame(date = x$date, win = ifelse(x$margin &gt; 
+    0, 1, -1)))
+</code></pre>
+
+<pre><code class="r">cal.heatMap(final2[[&quot;Chicago Bulls&quot;]], &quot;win&quot;)
+</code></pre>
+
+<div class="separator" style="clear: both; text-align: center;"><img src="heat2.png" height="300" width="550"></a></div>
+
+<p>This tells a lot more of the story, in the case of the 2011-2012 Chicago Bulls, they were always on top. </p>
+
+<p>We can see what I set out to resolve, the Timberwolves practically fell apart in April winning only one game.</p>
+
+<pre><code class="r">cal.heatMap(final2[[&quot;Minnesota Timberwolves&quot;]], &quot;win&quot;)
+</code></pre>
+
+<div class="separator" style="clear: both; text-align: center;"><img src="heat3.png" height="300" width="550"></a></div>
+
+<p>The Orlando Magic seemed to fall apart towards the end as well.</p>
+
+<pre><code class="r">cal.heatMap(final2[[&quot;Orlando Magic&quot;]], &quot;win&quot;)
+</code></pre>
+
+<div class="separator" style="clear: both; text-align: center;"><img src="heat4.png" height="300" width="550"></a></div>
+
+<p>In hindsight since the calendar heat map aspect did not pan out so well there may be better ways to visualize this data. I do like that this demonstrates a fairly consistent aspect of any data science endeavour, to answer the question you started with you often have to change paths as you get further in. Data Science is dynamic, letting the data tell you what works and what doesn&#39;t will get you much farther. It also helps to have code and data that lets you change paths easily. </p>
+
+<h3>Future</h3>
+
+<p>I think it would be cool given data over more years to be able to pick seasons and also be able to compare teams or even look over teams for multiple years. That is starting to get away from the simple nature of manipulate and move more towards shiny or d3, which I may think of converting this into.</p>
+
+</body>
+
+</html>

@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<!-- saved from url=(0014)about:internet -->
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+<meta http-equiv="x-ua-compatible" content="IE=9" >
+
+<title>Activity Tracker</title>
+
+<link rel="stylesheet" type="text/css" href="../../stylesheets/blog.css">
+
+<!-- Styles for R syntax highlighter -->
+<link rel="stylesheet" type="text/css" href="../../stylesheets/blog2.css">
+
+<link rel="stylesheet" type="text/css" href="../../stylesheets/stylesheet.css" media="screen" />
+
+<link rel="stylesheet" type="text/css" href="../../stylesheets/pygment_trac.css" media="screen" />
+
+<link rel="stylesheet" type="text/css" href="../../stylesheets/print.css" media="print" />
+
+<!-- R syntax highlighter -->
+<script src="../../javascripts/r.js"></script>
+
+</head>
+
+<body>
+
+<div class="container">
+
+    <header>
+      <div class="container">
+        <h1>Making Your Own Activity Tracker</h1>
+        <h2></h2>
+        
+        <h4 class="author"><em>Kenny Darrell</em></h4>
+        <h4 class="date"><em>August 30, 2014</em></h4>
+        </section>
+      </div>
+    </header>
+
+<div class="container-fluid">
+
+
+<div id="background" class="section level3">
+
+<h3>Background</h3>
+
+<p>This post is the culmination of a few ideas. When I was an undergraduate and the the early part of my career where I was an Aerospace Engineer and a Control Systems Engineer I worked with lots of sensors. These sensors streamed in lots of data in the form of measurements of certain features of the real world. This part of the job was really cool. There were other really cool parts as well, I was doing a lot of data mining and machine learning before I even knew what those thing were. There are other parts of being an engineer that I did not like. Going to graduate school and focusing on machine learning and data mining was great. I was immedietly able to find an amazing job where I work on lots of data mining projects.</p>
+
+<p>I very rarely work with data that comes from real world measurements any more. The growing number of sensors coming about from the <a href="http://en.wikipedia.org/wiki/Internet_of_Things">Internet of Things</a> and the <a href="http://en.wikipedia.org/wiki/Quantified_Self">Quantified Self</a> movements have lead to sensors being almost everywhere. There are also many devices that measure aspects realted to your life, <a href="http://www.fitbit.com/">Fitbit</a> and <a href="https://jawbone.com/">Jawbone</a> are good examples. There are also a few Kaggle competetioins which are realted to this, determinig both <a href="http://www.kaggle.com/c/seizure-prediction">Epilepsy</a> and <a href="http://www.kaggle.com/c/predicting-parkinson-s-disease-progression-with-smartphone-data">Parkinson’s</a> related aspects given sensor data. I also watched a few talks at <a href="http://www.kdd.org/kdd2014/">KDD 2014</a> earlier this week which got me thinking a lot as well. This is also very related to my last post abot classifyng time series data.</p>
+
+<p>Having used some of these devices and seen the data that they create has left me wanting a little more. I am probably not a normal customer of this data though. I started thinking, could the device learn what playing basketball looks like or know that I am running as opposed to walking. Could it also grade me, tell me when I am out pacing a past outing on this path.</p>
+</div>
+
+<div id="collecting-data" class="section level3">
+
+<h3>Collecting Data</h3>
+
+
+<p>My first step was to either find an app or build one that could give me readings on all of the sensors in my phone. I was able to find quite a few which were a great starting point. The one that worked best was Sensor Data Logger. It allows you to toggle different sensors on and off and change the collection rate.</p>
+
+
+<p>There is still a lot of work related to interacting with the app. Currently I am emailing a large time window to my laptop which is less than desirable. I think for the longer term it would be great to make an app that houses the collection with the analysis but lets ignore those pain points for now.</p>
+
+
+<p>The files that are created are named in the following manner: LOG-YYYY-MM-DD-HH_MM_SS-K330_3-axis_Accelerometer.log.</p>
+
+<p>These files need a bit of work to be in a usable format. The first thing to look at is the structure of the file. It has a first line containing ‘--- LOG START --- ’</p>
+
+
+<pre class="r"><code>readLines('LOG_2014-08-30_11-59-00K330_3-axis_Accelerometer.log', 1)</code></pre>
+<pre><code>## [1] &quot;--- LOG START  --- &quot;</code></pre>
+</div>
+
+<div id="cleaning-data" class="section level3">
+<h3>Cleaning Data</h3>
+<p>We need to remove this, but I think it is useful to not modify the file itself. It should also be done in a way to check that this is the case, remove it if it is there or do nothing if it is not.</p>
+
+<pre class="r"><code>log &lt;- 'LOG_2014-08-30_11-59-00K330_3-axis_Accelerometer.log'
+
+firstLine &lt;- readLines(log, 1)
+skip &lt;- if ( firstLine == &quot;--- LOG START  --- &quot;) 1 else 0
+  
+path &lt;- read.csv(log, skip = skip)
+</code></pre>
+
+<p>We can also see a few other issues. We only have one column, so the file must not use commas, it uses semicolons as delimiters. We can also see the horrible names, so the file has no header. This is pretty easy to clean up.</p>
+
+<pre class="r"><code>path &lt;- read.csv(log, sep = ';', header = F, skip = skip, stringsAsFactors = F)
+
+str(path)</code></pre>
+<pre><code>## 'data.frame':    5967 obs. of  11 variables:
+##  $ V1 : int  1269 1290 1311 1332 1353 1374 1395 1416 1437 1458 ...
+##  $ V2 : chr  &quot;2014-08-30_11-59-00.732&quot; &quot;2014-08-30_11-59-01.997&quot; &quot;2014-08-30_11-59-03.233&quot; &quot;2014-08-30_11-59-04.495&quot; ...
+##  $ V3 : logi  NA NA NA NA NA NA ...
+##  $ V4 : num  38.9 38.9 38.9 38.9 38.9 ...
+##  $ V5 : num  -77.1 -77.1 -77.1 -77.1 -77.1 ...
+##  $ V6 : num  75 75 75 75 75 75 75 75 75 75 ...
+##  $ V7 : num  17 17 17 17 18 18 18 17 17 17 ...
+##  $ V8 : num  -0.394 -0.394 -0.394 -0.394 0.311 0.311 0.311 -0.641 -0.641 -0.641 ...
+##  $ V9 : num  3.09 3.09 3.09 3.09 1.45 ...
+##  $ V10: num  8.95 8.95 8.95 8.95 9.77 ...
+##  $ V11: logi  NA NA NA NA NA NA ...</code></pre>
+<pre class="r"><code>plot(path$V8[1:100])</code></pre>
+
+
+
+<div class="separator" style="clear: both; text-align: center;"><img src="sensor.png" height="400" width="550"></a></div>
+
+<p>A few other issues we have with this data are that column one is really the timestamp but it comes in as a character. The V3 field is really an artifact of having a double delimiter where the optional sensor values appear. We have the same thing with V11 as each line ends with a delimiter. We can just remove these two. We should also give the fields some better names.</p>
+<pre class="r"><code>library(lubridate)
+# There are two semi colons in a row 
+  path$V3 &lt;- NULL
+  # The line ends with a semi colon
+  path$V11 &lt;- NULL
+  
+  names(path) &lt;- c('inc', 'timestamp', 'lat', 'long', 'alt', 'acc', 'x', 'y', 'z')
+  
+  path$date &lt;- as.Date(substr(path$timestamp, 1, 10))
+  path$time &lt;- ymd_hms(path$timestamp)</code></pre>
+<p>We should also create an index field, the first field currently is the number of milliseconds from the start time. It is also a good idea to turn everything that should be a number into a number.</p>
+<pre class="r"><code>loc$ind &lt;- seq(nrow(loc))
+
+isNum &lt;- lapply(c(3:9), function(x) class(path[, x]))
+any('character' %in% isNum)</code></pre>
+<pre><code>## [1] FALSE</code></pre>
+<pre class="r"><code>for (i in c(3:9)) {
+  path[, i] &lt;- as.numeric(path[, i])
+}
+
+path$LatLong &lt;- paste(path$lat, path$long, sep = ':')
+
+str(path)</code></pre>
+<pre><code>## 'data.frame':    5967 obs. of  13 variables:
+##  $ inc      : int  1269 1290 1311 1332 1353 1374 1395 1416 1437 1458 ...
+##  $ timestamp: chr  &quot;2014-08-30_11-59-00.732&quot; &quot;2014-08-30_11-59-01.997&quot; &quot;2014-08-30_11-59-03.233&quot; &quot;2014-08-30_11-59-04.495&quot; ...
+##  $ lat      : num  38.9 38.9 38.9 38.9 38.9 ...
+##  $ long     : num  -77.1 -77.1 -77.1 -77.1 -77.1 ...
+##  $ alt      : num  75 75 75 75 75 75 75 75 75 75 ...
+##  $ acc      : num  17 17 17 17 18 18 18 17 17 17 ...
+##  $ x        : num  -0.394 -0.394 -0.394 -0.394 0.311 0.311 0.311 -0.641 -0.641 -0.641 ...
+##  $ y        : num  3.09 3.09 3.09 3.09 1.45 ...
+##  $ z        : num  8.95 8.95 8.95 8.95 9.77 ...
+##  $ date     : Date, format: &quot;2014-08-30&quot; &quot;2014-08-30&quot; ...
+##  $ time     : POSIXct, format: &quot;2014-08-30 11:59:00&quot; &quot;2014-08-30 11:59:01&quot; ...
+##  $ ind      : int  1 2 3 4 5 6 7 8 9 10 ...
+##  $ LatLong  : chr  &quot;38.949867:-77.082375&quot; &quot;38.949867:-77.082375&quot; &quot;38.949867:-77.082375&quot; &quot;38.949867:-77.082375&quot; ...</code></pre>
+<p>It is also a really good idea to put all of this into one function that can read log files and clean them in one step.</p>
+<pre class="r"><code>read.log &lt;- function(log) {
+  firstLine &lt;- readLines(log, 1)
+  skip &lt;- if ( firstLine == &quot;--- LOG START  --- &quot;) 1 else 0
+  # These are seperated by semicolons and skip one becuase the first line
+  # says log output.
+  path &lt;- read.csv(log, sep = ';', header = F, skip = skip, stringsAsFactors = F)
+  
+  # There are two semi colons in a row 
+  path$V3 &lt;- NULL
+  # The line ends with a semi colon
+  path$V11 &lt;- NULL
+  
+  names(path) &lt;- c('inc', 'timestamp', 'lat', 'long', 'alt', 'acc', 'x', 'y', 'z')
+  
+  path$date &lt;- as.Date(substr(path$timestamp, 1, 10))
+  path$time &lt;- ymd_hms(path$timestamp)
+  path$ind &lt;- seq(nrow(path))
+  
+  # These fields should all be numbers.
+  for (i in c(3:9)) {
+    # Suppress warnings when NA values are introduced.
+    suppressWarnings(path[, i] &lt;- as.numeric(path[, i]))
+  }
+  
+  path$LatLong &lt;- paste(path$lat, path$long, sep = ':')
+  
+  path
+}
+</code></pre>
+<p>Before I do anything with the sensor data I really want to look at it on a map.</p>
+<pre class="r"><code>library(googleVis)
+
+plotGPS &lt;- function(path, v = 10) {
+  if (v == -1) v &lt;- nrow(path)
+  if (v &gt; nrow(path)) v &lt;- nrow(path)
+  nn &lt;- list(LatLong = path$LatLong[1:v], Tip = path$timestamp[1:v])
+  
+  m &lt;- gvisMap(nn, 'LatLong' , 'Tip',
+               options=list(showTip=TRUE, showLine=FALSE,
+                            enableScrollWheel=TRUE,
+                            mapType='hybrid', useMapTypeControl=TRUE,
+                            width=800,height=400),
+               chartid=&quot;Run&quot;)
+  
+  plot(m)
+}
+
+path &lt;- read.log('LOG_2014-08-30_11-59-00K330_3-axis_Accelerometer.log')
+
+<p>That looks awesome, but we see a problem if we try to look at the whole path, or really any more than I have here.</p>
+
+plotGPS(path, v = 500)</code></pre>
+
+<div style="text-align:center;"> <iframe src="http://darrkj.github.io/home/blog/aug302014/plot" width="650" height="450"></iframe></div>
+
+
+<pre class="r"><code>plotGPS(path, v = 3000)</code></pre>
+
+
+<div style="text-align:center;"> <iframe src="http://darrkj.github.io/home/blog/aug302014/plot" width="650" height="450"></iframe></div>
+
+
+<p>It looks like there is an upper limit to the number of points I can place on the map. The map looks exactly the same and it is a clear giveaway when it says in the top left corner that some data was truncated. I can down-sample it by doing the following.</p>
+<pre class="r"><code>plotGPS(path[seq(1, 5800, 16), ], v = 5900)</code></pre>
+
+
+
+<div style="text-align:center;"> <iframe src="http://darrkj.github.io/home/blog/aug302014/plot2" width="650" height="450"></iframe></div>
+
+
+<p>That is pretty rough though. We can eliminate many rows by just removing points that have the same latitude and longitude, this was a point in time where I was standing still. Now I am starting to think I need more utility functions to process this data though.</p>
+
+
+<pre class="r"><code>newPath &lt;- path[!duplicated(path$LatLong), ]
+plotGPS(newPath[seq(1, 1625, 8), ], v = -1)</code></pre>
+
+
+<div style="text-align:center;"> <iframe src="http://darrkj.github.io/home/blog/aug302014/plot3" width="650" height="450"></iframe></div>
+
+
+
+
+</div>
+</div>
+<div id="collecting-data" class="section level3">
+
+<h3>Conclusion</h3>
+<p>This was a proof of concept that proved that it is possible to collect the sensor data from a phone and start to use. The next step coincides with my desire from the basketball scores post, classifying a time series. There are a few papers I hope to read that give more insights on how to use the SAX method. I also think it would be interesting to try to develop a few even if they perform very poorly to get an understanding of the difficulties in this area. The bigger next step though and possibly the hardest is that I have to go out and create some labeled data to train the model on. This means I have to collect data of me running and tag it as running, the same with walking and climbing stairs and other common activities. I may be in much better shape before my next post. 
+</p>
+
+</div>
+
+
+
+<script>
+
+// add bootstrap table styles to pandoc tables
+$(document).ready(function () {
+  $('tr.header').parent('thead').parent('table').addClass('table table-condensed');
+});
+
+</script>
+
+<!-- dynamically load mathjax for compatibility with --self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://c328740.ssl.cf1.rackcdn.com/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>
+

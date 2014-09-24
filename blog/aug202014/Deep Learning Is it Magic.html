@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<!-- saved from url=(0014)about:internet -->
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+<meta http-equiv="x-ua-compatible" content="IE=9" >
+
+<title>Deep Learning</title>
+
+
+<link rel="stylesheet" type="text/css" href="../../stylesheets/blog.css">
+
+<!-- Styles for R syntax highlighter -->
+<link rel="stylesheet" type="text/css" href="../../stylesheets/blog2.css">
+
+
+    <link rel="stylesheet" type="text/css" href="../../stylesheets/stylesheet.css" media="screen" />
+    <link rel="stylesheet" type="text/css" href="../../stylesheets/pygment_trac.css" media="screen" />
+    <link rel="stylesheet" type="text/css" href="../../stylesheets/print.css" media="print" />
+
+<!-- R syntax highlighter -->
+<script src="../../javascripts/r.js"></script>
+
+<style>
+table, th, td {
+    border: 1px solid black;
+    border-collapse: collapse;
+}
+</style>
+
+
+</head>
+
+<body>
+
+<div class="container">
+
+
+    <header>
+      <div class="container">
+        <h1>Deep Learning, Is it Magic?</h1>
+        <h2></h2>
+
+<h4 class="author"><em>Kenny Darrell</em></h4>
+<h4 class="date"><em>August 20, 2014</em></h4>
+        </section>
+      </div>
+    </header>
+
+
+<h3>Introduction</h3>
+
+<p>A collection of things has led me to want to learn more about <a href="http://en.wikipedia.org/wiki/Deep_learning">Deep Learning</a>. I have heard the term for some time now but am not really sure what it is all about. I have had some experience with image processing from my days in undergraduate engineering and image mining from my days as an engineer. This has led to an interest in trying my luck at image mining as well. Both of these areas seem to be all of the rage now as tons of major <a href="http://venturebeat.com/2012/12/19/dropbox-buys-snapjoy/">companies</a> have been <a href="http://techcrunch.com/2014/04/17/dropbox-acquires-cloud-photos-startup-loom-service-to-be-shut-down-as-users-transferred-to-carousel/">buying</a> <a href="http://www.pcworld.com/article/2459620/twitter-acquires-image-search-firm-madbits.html">startups</a> related in any way to <a href="http://gigaom.com/2013/11/19/the-dropbox-computer-vision-acquisition-that-slipped-under-the-radar/">images</a> or <a href="http://techcrunch.com/2014/01/26/google-deepmind/">deep learning</a>. <a href="http://www.kaggle.com/c/cifar-10">Kaggle</a> <a href="http://www.kaggle.com/c/facial-keypoints-detection">has</a> <a href="http://www.kaggle.com/c/digit-recognizer">taken</a> <a href="http://www.kaggle.com/c/dogs-vs-cats">notice</a> <a href="http://www.kaggle.com/c/galaxy-zoo-the-galaxy-challenge">as well</a>.
+</p>
+
+
+<p>It appears one is also a great tool for solving the other. So where to start with learning some of these things. At one point when I was a graduate student I new a fair deal about neural networks. Some of that has since faded but I thought it sufficient enough to jump in and try to use some deep learning tools. Later I can try to dig into the math.</p>
+
+<p>There are tutorials all over, some are good and some are bad. Here is a <a href="http://radar.oreilly.com/2014/07/how-to-build-and-run-your-first-deep-learning-network.html">link</a> to one that gave me some success.</p>
+
+<h3>Setting Up the Virtual Environment</h3>
+
+<p>The first requirement you need to fulfill is to install <a href="http://www.vagrantup.com/">Vagrant</a> and be able to use it. This was a great learning experience in itself as I have been meaning to learn one of these virtual development environment tools. I can't say that I am an expert but it was fairly easy to get up to speed and feel comfortable with this one. I am sure my knowledge only scratched the surface but I already see the value in them. </p>
+
+<p>Once this is setup you can run the following from the command line.</p>
+<pre><code>mkdir ~/dl_webcast
+cd ~/dl_webcast
+
+vagrant box add dl_webcast https://d2rlgkokhpr1uq.cloudfront.net/dl_webcast.box
+
+vagrant init dl_webcast
+vagrant up
+
+vagrant ssh</code></pre>
+
+<p>The real value in this virtual environment is that it already has a pre trained model included. In the tutorial it has you evaluate an image that comes preloaded. To jump right in and use the pre-build model run the python script as seen below.</p>
+<pre><code>cd ~/caffe
+python python/classify.py --print_results examples/images/cat.jpg foo</code></pre>
+
+<br>
+<br>
+
+
+<h3>Evaluation</h3>
+
+<p>Now let's try this with some images I found online since the example only comes with one image to evaluate.</p>
+
+<div class="separator" style="clear: both; text-align: center;"><img src="dog.5498.png" height="400" width="550"></a></div>
+
+
+
+<br>
+<table style="width:400" align="center">
+  <tr>
+    <td><font face="Arial" color="blue">beagle</td>
+    <td><font face="Arial" color="blue">0.49523</td> 
+  </tr>
+  <tr>
+    <td><font face="Arial" color="blue">English foxhound</td>
+    <td><font face="Arial" color="blue">0.07124</td> 
+  </tr>
+    <tr>
+    <td><font face="Arial" color="blue">Walker hound</td>
+    <td><font face="Arial" color="blue">0.05694</td> 
+  </tr>
+  <tr>
+    <td><font face="Arial" color="blue">basset</td>
+    <td><font face="Arial" color="blue">0.05413</td> 
+  </tr>
+    <tr>
+    <td><font face="Arial" color="blue">basset</td>
+    <td><font face="Arial" color="blue">0.01672</td> 
+  </tr>
+</table>
+<br>
+
+ 
+ <div class="separator" style="clear: both; text-align: center;"><img src="dog.5495.png" height="400" width="350"></a></div>
+
+
+<br>
+<table style="width:400" align="center" color="blue">
+  <tr>
+    <td><font face="Arial" color="blue">Doberman</td>
+    <td><font face="Arial" color="blue">0.75929</td> 
+  </tr>
+  <tr>
+    <td><font face="Arial" color="blue">miniature pinscher</td>
+    <td><font face="Arial" color="blue">0.09810</td> 
+  </tr>
+    <tr>
+    <td><font face="Arial" color="blue">Rottweiler</td>
+    <td><font face="Arial" color="blue">0.07136</td> 
+  </tr>
+  <tr>
+    <td><font face="Arial" color="blue">toy terrier</td>
+    <td><font face="Arial" color="blue">0.02606</td> 
+  </tr>
+    <tr>
+    <td><font face="Arial" color="blue">black-and-tan coonhound</td>
+    <td><font face="Arial" color="blue">0.02000</td> 
+  </tr>
+</table>
+<br>
+
+
+<p>These images of dogs look pretty good. Now lets try something I think is a little harder. I can't tell the difference between an alligator and a crocodile. One image even has another animal to throw the model off. How well does it work?</p>
+
+ <div class="separator" style="clear: both; text-align: center;"><img src="gator2.png" height="400" width="550"></a></div>
+
+
+<br>
+<table style="width:400" align="center">
+  <tr>
+    <td><font face="Arial" color="blue">American alligator</td>
+    <td><font face="Arial" color="blue">0.72230</td> 
+  </tr>
+  <tr>
+    <td><font face="Arial" color="blue">African crocodile</td>
+    <td><font face="Arial" color="blue">0.27429</td> 
+  </tr>
+    <tr>
+    <td><font face="Arial" color="blue">common iguana</td>
+    <td><font face="Arial" color="blue">0.00146</td> 
+  </tr>
+  <tr>
+    <td><font face="Arial" color="blue">Komodo dragon</td>
+    <td><font face="Arial" color="blue">0.00028</td> 
+  </tr>
+    <tr>
+    <td><font face="Arial" color="blue">rock python</td>
+    <td><font face="Arial" color="blue">0.00024</td> 
+  </tr>
+</table>
+<br>
+
+
+
+ <div class="separator" style="clear: both; text-align: center;"><img src="gator3.png" height="400" width="550"></a></div>
+ 
+ <br>
+<table style="width:400" align="center">
+  <tr>
+    <td><font face="Arial" color="blue">African crocodile</td>
+    <td><font face="Arial" color="blue">0.39933</td> 
+  </tr>
+  <tr>
+    <td><font face="Arial" color="blue">American alligator</td>
+    <td><font face="Arial" color="blue">0.16945</td> 
+  </tr>
+    <tr>
+    <td><font face="Arial" color="blue">alligator lizard</td>
+    <td><font face="Arial" color="blue">0.05302</td> 
+  </tr>
+  <tr>
+    <td><font face="Arial" color="blue">agama</td>
+    <td><font face="Arial" color="blue">0.05002</td> 
+  </tr>
+    <tr>
+    <td><font face="Arial" color="blue">garter snake</td>
+    <td><font face="Arial" color="blue">0.04964</td> 
+  </tr>
+</table>
+ <br>
+
+<p>Wow, I am pretty impressed. This seemed to work pretty well. Deep Learning does seem like magic at first but these are all pictures from the internet. How well will it work from real images. I wanted to try an image I created from my phone. I sacrificed life and limb to get the picture below hoping it would be a harder test. I was also thinking this would be more of how this could be utilized in a cool application, a phone app that tells you what kind of wildlife you are looking at.</p>
+
+ <div class="separator" style="clear: both; text-align: center;"><img src="me.png" height="400" width="500"></a></div>
+
+
+
+ <br>
+<table style="width:400" align="center">
+  <tr>
+    <td><font face="Arial" color="blue">skunk</td>
+    <td><font face="Arial" color="blue">0.05580</td> 
+  </tr>
+  <tr>
+    <td><font face="Arial" color="blue">coho</td>
+    <td><font face="Arial" color="blue">0.04459</td> 
+  </tr>
+    <tr>
+    <td><font face="Arial" color="blue">American alligator</td>
+    <td><font face="Arial" color="blue">0.04231</td> 
+  </tr>
+  <tr>
+    <td><font face="Arial" color="blue">tench</td>
+    <td><font face="Arial" color="blue">0.03036</td> 
+  </tr>
+    <tr>
+    <td><font face="Arial" color="blue">banjo</td>
+    <td><font face="Arial" color="blue">0.02585</td> 
+  </tr>
+</table>
+ <br>
+
+
+<p>WHAT, it thinks I am a skunk. After the bike ride it took to get there my wife may agree with that classification but I sure don't. I am at ease though after investigating the probability, it has very low confidence in its guess. I then wondered what would happen if I modified the picture a bit. I took off a lot of the perimeter to see if it got any better.</p>
+
+
+ <div class="separator" style="clear: both; text-align: center;"><img src="m5.png" height="400" width="500"></a></div>
+
+
+
+ <br>
+<table style="width:400" align="center">
+  <tr>
+    <td><font face="Arial" color="blue">American alligator</td>
+    <td><font face="Arial" color="blue">0.04321</td> 
+  </tr>
+  <tr>
+    <td><font face="Arial" color="blue">banjo</td>
+    <td><font face="Arial" color="blue">0.03946</td> 
+  </tr>
+    <tr>
+    <td><font face="Arial" color="blue">apiary</td>
+    <td><font face="Arial" color="blue">0.03699</td> 
+  </tr>
+  <tr>
+    <td><font face="Arial" color="blue">jersey</td>
+    <td><font face="Arial" color="blue">0.03635</td> 
+  </tr>
+    <tr>
+    <td><font face="Arial" color="blue">neck brace</td>
+    <td><font face="Arial" color="blue">0.02906</td> 
+  </tr>
+</table>
+ <br>
+
+
+<p>That looks a little better. It does get the alligator and most importantly it does not think that I am a skunk. I think it sees me as the jersey, or the the neck brace?</p>
+
+
+<h3>Conclusion</h3>
+
+<p>What happens if I take myself out and just look at the alligator?</p>
+
+
+
+ <div class="separator" style="clear: both; text-align: center;"><img src="m6.png" height="400" width="500"></a></div>
+
+
+ <br>
+<table style="width:400" align="center">
+  <tr>
+    <td><font face="Arial" color="blue">aircraft carrier</td>
+    <td><font face="Arial" color="blue">0.08376</td> 
+  </tr>
+  <tr>
+    <td><font face="Arial" color="blue">snow leopard</td>
+    <td><font face="Arial" color="blue">0.07310</td> 
+  </tr>
+    <tr>
+    <td><font face="Arial" color="blue">grey whale</td>
+    <td><font face="Arial" color="blue">0.06862</td> 
+  </tr>
+  <tr>
+    <td><font face="Arial" color="blue">indri</td>
+    <td><font face="Arial" color="blue">0.05899</td> 
+  </tr>
+    <tr>
+    <td><font face="Arial" color="blue">steel arch bridge</td>
+    <td><font face="Arial" color="blue">0.04745</td> 
+  </tr>
+</table>
+ <br>
+
+<p>This is very interesting. Is is obviously wrong but I can see where it was going with the aircraft carrier, whale and the bridge. This reassures me that these are not magic. They do a good job of classifying images but the problem is not solved to completion. I think they deserve the attention they have been getting lately though. Perhaps I will be able to dig deeper and look at there inner workings more in the future.</p>
+
+
+
+</div>
+
+
+
+
+
+<script>
+
+// add bootstrap table styles to pandoc tables
+$(document).ready(function () {
+  $('tr.header').parent('thead').parent('table').addClass('table table-condensed');
+});
+
+</script>
+
+<!-- dynamically load mathjax for compatibility with --self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://c328740.ssl.cf1.rackcdn.com/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>
+

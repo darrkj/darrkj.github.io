@@ -1,0 +1,132 @@
+<!DOCTYPE html> <meta charset="utf-8">
+<body> 
+ <style> 
+.link {  
+stroke: #666;
+opacity: 0.6;
+stroke-width: 1.5px; 
+} 
+.node circle { 
+stroke: #fff; 
+opacity: 0.6;
+stroke-width: 1.5px; 
+} 
+text { 
+font: 7px serif; 
+opacity: 0.6;
+pointer-events: none; 
+} 
+</style> 
+
+<script src="//d3js.org/d3.v3.min.js"></script>
+
+
+
+<script> 
+ var links = [ { "source" : "BRETT", "target" : "MARSELLUS" }, { "source" : "BRETT", "target" : "MARVIN" }, { "source" : "BRETT", "target" : "ROGER" }, { "source" : "BRETT", "target" : "VINCENT" }, { "source" : "BUDDY", "target" : "MIA" }, { "source" : "BUDDY", "target" : "VINCENT" }, { "source" : "BRETT", "target" : "BUTCH" }, { "source" : "BUTCH", "target" : "CAPT KOONS" }, { "source" : "BUTCH", "target" : "ESMARELDA" }, { "source" : "BUTCH", "target" : "GAWKER #2" }, { "source" : "BUTCH", "target" : "JULES" }, { "source" : "BUTCH", "target" : "MARSELLUS" }, { "source" : "BUTCH", "target" : "PEDESTRIAN" }, { "source" : "BUTCH", "target" : "SPORTSCASTER #1" }, { "source" : "BUTCH", "target" : "ENGLISH DAVE" }, { "source" : "BRETT", "target" : "FABIENNE" }, { "source" : "BUTCH", "target" : "FABIENNE" }, { "source" : "FABIENNE", "target" : "JULES" }, { "source" : "FOURTH MAN", "target" : "JULES" }, { "source" : "FOURTH MAN", "target" : "VINCENT" }, { "source" : "GAWKER #2", "target" : "MARSELLUS" }, { "source" : "HONEY BUNNY", "target" : "MANAGER" }, { "source" : "JIMMIE", "target" : "JULES" }, { "source" : "JODY", "target" : "MIA" }, { "source" : "BRETT", "target" : "JULES" }, { "source" : "HONEY BUNNY", "target" : "JULES" }, { "source" : "JULES", "target" : "MANAGER" }, { "source" : "JULES", "target" : "MARSELLUS" }, { "source" : "JULES", "target" : "MARVIN" }, { "source" : "JULES", "target" : "PATRON" }, { "source" : "JULES", "target" : "PUMPKIN" }, { "source" : "JULES", "target" : "RAQUEL" }, { "source" : "JULES", "target" : "ROGER" }, { "source" : "JULES", "target" : "WINSTON" }, { "source" : "JODY", "target" : "LANCE" }, { "source" : "LANCE", "target" : "MIA" }, { "source" : "LANCE", "target" : "VINCENT" }, { "source" : "ENGLISH DAVE", "target" : "MARSELLUS" }, { "source" : "BUTCH", "target" : "MARVIN" }, { "source" : "MARSELLUS", "target" : "MARVIN" }, { "source" : "MARVIN", "target" : "ROGER" }, { "source" : "BUTCH", "target" : "MAYNARD" }, { "source" : "MAYNARD", "target" : "THE GIMP" }, { "source" : "MAYNARD", "target" : "ZED" }, { "source" : "BUTCH", "target" : "MIA" }, { "source" : "CAPT KOONS", "target" : "MIA" }, { "source" : "ED SULLIVAN", "target" : "MIA" }, { "source" : "ENGLISH DAVE", "target" : "MIA" }, { "source" : "MARSELLUS", "target" : "MIA" }, { "source" : "MIA", "target" : "MOTHER" }, { "source" : "MIA", "target" : "WOMAN" }, { "source" : "BUTCH", "target" : "MOTHER" }, { "source" : "CAPT KOONS", "target" : "MOTHER" }, { "source" : "HONEY BUNNY", "target" : "PATRON" }, { "source" : "MANAGER", "target" : "PATRON" }, { "source" : "PATRON", "target" : "PUMPKIN" }, { "source" : "GAWKER #2", "target" : "PEDESTRIAN" }, { "source" : "MARSELLUS", "target" : "PEDESTRIAN" }, { "source" : "JODY", "target" : "PREACHER" }, { "source" : "LANCE", "target" : "PREACHER" }, { "source" : "PREACHER", "target" : "VINCENT" }, { "source" : "HONEY BUNNY", "target" : "PUMPKIN" }, { "source" : "MANAGER", "target" : "PUMPKIN" }, { "source" : "RAQUEL", "target" : "VINCENT" }, { "source" : "BUTCH", "target" : "ROGER" }, { "source" : "MARSELLUS", "target" : "ROGER" }, { "source" : "SPORTSCASTER #1", "target" : "SPORTSCASTER #2" }, { "source" : "JIMMIE", "target" : "THE WOLF" }, { "source" : "JULES", "target" : "THE WOLF" }, { "source" : "THE WOLF", "target" : "VINCENT" }, { "source" : "BUTCH", "target" : "VINCENT" }, { "source" : "CAPT KOONS", "target" : "VINCENT" }, { "source" : "ED SULLIVAN", "target" : "VINCENT" }, { "source" : "ENGLISH DAVE", "target" : "VINCENT" }, { "source" : "HONEY BUNNY", "target" : "VINCENT" }, { "source" : "JIMMIE", "target" : "VINCENT" }, { "source" : "JODY", "target" : "VINCENT" }, { "source" : "JULES", "target" : "VINCENT" }, { "source" : "MANAGER", "target" : "VINCENT" }, { "source" : "MARSELLUS", "target" : "VINCENT" }, { "source" : "MARVIN", "target" : "VINCENT" }, { "source" : "MIA", "target" : "VINCENT" }, { "source" : "MOTHER", "target" : "VINCENT" }, { "source" : "PATRON", "target" : "VINCENT" }, { "source" : "PUMPKIN", "target" : "VINCENT" }, { "source" : "ROGER", "target" : "VINCENT" }, { "source" : "VINCENT", "target" : "WOMAN" }, { "source" : "HONEY BUNNY", "target" : "WAITRESS" }, { "source" : "PUMPKIN", "target" : "WAITRESS" }, { "source" : "RAQUEL", "target" : "WINSTON" }, { "source" : "VINCENT", "target" : "WINSTON" }, { "source" : "BUTCH", "target" : "WOMAN" }, { "source" : "CAPT KOONS", "target" : "WOMAN" }, { "source" : "MOTHER", "target" : "WOMAN" }, { "source" : "HONEY BUNNY", "target" : "YOUNG MAN" }, { "source" : "PUMPKIN", "target" : "YOUNG MAN" }, { "source" : "WAITRESS", "target" : "YOUNG MAN" }, { "source" : "YOUNG MAN", "target" : "YOUNG WOMAN" }, { "source" : "HONEY BUNNY", "target" : "YOUNG WOMAN" }, { "source" : "PUMPKIN", "target" : "YOUNG WOMAN" }, { "source" : "WAITRESS", "target" : "YOUNG WOMAN" }, { "source" : "THE GIMP", "target" : "ZED" } ] ; 
+ var nodes = {}
+
+// Compute the distinct nodes from the links.
+links.forEach(function(link) {
+link.source = nodes[link.source] || 
+(nodes[link.source] = {name: link.source});
+link.target = nodes[link.target] || 
+(nodes[link.target] = {name: link.target});
+link.value = +link.value;
+});
+
+var width = 550
+height = 450;
+
+var force = d3.layout.force() 
+.nodes(d3.values(nodes)) 
+.links(links) 
+.size([width, height]) 
+.linkDistance(50) 
+.charge(-200) 
+.on("tick", tick) 
+.start(); 
+
+var svg = d3.select("body").append("svg") 
+.attr("width", width) 
+.attr("height", height); 
+
+var link = svg.selectAll(".link") 
+.data(force.links()) 
+.enter().append("line") 
+.attr("class", "link"); 
+
+var node = svg.selectAll(".node") 
+.data(force.nodes()) 
+.enter().append("g") 
+.attr("class", "node") 
+.on("mouseover", mouseover) 
+.on("mouseout", mouseout) 
+.on("click", click)
+.on("dblclick", dblclick)
+.call(force.drag); 
+
+node.append("circle") 
+.attr("r", 8)
+.style("fill", "#3182bd");
+
+node.append("text") 
+.attr("x", 12) 
+.attr("dy", ".35em") 
+.style("fill", "#3182bd")
+.text(function(d) { return d.name; }); 
+
+function tick() { 
+link 
+.attr("x1", function(d) { return d.source.x; }) 
+.attr("y1", function(d) { return d.source.y; }) 
+.attr("x2", function(d) { return d.target.x; }) 
+.attr("y2", function(d) { return d.target.y; }); 
+
+node.attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; }); 
+} 
+
+function mouseover() { 
+d3.select(this).select("circle").transition() 
+.duration(750) 
+.attr("r", 16); 
+} 
+
+function mouseout() { 
+d3.select(this).select("circle").transition() 
+.duration(750) 
+.attr("r", 8); 
+} 
+// action to take on mouse click
+function click() {
+d3.select(this).select("text").transition()
+.duration(750)
+.attr("x", 22)
+.style("stroke-width", ".5px")
+.style("opacity", 1)
+.style("fill", "#E34A33")
+.style("font", "17.5px serif");
+d3.select(this).select("circle").transition()
+.duration(750)
+.style("fill", "#E34A33")
+.attr("r", 16)
+}
+
+// action to take on mouse double click
+function dblclick() {
+d3.select(this).select("circle").transition()
+.duration(750)
+.attr("r", 6)
+.style("fill", "#E34A33");
+d3.select(this).select("text").transition()
+.duration(750)
+.attr("x", 12)
+.style("stroke", "none")
+.style("fill", "#E34A33")
+.style("stroke", "none")
+.style("opacity", 0.6)
+.style("font", "7px serif");
+}
+
+</script>
+ </body>

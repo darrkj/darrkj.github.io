@@ -1,0 +1,69 @@
+---
+title: "Is it Magic?"
+author: "Kenny Darrell"
+date: "August 26, 2014"
+output: html_document
+---
+
+
+
+A culmination of things has led me to want to learn more about deep learning. I have heard the term for some time now but am not really sure what it is all about. I have had some experience with image preocessing from my days in undergraduate engineering and image mining in my days as an engineer and been interested in trying my luck at image mining as well. Both of these areas seem to be all of the rage now.
+
+Links to deep learning
+links to image companies being bought up.
+links to kaggle comps, julia image det
+
+It appears the that one is also a great tool for solving problems in the other. So where to start with learning some of these things. At one point when I was a graduate student I new a fair deal about nueral networks, some of that has since faded but I thought it suffcient enough to jump in and try to use some deep learning tool then to try to dif into the math at first.
+
+There are tutorials all over, some good  and some bad. Here is a [link](http://radar.oreilly.com/2014/07/how-to-build-and-run-your-first-deep-learning-network.html) to one that gave me some some success.
+
+
+The first thing it requires you to do is install [Vagrant](http://www.vagrantup.com/)
+
+
+Once this is setup you can run the following from the command line.
+
+```
+mkdir ~/dl_webcast
+cd ~/dl_webcast
+
+vagrant box add dl_webcast https://d2rlgkokhpr1uq.cloudfront.net/dl_webcast.box
+
+vagrant init dl_webcast
+vagrant up
+
+vagrant ssh
+```
+
+
+Now to jump right in and use the pre-build model.
+
+```
+cd ~/caffe
+python python/classify.py --print_results examples/images/cat.jpg foo
+```
+
+![ddd](dog.5498.jpg)
+[('beagle', '0.49523'), ('English foxhound', '0.07124'), ('Walker hound', '0.05694'), ('basset', '0.05413'), ('Italian greyhound', '0.01672')]
+
+![ddd](dog.5495.jpg)
+[('Doberman', '0.75929'), ('miniature pinscher', '0.09810'), ('Rottweiler', '0.07136'), ('toy terrier', '0.02606'), ('black-and-tan coonhound', '0.02000')]
+
+```{r}
+#![ddd](gator1.jpg)
+#[('African crocodile', '0.23213'), ('American alligator', '0.20320'), ('common iguana', '0.11510'), ('knot', '0.09811'), ('head cabbage', '0.05123')]
+
+```
+![ddd](gator2.jpg)
+[('American alligator', '0.72230'), ('African crocodile', '0.27429'), ('common iguana', '0.00146'), ('Komodo dragon', '0.00028'), ('rock python', '0.00024')]
+
+![ddd](gator3.jpg)
+[('African crocodile', '0.39933'), ('American alligator', '0.16945'), ('alligator lizard', '0.05302'), ('agama', '0.05002'), ('garter snake', '0.04964')]
+
+
+
+
+
+
+
+

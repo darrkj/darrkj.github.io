@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<!-- saved from url=(0014)about:internet -->
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+<meta http-equiv="x-ua-compatible" content="IE=9" >
+
+<title>Writer Monads</title>
+
+<link rel="stylesheet" type="text/css" href="../../stylesheets/blog.css">
+
+<!-- Styles for R syntax highlighter -->
+<style type="text/css">
+   pre .operator,
+   pre .paren {
+     color: rgb(104, 118, 135)
+   }
+
+   pre .literal {
+     color: rgb(88, 72, 246)
+   }
+
+   pre .number {
+     color: rgb(0, 0, 205);
+   }
+
+   pre .comment {
+     color: rgb(76, 136, 107);
+   }
+
+   pre .keyword {
+     color: rgb(0, 0, 255);
+   }
+
+   pre .identifier {
+     color: rgb(0, 0, 0);
+   }
+
+   pre .string {
+     color: rgb(3, 106, 7);
+   }
+</style>
+
+    <link rel="stylesheet" type="text/css" href="../../stylesheets/stylesheet.css" media="screen" />
+    <link rel="stylesheet" type="text/css" href="../../stylesheets/pygment_trac.css" media="screen" />
+    <link rel="stylesheet" type="text/css" href="../../stylesheets/print.css" media="print" />
+
+<!-- R syntax highlighter -->
+<script src="../../javascripts/r.js"></script>
+
+
+</head>
+
+<body>
+
+<div class="container">
+
+
+    <header>
+      <div class="container">
+        <h1>Using Writer Monads in R</h1>
+        <h2></h2>
+
+<h4 class="author"><em>Kenny Darrell</em></h4>
+<h4 class="date"><em>May 31, 2014</em></h4>
+        </section>
+      </div>
+    </header>
+
+
+
+<p>I was somewhat mystified in finding a solution to the problem posed at the end of a <a href="http://darrkj.github.io/home/blog/I%20Second%20the%20Notion">previous blog</a>. I was trying to find a way to attach meta data to pieces of data as they flowed through various analytic steps, a common task while constructing a dataset. I saw a <a href="https://blog.jcoglan.com/2011/03/05/translation-from-haskell-to-javascript-of-selected-portions-of-the-best-introduction-to-monads-ive-ever-read/">great</a> <a href="https://blog.jcoglan.com/2011/03/06/monad-syntax-for-javascript/">blog</a> that seems to provide the perfect solution. I should have known that the world of functional programming has already solved this problem, only everyone outside of functional programming is probably scared of the answer because it contains the <a href="http://en.wikipedia.org/wiki/Monad_(functional_programming)">M</a> word.</p>
+<p>I have recreated that example here to see how easy it is to implement and understand the writer monad concept.</p>
+<p>To restate the problem, it would be nice to know where the data you are working with came from, what steps were taken to create it and have that code to redo it yourself to validate concerns as to how it came to be.</p>
+<p>Lets create a few functions to display the problem, basically trying to recreate the code from the source above.</p>
+<p>Create a sine function.</p>
+<pre class="r"><code>sine &lt;- function(x) sin(x)</code></pre>
+<p>Create a cube function.</p>
+<pre class="r"><code>cube &lt;- function(x) x*x*x</code></pre>
+<p>We can call these functions pretty easily, but at the end we just have a value. That is fine for this simple case.</p>
+<pre class="r"><code>sine(2)</code></pre>
+<pre><code>## [1] 0.9093</code></pre>
+<pre class="r"><code>cube(2)</code></pre>
+<pre><code>## [1] 8</code></pre>
+<p>In a normal data flow though we need to create a process for the data to flow through. A simple example would be to string the fucntions together.</p>
+<p>Compose the functions into a new function.</p>
+<pre class="r"><code>sineCubed &lt;- function(x) cube(sine(x))
+sineCubed(2)</code></pre>
+<pre><code>## [1] 0.7518</code></pre>
+<pre class="r"><code># This works better though.
+compose &lt;- function(f, g) {
+  function(x) f(g(x))
+}
+
+# Now we can apply any two functions we wish.
+compose(sine, cube)(3)</code></pre>
+<pre><code>## [1] 0.9564</code></pre>
+<p>Back to the problem at hand, we wish to attach some metadata to pass around. Lets add this to the function call.</p>
+<pre class="r"><code>sine &lt;- function(x) {
+  list(sin(x), 'sine was called')
+}
+sine(2)</code></pre>
+<pre><code>## [[1]]
+## [1] 0.9093
+## 
+## [[2]]
+## [1] &quot;sine was called&quot;</code></pre>
+<pre class="r"><code>cube &lt;- function(x) {
+  list(x*x*x, 'cube was called')
+}
+cube(2)</code></pre>
+<pre><code>## [[1]]
+## [1] 8
+## 
+## [[2]]
+## [1] &quot;cube was called&quot;</code></pre>
+<p>We now see along with the value we get some info on what happened. We can no longer compose anything though as this is no longer an acceptable input to our functions.</p>
+<pre class="r"><code>sineCubed(2)</code></pre>
+<pre><code>Error in x * x : non-numeric argument to binary operator</code></pre>
+<pre class="r"><code>compose(sine, cube)(3)</code></pre>
+<pre><code>Error in sin(x) : non-numeric argument to mathematical function</code></pre>
+<p>The problem here is that the second function being called gets passed a list from the first function which it does not accept. We need a way to wrap a function to get around this. This is exactly what a monadic container is for. The bind function helps with this. It takes a function and returns a new function that accepts a list of type <em>T :: {number, string}</em> and gives the function of interest the value while passing the string to the output.</p>
+<pre class="r"><code>bind &lt;- function(f) {
+  function(tuple) {
+    x &lt;- unlist(tuple[[1]])
+    s &lt;- tuple[2]
+    fx &lt;- f(x)
+    y &lt;- unlist(fx[1])
+    t &lt;- fx[2]
+    list(y, paste(s, t, '.'))
+  }
+}
+bind(sine)(2)</code></pre>
+<pre><code>## [[1]]
+## [1] 0.9093
+## 
+## [[2]]
+## [1] &quot;NA sine was called .&quot;</code></pre>
+<pre class="r"><code>bind(sine)(list(2, ''))</code></pre>
+<pre><code>## [[1]]
+## [1] 0.9093
+## 
+## [[2]]
+## [1] &quot; sine was called .&quot;</code></pre>
+<pre class="r"><code>bind(cube)(2)</code></pre>
+<pre><code>## [[1]]
+## [1] 8
+## 
+## [[2]]
+## [1] &quot;NA cube was called .&quot;</code></pre>
+<pre class="r"><code>bind(cube)(list(2, ''))</code></pre>
+<pre><code>## [[1]]
+## [1] 8
+## 
+## [[2]]
+## [1] &quot; cube was called .&quot;</code></pre>
+<p>We have to pass it a string or we get a missing value as the initial value of the string. We can now compose these types of functions like we did earlier except that we must bind each function first.</p>
+<pre class="r"><code>f &lt;- compose(bind(sine), bind(cube))
+f(3)</code></pre>
+<pre><code>## [[1]]
+## [1] 0.9564
+## 
+## [[2]]
+## [1] &quot;NA cube was called . sine was called .&quot;</code></pre>
+<pre class="r"><code>f(list(3, ''))</code></pre>
+<pre><code>## [[1]]
+## [1] 0.9564
+## 
+## [[2]]
+## [1] &quot; cube was called . sine was called .&quot;</code></pre>
+<p>We have to also give it the initialized string to start off with or we get an NA which will start to get annoying. Here is were unit comes in. The bind function extracted the value from the container, unit does the opposite, it puts a value in a container. At first this function seems almost to simple to be of any real value, but stick with me.</p>
+<pre class="r"><code>unit &lt;- function(x) list(x, '')
+
+unit(3)</code></pre>
+<pre><code>## [[1]]
+## [1] 3
+## 
+## [[2]]
+## [1] &quot;&quot;</code></pre>
+<pre class="r"><code>f(unit(3))</code></pre>
+<pre><code>## [[1]]
+## [1] 0.9564
+## 
+## [[2]]
+## [1] &quot; cube was called . sine was called .&quot;</code></pre>
+<pre class="r"><code>compose(f, unit)(3)</code></pre>
+<pre><code>## [[1]]
+## [1] 0.9564
+## 
+## [[2]]
+## [1] &quot; cube was called . sine was called .&quot;</code></pre>
+<p>We have just created two inverse operations, each counters what the other does. Paraphrasing Wikipedia <em>Formally, a monad consists of a type constructor M and two operations, bind and unit. The unit operation takes a value from a plain type and puts it into a monadic container using the constructor, creating a monadic value. The bind operation performs the reverse process, extracting the original value from the container and passing it to the associated next function in the pipeline.</em></p>
+<p>Now as we may want to add more functions to our pool we have to add the string construction to each function. We want to lift our functions up to be on par with our monadic container. R makes it very easy to fulfill the needs of lift by being very functional an allowing you to pass functions to functions as arguments and have functions return functions.</p>
+<pre class="r"><code>lift &lt;- function(f) compose(unit, f)
+
+roundDebug &lt;- lift(round)
+
+f &lt;- compose(bind(roundDebug), bind(sine))
+
+f(unit(3))</code></pre>
+<pre><code>## [[1]]
+## [1] 0
+## 
+## [[2]]
+## [1] &quot; sine was called .  .&quot;</code></pre>
+<p>This is the basic idea of the Writer Monad. It allows you to add context to by writing data to the computations and having machinery to extract and inject data and functions into this monadic container.</p>
+<p>This can be super powerful if we tweak our functions just a bit.</p>
+<pre class="r"><code>arg &lt;- function(x) {
+  gsub('()', '', x, fixed = T)
+}
+
+Bind &lt;- function(f) {
+  fcall &lt;- arg(match.call(expand.dots = FALSE)[2])
+  function(tuple) {
+    x &lt;- unlist(tuple[[1]])
+    s &lt;- tuple[2]
+    fx &lt;- f(x)
+    y &lt;- unlist(fx[1])
+    t &lt;- fcall
+    list(y, paste(s, '&gt;&gt;=', t))
+  }
+}
+
+Bind(sin)(2)</code></pre>
+<pre><code>## [[1]]
+## [1] 0.9093
+## 
+## [[2]]
+## [1] &quot;NA &gt;&gt;= sin&quot;</code></pre>
+<p>Now the Bind function tells us what it did. If we get a piece of data we have the start of an audit trail.</p>
+<pre class="r"><code>Unit &lt;- function(x) {
+  fcall &lt;- arg(match.call(expand.dots = FALSE)[2])
+  list(x, fcall)
+}
+
+Unit(3)</code></pre>
+<pre><code>## [[1]]
+## [1] 3
+## 
+## [[2]]
+## [1] &quot;3&quot;</code></pre>
+<pre class="r"><code>Bind(sin)(Unit(3))</code></pre>
+<pre><code>## [[1]]
+## [1] 0.1411
+## 
+## [[2]]
+## [1] &quot;3 &gt;&gt;= sin&quot;</code></pre>
+<pre class="r"><code>f &lt;- compose(Bind(sin), Bind(round))
+f(Unit(3))</code></pre>
+<pre><code>## [[1]]
+## [1] 0.1411
+## 
+## [[2]]
+## [1] &quot;3 &gt;&gt;= round &gt;&gt;= sin&quot;</code></pre>
+<pre class="r"><code>f &lt;- compose(Bind(tan), compose(Bind(sin), Bind(round)))
+f(Unit(4))</code></pre>
+<pre><code>## [[1]]
+## [1] -0.9444
+## 
+## [[2]]
+## [1] &quot;4 &gt;&gt;= round &gt;&gt;= sin &gt;&gt;= tan&quot;</code></pre>
+<p>Now we see the value that was piped through this analysis.</p>
+<pre class="r"><code>Lift &lt;- function(x) paste(x[[2]], '&gt;&gt;=', x[[1]])
+
+Lift(Bind(sin)(Unit(3)))</code></pre>
+<pre><code>## [1] &quot;3 &gt;&gt;= sin &gt;&gt;= 0.141120008059867&quot;</code></pre>
+<pre class="r"><code>Lift(f(Unit(4)))</code></pre>
+<pre><code>## [1] &quot;4 &gt;&gt;= round &gt;&gt;= sin &gt;&gt;= tan &gt;&gt;= -0.94438388367123&quot;</code></pre>
+<p>We now see the full pipeline with the result. What you may also notice if you are a <a href="http://blog.sigfpe.com/2006/08/you-could-have-invented-monads-and.html">functional programming connoisseur</a> is that this is basically writing <a href="http://www.haskell.org/haskellwiki/Haskell">Haskell</a> syntax for writer monads. I now think that the problem can be cleanly solved with this solution but it will take more time to formulate how to implement it correctly.</p>
+
+
+
+</div>
+
+
+</div>
+
+<script>
+
+// add bootstrap table styles to pandoc tables
+$(document).ready(function () {
+  $('tr.header').parent('thead').parent('table').addClass('table table-condensed');
+});
+
+</script>
+
+<!-- dynamically load mathjax for compatibility with --self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://c328740.ssl.cf1.rackcdn.com/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>

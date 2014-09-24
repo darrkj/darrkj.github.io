@@ -1,0 +1,94 @@
+---
+title: "neoterror"
+author: "Kenny Darrell"
+date: "July 3, 2014"
+output: html_document
+---
+
+Lat time I walked through the Social Balance problem on networks of terroroist orgaizations. One thing that was interesting is that after all o fthe data was collected the code code became very awkward. Trying to create algorithms and traversals on graphs in R is not natural. There is a really nice solution to this problem as well. a few posts back I wrote about creating some wrappers around Neo4j to use from R. There is now a nice package wraps much more functionality up in a very usable manner. This gets rid of the code that we to traverse the graph. We only have to worry about gettin gthe data into a Neo4j database.
+
+Lets start the data that was a available last time. This means that we have just used R for scraping and cleaning task. This code was all pretty standard.
+
+
+ADD  FILE  HERE
+
+```{r}
+options(stringsAsFactors = FALSE)
+library(igraph)
+load('terrorNet.rda')
+```
+
+
+First we need make sure we have an instance of Neo4j up and running. Without going into to many details you need to [download Neo4j](http://www.neo4j.org/download). Once you unzip you can use the commands below on a Mac.
+
+```
+cd neo4j-community-2.0.3
+bin/neo4j start
+```
+
+If you use a broswer and navigate to `http://localhost:7474/` you can see if it is indeed up and running.
+
+
+Next we need to load the RNeo4j package. To get this setup there are instruction [here](http://nicolewhite.github.io/RNeo4j/). Once it is loaded we have to create a connection to the database instance. 
+
+```{r}
+
+library(RNeo4j)
+
+graph = startGraph("http://localhost:7474/db/data/")
+
+```
+
+
+
+There are a few steps of preperation needed, but these are minor. We need to create
+
+```{r eval = F}
+# Create the unique set of all orgainzations
+nodes <- unique(rbind(data.frame(id = net$from, name = net$fromn),
+                      data.frame(id = net$to,   name = net$ton)))
+
+# These will hold pointers to the node in the database when we create edges.
+neoNodes <- list()
+
+# Loop through all nodes and insert into db, retaining pointer.
+for(i in 1:nrow(nodes)) {
+  neoNodes[[i]] = createNode(graph, label = "Terror", name = nodes$id[i], 
+                           aka = nodes$name[i]) 
+}
+
+# Now we add each edge to the db as a relationship.
+for (i in 1:nrow(net)) {
+  # Get index for which nodes are in this edge.
+  from <- which(nodes == net$from[i])
+  to <- which(nodes == net$to[i])
+  # Add to db.
+  createRel(from]], net$conn[i], neoNodes[[to]], how = net$type[i])
+}
+```
+
+
+
+
+
+```{r}
+q <- 'MATCH (a)-[r:hates]->(b)<-[s:likes]-(c), (a)-[t:hates]->(c) 
+      return a.aka, b.aka, c.aka;'
+tri <- cypher(graph, query = q)
+```
+
+
+```{r eval = FALSE}
+devtools::source_url('http://darrkj.github.io/home/rcode/d3plot.R')
+
+triples <- rbind(data.frame(Source = tri[, 1], Target = tri[, 2]),
+           data.frame(Source = tri[, 1], Target = tri[, 3]),
+           data.frame(Source = tri[, 2], Target = tri[, 3]))
+
+
+d3plot(triples, 700, 600)
+```
+
+
+
+

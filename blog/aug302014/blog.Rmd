@@ -1,0 +1,209 @@
+---
+title: "Making your own pedometer"
+author: "Kenny Darrell"
+date: "August 30, 2014"
+output: html_document
+---
+
+
+### Background
+
+This post is a culmination of a few ideas. When I was an undergraduate and the the early part of my career where I was an Aerospace Engineer and a Control Systems Engineer I worked with lots of sensors. These sensors streamed in lots of data in the form of measurements of certain features of the real world. This part of the job was really cool. There were other really cool parts as well, I was doing a lot of data mining and machine learning before I even knew what those thing were. There are other parts of being an engineer that I did not like. Going to graduate school and focusing on machine learning and data mining was great. I was immedietly able to find an amazing job where I work on lots of data mining projects. 
+
+I very rarely work with data that comes from real world measurements any more. The growing number of sensors coming about from the [Internet of Things](http://en.wikipedia.org/wiki/Internet_of_Things) and the [Quantified Self](http://en.wikipedia.org/wiki/Quantified_Self) movements have lead to sensors being almost everywhere. There are also many devices that measure aspects realted to your life, [Fitbit](http://www.fitbit.com/) and [Jawbone](https://jawbone.com/) are good examples. There are also a few Kaggle competetioins which are realted to this, determinig both [Epilepsy](http://www.kaggle.com/c/seizure-prediction) and [Parkinson's](http://www.kaggle.com/c/predicting-parkinson-s-disease-progression-with-smartphone-data) related aspects given sensor data. I also watched a few talks at [KDD 2014](http://www.kdd.org/kdd2014/) earlier this week which got me thinking a lot as well. This is also very related to my last post abot classifyng time series data.
+
+Having used some of these devices and seen the data that they create has left me wanting a little more. I am probably not the normal customer though. I started thinking could the device learn what playing basketball looks like or know that I am running as opposed to walking. Could it also push me in some areas, tell me to run faster as I already did this course and am lagging py previous time.
+
+
+### Collecting Data
+
+My first step was to either find an app or build one that could give me all of the sensor readings on my phone. I was able to find quite a few which is a great place to start. THe one that worked best was Sensor Data Logger. It allows you to toggle different sensors on and off and change the collection rate.
+
+There is still a lot of work in how to interact with the app. Currently I am emailing a large time window to my laptop which is less than desirable. I think for the long term it would be great to make an app that houses the collection with the analysis but lets ignore the those pain points for now.
+
+The files that are created are name in the following manner:
+LOG-YYYY-MM-DD-HH_MM_SS-K330_3-axis_Accelerometer.log.
+
+These files need a bit of work to to be in a usable format.
+The first thing to look at is the structure of the file. 
+It has a first line containing '--- LOG START ---'
+
+
+
+```{r}
+
+library(lubridate)
+
+#x <- readLines('LOG_2014-04-06_20-39-37_Random.log', 1)
+readLines('LOG_2014-08-30_11-59-00K330_3-axis_Accelerometer.log', 1)
+
+```
+
+### Cleaning Data
+
+We want to remove this, but I think it is useful to not modify the file itself. It should also be done in a way to check that this is the case.
+
+
+
+
+
+
+```{r}
+
+log <- 'LOG_2014-08-30_11-59-00K330_3-axis_Accelerometer.log'
+
+firstLine <- readLines(log, 1)
+skip <- if ( firstLine == "--- LOG START  --- ") 1 else 0
+  
+loc <- read.csv(log, skip = skip)
+
+
+#x <- read.log('LOG_2014-04-11_07-47-03_Subway.log')
+#x <- read.log('LOG_2014-04-06_20-39-37_Random.log')
+
+```
+
+We can also see a few other items, the file has no header, and it uses semicolons as delimeters.
+
+```{r}
+
+
+
+loc <- read.csv(log, sep = ';', header = F, 
+                    skip = skip, stringsAsFactors = F)
+
+
+#x <- read.log('LOG_2014-04-11_07-47-03_Subway.log')
+#x <- read.log('LOG_2014-04-06_20-39-37_Random.log')
+
+str(loc)
+
+plot(loc$V8[1:100])
+```
+
+
+A few other issues we have with this data are that column one is really the timestamp but it comes in as a character. The V3 field is really an artifact of have a double delimeter in where the optional sensor values come in. We have the same thing with V11 as each line ends with a delimeter. SO we can just remove these two. We should also give the fields some better names.
+
+
+```{r}
+  # There are teo semi colons in a row 
+  loc$V3 <- NULL
+  # The line ends with a semi colon
+  loc$V11 <- NULL
+  
+  names(loc) <- c('inc', 'timestamp', 'lat', 'long', 'alt', 'acc', 'x', 'y', 'z')
+  
+  loc$date <- as.Date(substr(loc$timestamp, 1, 10))
+  loc$time <- ymd_hms(loc$timestamp)
+
+```
+
+We should also create an index field, the first field currently is the number of milliseconds from teh start time.
+
+```{r}
+loc$ind <- seq(nrow(loc))
+
+isNum <- lapply(c(3:9), function(x) class(loc[, x]))
+any('character' %in% isNum)
+
+for (i in c(3:9)) {
+  loc[, i] <- as.numeric(loc[, i])
+}
+
+loc$LatLong <- paste(loc$lat, loc$long, sep = ':')
+
+str(loc)
+```
+
+
+We should put all of this into a function to read log files in a clean them.
+
+```{r}
+read.log <- function(log) {
+    firstLine <- readLines(log, 1)
+  skip <- if ( firstLine == "--- LOG START  --- ") 1 else 0
+  # These are seperated by semicolons and skip one becuase the first line
+  # says log output.
+  loc <- read.csv(log, sep = ';', header = F, skip = skip, stringsAsFactors = F)
+  
+  # There are teo semi colons in a row 
+  loc$V3 <- NULL
+  # The line ends with a semi colon
+  loc$V11 <- NULL
+  
+  names(loc) <- c('inc', 'timestamp', 'lat', 'long', 'alt', 'acc', 'x', 'y', 'z')
+  
+  loc$date <- as.Date(substr(loc$timestamp, 1, 10))
+  loc$time <- ymd_hms(loc$timestamp)
+  loc$ind <- seq(nrow(loc))
+  
+  # These fields should all be numbers.
+  for (i in c(3:9)) {
+    # Suppress warnings when NA values are introduced.
+    suppressWarnings(loc[, i] <- as.numeric(loc[, i]))
+  }
+  
+  loc$LatLong <- paste(loc$lat, loc$long, sep = ':')
+  
+  loc
+}
+
+
+#x <- read.log('LOG_2014-04-11_07-47-03_Subway.log')
+#x <- read.log('LOG_2014-04-06_20-39-37_Random.log')
+
+```
+
+
+Before we do anything with the sensor data I want to look at it on a map.
+
+
+
+```{r}
+library(googleVis)
+plotGPS <- function(path, v = 10) {
+  if (v == -1) v <- nrow(path)
+  if (v > nrow(path)) v <- nrow(path)
+  nn <- list(LatLong = path$LatLong[1:v], Tip = path$timestamp[1:v])
+  
+  m <- gvisMap(nn, 'LatLong' , 'Tip',
+               options=list(showTip=TRUE, showLine=FALSE,
+                            enableScrollWheel=TRUE,
+                            mapType='hybrid', useMapTypeControl=TRUE,
+                            width=800,height=400),
+               chartid="Run")
+  
+  plot(m)
+}
+
+x <- read.log('LOG_2014-08-30_11-59-00K330_3-axis_Accelerometer.log')
+
+
+plotGPS(x, v = 500)
+plotGPS(x, v = 3000)
+```
+
+
+It looks like there is an upper limit to the numer of points I can place on the map. I can downsample it by doing the following.
+
+```{r}
+plotGPS(x[seq(1, 5800, 16), ], v = 5900)
+```
+
+
+
+
+
+
+
+
+```{r}
+
+xx <- x[!duplicated(x$LatLong), ]
+plotGPS(xx[seq(1, 1625, 4), ], v = -1)
+
+plotGPS(x[seq(1, 1625, 16), ], v = 1000)
+
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.

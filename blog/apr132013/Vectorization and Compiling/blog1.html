@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<!-- saved from url=(0014)about:internet -->
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+
+<title>Speeding up R Functions</title>
+
+<style type="text/css">
+body, td {
+   font-family: sans-serif;
+   background-color: white;
+   font-size: 12px;
+   margin: 8px;
+}
+
+tt, code, pre {
+   font-family: 'DejaVu Sans Mono', 'Droid Sans Mono', 'Lucida Console', Consolas, Monaco, monospace;
+}
+
+h1 { 
+   font-size:2.2em; 
+}
+
+h2 { 
+   font-size:1.8em; 
+}
+
+h3 { 
+   font-size:1.4em; 
+}
+
+h4 { 
+   font-size:1.0em; 
+}
+
+h5 { 
+   font-size:0.9em; 
+}
+
+h6 { 
+   font-size:0.8em; 
+}
+
+a:visited {
+   color: rgb(50%, 0%, 50%);
+}
+
+pre {	
+   margin-top: 0;
+   max-width: 95%;
+   border: 1px solid #ccc;
+   white-space: pre-wrap;
+}
+
+pre code {
+   display: block; padding: 0.5em;
+}
+
+code.r, code.cpp {
+   background-color: #F8F8F8;
+}
+
+table, td, th {
+  border: none;
+}
+
+blockquote {
+   color:#666666;
+   margin:0;
+   padding-left: 1em;
+   border-left: 0.5em #EEE solid;
+}
+
+hr {
+   height: 0px;
+   border-bottom: none;
+   border-top-width: thin;
+   border-top-style: dotted;
+   border-top-color: #999999;
+}
+
+@media print {
+   * { 
+      background: transparent !important; 
+      color: black !important; 
+      filter:none !important; 
+      -ms-filter: none !important; 
+   }
+
+   body { 
+      font-size:12pt; 
+      max-width:100%; 
+   }
+       
+   a, a:visited { 
+      text-decoration: underline; 
+   }
+
+   hr { 
+      visibility: hidden;
+      page-break-before: always;
+   }
+
+   pre, blockquote { 
+      padding-right: 1em; 
+      page-break-inside: avoid; 
+   }
+
+   tr, img { 
+      page-break-inside: avoid; 
+   }
+
+   img { 
+      max-width: 100% !important; 
+   }
+
+   @page :left { 
+      margin: 15mm 20mm 15mm 10mm; 
+   }
+     
+   @page :right { 
+      margin: 15mm 10mm 15mm 20mm; 
+   }
+
+   p, h2, h3 { 
+      orphans: 3; widows: 3; 
+   }
+
+   h2, h3 { 
+      page-break-after: avoid; 
+   }
+}
+
+</style>
+
+<!-- Styles for R syntax highlighter -->
+<style type="text/css">
+   pre .operator,
+   pre .paren {
+     color: rgb(104, 118, 135)
+   }
+
+   pre .literal {
+     color: rgb(88, 72, 246)
+   }
+
+   pre .number {
+     color: rgb(0, 0, 205);
+   }
+
+   pre .comment {
+     color: rgb(76, 136, 107);
+   }
+
+   pre .keyword {
+     color: rgb(0, 0, 255);
+   }
+
+   pre .identifier {
+     color: rgb(0, 0, 0);
+   }
+
+   pre .string {
+     color: rgb(3, 106, 7);
+   }
+</style>
+
+<!-- R syntax highlighter -->
+<script type="text/javascript">
+var hljs=new function(){function m(p){return p.replace(/&/gm,"&amp;").replace(/</gm,"&lt;")}function f(r,q,p){return RegExp(q,"m"+(r.cI?"i":"")+(p?"g":""))}function b(r){for(var p=0;p<r.childNodes.length;p++){var q=r.childNodes[p];if(q.nodeName=="CODE"){return q}if(!(q.nodeType==3&&q.nodeValue.match(/\s+/))){break}}}function h(t,s){var p="";for(var r=0;r<t.childNodes.length;r++){if(t.childNodes[r].nodeType==3){var q=t.childNodes[r].nodeValue;if(s){q=q.replace(/\n/g,"")}p+=q}else{if(t.childNodes[r].nodeName=="BR"){p+="\n"}else{p+=h(t.childNodes[r])}}}if(/MSIE [678]/.test(navigator.userAgent)){p=p.replace(/\r/g,"\n")}return p}function a(s){var r=s.className.split(/\s+/);r=r.concat(s.parentNode.className.split(/\s+/));for(var q=0;q<r.length;q++){var p=r[q].replace(/^language-/,"");if(e[p]){return p}}}function c(q){var p=[];(function(s,t){for(var r=0;r<s.childNodes.length;r++){if(s.childNodes[r].nodeType==3){t+=s.childNodes[r].nodeValue.length}else{if(s.childNodes[r].nodeName=="BR"){t+=1}else{if(s.childNodes[r].nodeType==1){p.push({event:"start",offset:t,node:s.childNodes[r]});t=arguments.callee(s.childNodes[r],t);p.push({event:"stop",offset:t,node:s.childNodes[r]})}}}}return t})(q,0);return p}function k(y,w,x){var q=0;var z="";var s=[];function u(){if(y.length&&w.length){if(y[0].offset!=w[0].offset){return(y[0].offset<w[0].offset)?y:w}else{return w[0].event=="start"?y:w}}else{return y.length?y:w}}function t(D){var A="<"+D.nodeName.toLowerCase();for(var B=0;B<D.attributes.length;B++){var C=D.attributes[B];A+=" "+C.nodeName.toLowerCase();if(C.value!==undefined&&C.value!==false&&C.value!==null){A+='="'+m(C.value)+'"'}}return A+">"}while(y.length||w.length){var v=u().splice(0,1)[0];z+=m(x.substr(q,v.offset-q));q=v.offset;if(v.event=="start"){z+=t(v.node);s.push(v.node)}else{if(v.event=="stop"){var p,r=s.length;do{r--;p=s[r];z+=("</"+p.nodeName.toLowerCase()+">")}while(p!=v.node);s.splice(r,1);while(r<s.length){z+=t(s[r]);r++}}}}return z+m(x.substr(q))}function j(){function q(x,y,v){if(x.compiled){return}var u;var s=[];if(x.k){x.lR=f(y,x.l||hljs.IR,true);for(var w in x.k){if(!x.k.hasOwnProperty(w)){continue}if(x.k[w] instanceof Object){u=x.k[w]}else{u=x.k;w="keyword"}for(var r in u){if(!u.hasOwnProperty(r)){continue}x.k[r]=[w,u[r]];s.push(r)}}}if(!v){if(x.bWK){x.b="\\b("+s.join("|")+")\\s"}x.bR=f(y,x.b?x.b:"\\B|\\b");if(!x.e&&!x.eW){x.e="\\B|\\b"}if(x.e){x.eR=f(y,x.e)}}if(x.i){x.iR=f(y,x.i)}if(x.r===undefined){x.r=1}if(!x.c){x.c=[]}x.compiled=true;for(var t=0;t<x.c.length;t++){if(x.c[t]=="self"){x.c[t]=x}q(x.c[t],y,false)}if(x.starts){q(x.starts,y,false)}}for(var p in e){if(!e.hasOwnProperty(p)){continue}q(e[p].dM,e[p],true)}}function d(B,C){if(!j.called){j();j.called=true}function q(r,M){for(var L=0;L<M.c.length;L++){if((M.c[L].bR.exec(r)||[null])[0]==r){return M.c[L]}}}function v(L,r){if(D[L].e&&D[L].eR.test(r)){return 1}if(D[L].eW){var M=v(L-1,r);return M?M+1:0}return 0}function w(r,L){return L.i&&L.iR.test(r)}function K(N,O){var M=[];for(var L=0;L<N.c.length;L++){M.push(N.c[L].b)}var r=D.length-1;do{if(D[r].e){M.push(D[r].e)}r--}while(D[r+1].eW);if(N.i){M.push(N.i)}return f(O,M.join("|"),true)}function p(M,L){var N=D[D.length-1];if(!N.t){N.t=K(N,E)}N.t.lastIndex=L;var r=N.t.exec(M);return r?[M.substr(L,r.index-L),r[0],false]:[M.substr(L),"",true]}function z(N,r){var L=E.cI?r[0].toLowerCase():r[0];var M=N.k[L];if(M&&M instanceof Array){return M}return false}function F(L,P){L=m(L);if(!P.k){return L}var r="";var O=0;P.lR.lastIndex=0;var M=P.lR.exec(L);while(M){r+=L.substr(O,M.index-O);var N=z(P,M);if(N){x+=N[1];r+='<span class="'+N[0]+'">'+M[0]+"</span>"}else{r+=M[0]}O=P.lR.lastIndex;M=P.lR.exec(L)}return r+L.substr(O,L.length-O)}function J(L,M){if(M.sL&&e[M.sL]){var r=d(M.sL,L);x+=r.keyword_count;return r.value}else{return F(L,M)}}function I(M,r){var L=M.cN?'<span class="'+M.cN+'">':"";if(M.rB){y+=L;M.buffer=""}else{if(M.eB){y+=m(r)+L;M.buffer=""}else{y+=L;M.buffer=r}}D.push(M);A+=M.r}function G(N,M,Q){var R=D[D.length-1];if(Q){y+=J(R.buffer+N,R);return false}var P=q(M,R);if(P){y+=J(R.buffer+N,R);I(P,M);return P.rB}var L=v(D.length-1,M);if(L){var O=R.cN?"</span>":"";if(R.rE){y+=J(R.buffer+N,R)+O}else{if(R.eE){y+=J(R.buffer+N,R)+O+m(M)}else{y+=J(R.buffer+N+M,R)+O}}while(L>1){O=D[D.length-2].cN?"</span>":"";y+=O;L--;D.length--}var r=D[D.length-1];D.length--;D[D.length-1].buffer="";if(r.starts){I(r.starts,"")}return R.rE}if(w(M,R)){throw"Illegal"}}var E=e[B];var D=[E.dM];var A=0;var x=0;var y="";try{var s,u=0;E.dM.buffer="";do{s=p(C,u);var t=G(s[0],s[1],s[2]);u+=s[0].length;if(!t){u+=s[1].length}}while(!s[2]);if(D.length>1){throw"Illegal"}return{r:A,keyword_count:x,value:y}}catch(H){if(H=="Illegal"){return{r:0,keyword_count:0,value:m(C)}}else{throw H}}}function g(t){var p={keyword_count:0,r:0,value:m(t)};var r=p;for(var q in e){if(!e.hasOwnProperty(q)){continue}var s=d(q,t);s.language=q;if(s.keyword_count+s.r>r.keyword_count+r.r){r=s}if(s.keyword_count+s.r>p.keyword_count+p.r){r=p;p=s}}if(r.language){p.second_best=r}return p}function i(r,q,p){if(q){r=r.replace(/^((<[^>]+>|\t)+)/gm,function(t,w,v,u){return w.replace(/\t/g,q)})}if(p){r=r.replace(/\n/g,"<br>")}return r}function n(t,w,r){var x=h(t,r);var v=a(t);var y,s;if(v){y=d(v,x)}else{return}var q=c(t);if(q.length){s=document.createElement("pre");s.innerHTML=y.value;y.value=k(q,c(s),x)}y.value=i(y.value,w,r);var u=t.className;if(!u.match("(\\s|^)(language-)?"+v+"(\\s|$)")){u=u?(u+" "+v):v}if(/MSIE [678]/.test(navigator.userAgent)&&t.tagName=="CODE"&&t.parentNode.tagName=="PRE"){s=t.parentNode;var p=document.createElement("div");p.innerHTML="<pre><code>"+y.value+"</code></pre>";t=p.firstChild.firstChild;p.firstChild.cN=s.cN;s.parentNode.replaceChild(p.firstChild,s)}else{t.innerHTML=y.value}t.className=u;t.result={language:v,kw:y.keyword_count,re:y.r};if(y.second_best){t.second_best={language:y.second_best.language,kw:y.second_best.keyword_count,re:y.second_best.r}}}function o(){if(o.called){return}o.called=true;var r=document.getElementsByTagName("pre");for(var p=0;p<r.length;p++){var q=b(r[p]);if(q){n(q,hljs.tabReplace)}}}function l(){if(window.addEventListener){window.addEventListener("DOMContentLoaded",o,false);window.addEventListener("load",o,false)}else{if(window.attachEvent){window.attachEvent("onload",o)}else{window.onload=o}}}var e={};this.LANGUAGES=e;this.highlight=d;this.highlightAuto=g;this.fixMarkup=i;this.highlightBlock=n;this.initHighlighting=o;this.initHighlightingOnLoad=l;this.IR="[a-zA-Z][a-zA-Z0-9_]*";this.UIR="[a-zA-Z_][a-zA-Z0-9_]*";this.NR="\\b\\d+(\\.\\d+)?";this.CNR="\\b(0[xX][a-fA-F0-9]+|(\\d+(\\.\\d*)?|\\.\\d+)([eE][-+]?\\d+)?)";this.BNR="\\b(0b[01]+)";this.RSR="!|!=|!==|%|%=|&|&&|&=|\\*|\\*=|\\+|\\+=|,|\\.|-|-=|/|/=|:|;|<|<<|<<=|<=|=|==|===|>|>=|>>|>>=|>>>|>>>=|\\?|\\[|\\{|\\(|\\^|\\^=|\\||\\|=|\\|\\||~";this.ER="(?![\\s\\S])";this.BE={b:"\\\\.",r:0};this.ASM={cN:"string",b:"'",e:"'",i:"\\n",c:[this.BE],r:0};this.QSM={cN:"string",b:'"',e:'"',i:"\\n",c:[this.BE],r:0};this.CLCM={cN:"comment",b:"//",e:"$"};this.CBLCLM={cN:"comment",b:"/\\*",e:"\\*/"};this.HCM={cN:"comment",b:"#",e:"$"};this.NM={cN:"number",b:this.NR,r:0};this.CNM={cN:"number",b:this.CNR,r:0};this.BNM={cN:"number",b:this.BNR,r:0};this.inherit=function(r,s){var p={};for(var q in r){p[q]=r[q]}if(s){for(var q in s){p[q]=s[q]}}return p}}();hljs.LANGUAGES.cpp=function(){var a={keyword:{"false":1,"int":1,"float":1,"while":1,"private":1,"char":1,"catch":1,"export":1,virtual:1,operator:2,sizeof:2,dynamic_cast:2,typedef:2,const_cast:2,"const":1,struct:1,"for":1,static_cast:2,union:1,namespace:1,unsigned:1,"long":1,"throw":1,"volatile":2,"static":1,"protected":1,bool:1,template:1,mutable:1,"if":1,"public":1,friend:2,"do":1,"return":1,"goto":1,auto:1,"void":2,"enum":1,"else":1,"break":1,"new":1,extern:1,using:1,"true":1,"class":1,asm:1,"case":1,typeid:1,"short":1,reinterpret_cast:2,"default":1,"double":1,register:1,explicit:1,signed:1,typename:1,"try":1,"this":1,"switch":1,"continue":1,wchar_t:1,inline:1,"delete":1,alignof:1,char16_t:1,char32_t:1,constexpr:1,decltype:1,noexcept:1,nullptr:1,static_assert:1,thread_local:1,restrict:1,_Bool:1,complex:1},built_in:{std:1,string:1,cin:1,cout:1,cerr:1,clog:1,stringstream:1,istringstream:1,ostringstream:1,auto_ptr:1,deque:1,list:1,queue:1,stack:1,vector:1,map:1,set:1,bitset:1,multiset:1,multimap:1,unordered_set:1,unordered_map:1,unordered_multiset:1,unordered_multimap:1,array:1,shared_ptr:1}};return{dM:{k:a,i:"</",c:[hljs.CLCM,hljs.CBLCLM,hljs.QSM,{cN:"string",b:"'\\\\?.",e:"'",i:"."},{cN:"number",b:"\\b(\\d+(\\.\\d*)?|\\.\\d+)(u|U|l|L|ul|UL|f|F)"},hljs.CNM,{cN:"preprocessor",b:"#",e:"$"},{cN:"stl_container",b:"\\b(deque|list|queue|stack|vector|map|set|bitset|multiset|multimap|unordered_map|unordered_set|unordered_multiset|unordered_multimap|array)\\s*<",e:">",k:a,r:10,c:["self"]}]}}}();hljs.LANGUAGES.r={dM:{c:[hljs.HCM,{cN:"number",b:"\\b0[xX][0-9a-fA-F]+[Li]?\\b",e:hljs.IMMEDIATE_RE,r:0},{cN:"number",b:"\\b\\d+(?:[eE][+\\-]?\\d*)?L\\b",e:hljs.IMMEDIATE_RE,r:0},{cN:"number",b:"\\b\\d+\\.(?!\\d)(?:i\\b)?",e:hljs.IMMEDIATE_RE,r:1},{cN:"number",b:"\\b\\d+(?:\\.\\d*)?(?:[eE][+\\-]?\\d*)?i?\\b",e:hljs.IMMEDIATE_RE,r:0},{cN:"number",b:"\\.\\d+(?:[eE][+\\-]?\\d*)?i?\\b",e:hljs.IMMEDIATE_RE,r:1},{cN:"keyword",b:"(?:tryCatch|library|setGeneric|setGroupGeneric)\\b",e:hljs.IMMEDIATE_RE,r:10},{cN:"keyword",b:"\\.\\.\\.",e:hljs.IMMEDIATE_RE,r:10},{cN:"keyword",b:"\\.\\.\\d+(?![\\w.])",e:hljs.IMMEDIATE_RE,r:10},{cN:"keyword",b:"\\b(?:function)",e:hljs.IMMEDIATE_RE,r:2},{cN:"keyword",b:"(?:if|in|break|next|repeat|else|for|return|switch|while|try|stop|warning|require|attach|detach|source|setMethod|setClass)\\b",e:hljs.IMMEDIATE_RE,r:1},{cN:"literal",b:"(?:NA|NA_integer_|NA_real_|NA_character_|NA_complex_)\\b",e:hljs.IMMEDIATE_RE,r:10},{cN:"literal",b:"(?:NULL|TRUE|FALSE|T|F|Inf|NaN)\\b",e:hljs.IMMEDIATE_RE,r:1},{cN:"identifier",b:"[a-zA-Z.][a-zA-Z0-9._]*\\b",e:hljs.IMMEDIATE_RE,r:0},{cN:"operator",b:"<\\-(?!\\s*\\d)",e:hljs.IMMEDIATE_RE,r:2},{cN:"operator",b:"\\->|<\\-",e:hljs.IMMEDIATE_RE,r:1},{cN:"operator",b:"%%|~",e:hljs.IMMEDIATE_RE},{cN:"operator",b:">=|<=|==|!=|\\|\\||&&|=|\\+|\\-|\\*|/|\\^|>|<|!|&|\\||\\$|:",e:hljs.IMMEDIATE_RE,r:0},{cN:"operator",b:"%",e:"%",i:"\\n",r:1},{cN:"identifier",b:"`",e:"`",r:0},{cN:"string",b:'"',e:'"',c:[hljs.BE],r:0},{cN:"string",b:"'",e:"'",c:[hljs.BE],r:0},{cN:"paren",b:"[[({\\])}]",e:hljs.IMMEDIATE_RE,r:0}]}};
+hljs.initHighlightingOnLoad();
+</script>
+
+
+
+
+</head>
+
+<body>
+<h1>Speeding up R Functions</h1>
+
+<p>This is my first blog post.  I have two intentions with creating this blog.  I recently read that you should take some of your weaknesses and devote more to them in order to get better.  I think I could work on documentation, presentation, and commenting my code. I think that this blog gives me some room to work on all three.  It forces me to write some documentation around the various things that I find interesting, while also forcing me to think about how to present information and make it useful to others.  In doing this I will also force to work on better commenting.  The second reason is to use it more as a reference, if I learn something useful or do something interesting it seems this is a great way to catalog it for myself. </p>
+
+<p>Sometimes writing code in a matrix based language can be awkward.  There can be situations where you have to write code in a vectorized manner for it to be efficient.  This makes it look different and forces you to think differently.  In this post I want to present an example of vectorizing code useful to data mining and how much better performs.  I also want to take a naive look into the somewhat newer compiler package in R.</p>
+
+<pre><code class="r">library(rbenchmark)
+library(rpart)
+library(compiler)
+
+# Useful for data imports.
+options(stringsAsFactors = FALSE)
+
+# Useful function for getting an average time.
+timer &lt;- function(fun, iters, ...) {
+    system.time(for (n in seq(iters)) fun(...))[3]/iters
+}
+</code></pre>
+
+<h2>Model Development</h2>
+
+<p>The data used here is referred to as the <a href="http://archive.ics.uci.edu/ml/datasets/Adult">adult data</a>. It is a common data set used for bench-marking  machine learning algorithms.  Commas were added to make it a csv. It is a binary decsion problem, you have lots of indpendent variables and want to train a model to predict the dependent variable which can have one of only two outcomes.  R offers a variaty of methods to train a model to make predictions of this type. I am going to use the rpart package in order to build a decision tree to solve this problem.  </p>
+
+<pre><code class="r">adult.train &lt;- read.csv(&quot;../../data/adulttrain.csv&quot;, na.strings = &quot;?&quot;)
+
+# Change dichotomous dependent variable to binary.
+adult.train$y &lt;- as.character(adult.train$y)
+adult.train$y &lt;- ifelse(adult.train$y == &quot;&lt;=50K&quot;, 0, 1)
+
+# Set random seed to make repeatable.
+set.seed(2)
+
+# Number of observations in training set.
+size &lt;- nrow(adult.train)
+n &lt;- ceiling(size * 0.75)
+z &lt;- sample(size)
+
+# Partition to train and test set.
+train &lt;- adult.train[z[1:n], ]
+test &lt;- adult.train[z[(n + 1):size], ]
+
+# Create decision tree model on training set.
+rmod &lt;- rpart(factor(y) ~ ., train, control = rpart.control(minsplit = 2, cp = 5e-04))
+# Prune the tree to reduce overfit.
+rmod &lt;- prune(rmod, cp = 0.0011)
+
+# Evaluate model on test set.
+pred &lt;- predict(rmod, newdata = test, type = &quot;prob&quot;)[, 2]
+
+# Simple check of accuracy.
+value &lt;- ifelse(pred &gt; 0.5, 1, 0)
+accuracy &lt;- sum(test$y == value)/length(value)
+</code></pre>
+
+<p>The accuracy is a very simple method to determine the quality of the models predictions on data the model was not trained on. There are a lot of things that the accuracy cannot tell us though. Many real world problems weigh one outcome higher than another. For instance in mediccal diagnosis a false negative, saying something is not cancer when it is can have severe results, you may not care that the accuracy is high becuase you pick most of the negative cases correctly. If there are only five percent true you could get 95% by picking all false. When it comes to mortgages te opposite is true, you do not want a false positive, giving a mortgage that is unlikly to be paid back (at least in theory). These determine the how well model work given these influences we need to construct some new scoring mechanisms.</p>
+
+<h2>Methods under consideration</h2>
+
+<h3>Version 1: Naive Looping Approach</h3>
+
+<p>Most methods of evaluating how good a supervised model work depend on four parameters; </p>
+
+<ul>
+<li>Number of true positives</li>
+<li>Number of true negatives</li>
+<li>Number of false positives </li>
+<li>Number of false negatives<br/></li>
+</ul>
+
+<p>The following function does this in a straightforward way.  This is how a lot of programmers coming from an imperitve background would approach this task. It is also very logical, when thinking through how to solve this problem you would probably end up with something similar.  </p>
+
+<pre><code class="r">params1 &lt;- function(act, pred, cutoff = 0.5) {
+    pred &lt;- ifelse(pred &gt; cutoff, 1, 0)
+    tp &lt;- 0
+    tn &lt;- 0
+    fp &lt;- 0
+    fn &lt;- 0
+    for (i in 1:length(pred)) {
+        if (act[i] == 1 &amp;&amp; pred[i] == 1) {
+            tp &lt;- tp + 1
+        } else if (act[i] == 0 &amp;&amp; pred[i] == 0) {
+            tn &lt;- tn + 1
+        } else if (act[i] == 1 &amp;&amp; pred[i] == 0) {
+            fn &lt;- fn + 1
+        } else if (act[i] == 0 &amp;&amp; pred[i] == 1) {
+            fp &lt;- fp + 1
+        }
+    }
+    return(list(tp = tp, fp = fp, fn = fn, tn = tn))
+}
+
+# Look at how well we did.
+tmp &lt;- params1(test$y, pred)
+accuracy2 &lt;- (tmp$tp + tmp$tn)/(tmp$tp + tmp$tn + tmp$fp + tmp$fn)
+
+# Sanity check.
+accuracy == accuracy2
+</code></pre>
+
+<pre><code>## [1] TRUE
+</code></pre>
+
+<p>Create a function to calculate the ROC (receiver operating curve). This will allow us to determine how much better than random guessing our model is performing.  There are a lot of things that can be improved in both of these functions and we will look at some of them in the later sections.</p>
+
+<pre><code class="r">roc1 &lt;- function(act, pred, gran = 0.1) {
+    s1 &lt;- rep(NA, (1/gran) + 1)
+    s2 &lt;- rep(NA, (1/gran) + 1)
+    j &lt;- 1
+    for (i in seq(0, 1, gran)) {
+        x &lt;- params1(act, pred, cutoff = i)
+        s1[j] &lt;- (x$tp/(x$tp + x$fn))
+        s2[j] &lt;- (x$fp/(x$fp + x$tn))
+        j &lt;- j + 1
+    }
+    return(cbind(s2, s1))
+}
+</code></pre>
+
+<p>One thing that you can see here is that these loops become rather verbose.  There are doing a lot of increment operations happening, set a variable equal to one plus itself.  It would be cleaner if there was a ++ increment operation like most other imperative languages. Some of the reasons there is no increment (decrement) operator in R is a side effect of it being an interpreted language.  For loops are slow in these languages so it is not advised to use loops approaches where increment operation usually reside.  Next we can look at how slow they actually are.</p>
+
+<pre><code class="r">r &lt;- roc1(test$y, pred)
+</code></pre>
+
+<pre><code class="r">plot(r[, 1], r[, 2], ann = FALSE)
+title(xlab = &quot;False Positive Rate&quot;, ylab = &quot;True Positive Rate&quot;)
+</code></pre>
+
+<p><img src="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEASABIAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/2wBDAQkJCQwLDBgNDRgyIRwhMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjL/wAARCAH4AkADASIAAhEBAxEB/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAAAgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkKFhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl5ufo6erx8vP09fb3+Pn6/8QAHwEAAwEBAQEBAQEBAQAAAAAAAAECAwQFBgcICQoL/8QAtREAAgECBAQDBAcFBAQAAQJ3AAECAxEEBSExBhJBUQdhcRMiMoEIFEKRobHBCSMzUvAVYnLRChYkNOEl8RcYGRomJygpKjU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6goOEhYaHiImKkpOUlZaXmJmaoqOkpaanqKmqsrO0tba3uLm6wsPExcbHyMnK0tPU1dbX2Nna4uPk5ebn6Onq8vP09fb3+Pn6/9oADAMBAAIRAxEAPwD3+iiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiubvLzXrrxVd6Xpd5ptpBa2VvcM11ZPOztK8y4G2ZAABCOx6mgDpKK5/7H4w/6Duh/+Cab/wCSqPsfjD/oO6H/AOCab/5KoA6Ciuf+x+MP+g7of/gmm/8Akqj7H4w/6Duh/wDgmm/+SqAOgorn/sfjD/oO6H/4Jpv/AJKo+x+MP+g7of8A4Jpv/kqgDoKK5/7H4w/6Duh/+Cab/wCSqPsfjD/oO6H/AOCab/5KoA6Ciuf+x+MP+g7of/gmm/8Akqj7H4w/6Duh/wDgmm/+SqAOgorn/sfjD/oO6H/4Jpv/AJKo+x+MP+g7of8A4Jpv/kqgDoKK5/7H4w/6Duh/+Cab/wCSqPsfjD/oO6H/AOCab/5KoA6Ciuf+x+MP+g7of/gmm/8Akqj7H4w/6Duh/wDgmm/+SqAOgorn/sfjD/oO6H/4Jpv/AJKo+x+MP+g7of8A4Jpv/kqgDoKK5/7H4w/6Duh/+Cab/wCSqPsfjD/oO6H/AOCab/5KoA6Ciuf+x+MP+g7of/gmm/8Akqj7H4w/6Duh/wDgmm/+SqAOgorn/sfjD/oO6H/4Jpv/AJKo+x+MP+g7of8A4Jpv/kqgDoKK5/7H4w/6Duh/+Cab/wCSqPsfjD/oO6H/AOCab/5KoA6Ciuf+x+MP+g7of/gmm/8Akqj7H4w/6Duh/wDgmm/+SqAOgorn/sfjD/oO6H/4Jpv/AJKo+x+MP+g7of8A4Jpv/kqgDoKK5/7H4w/6Duh/+Cab/wCSqPsfjD/oO6H/AOCab/5KoA6Ciuf+x+MP+g7of/gmm/8Akqj7H4w/6Duh/wDgmm/+SqAOgorn/sfjD/oO6H/4Jpv/AJKo+x+MP+g7of8A4Jpv/kqgDoKK5/7H4w/6Duh/+Cab/wCSqPsfjD/oO6H/AOCab/5KoA6Ciuf+x+MP+g7of/gmm/8Akqj7H4w/6Duh/wDgmm/+SqAOgorn/sfjD/oO6H/4Jpv/AJKo+x+MP+g7of8A4Jpv/kqgDoKK5/7H4w/6Duh/+Cab/wCSqPsfjD/oO6H/AOCab/5KoA6Ciuf+x+MP+g7of/gmm/8Akqj7H4w/6Duh/wDgmm/+SqAOgorn/sfjD/oO6H/4Jpv/AJKo+x+MP+g7of8A4Jpv/kqgDoKK5/7H4w/6Duh/+Cab/wCSqPsfjD/oO6H/AOCab/5KoA6Ciuf+x+MP+g7of/gmm/8Akqj7H4w/6Duh/wDgmm/+SqAOgorn/sfjD/oO6H/4Jpv/AJKo+x+MP+g7of8A4Jpv/kqgDoKK5/7H4w/6Duh/+Cab/wCSqPsfjD/oO6H/AOCab/5KoA6Ciuf+x+MP+g7of/gmm/8Akqj7H4w/6Duh/wDgmm/+SqAOgorn/sfjD/oO6H/4Jpv/AJKo+x+MP+g7of8A4Jpv/kqgDoKKx/DGoXmp6KZ78wNdR3d1bO0EZjRvKnkiDBSzEZCA4yetbFABRRRQAUUUUAFFFFAHB3OnX39o3rahpHifUJHuHaOfTda+zweUT8iiP7THtIXAPy8kE5Oc10/hyG/t9Dgi1EyfaAXIWWTzJEjLEorvk7mVNoLZOSCcnqc9/Ftx/bF5pkHhjWZ57XBYo9qqujZ2uu+dSVODzjsQcEEVs6YwexWT+zZNOZ2d2tpPL3KxYkk+WzLkklsgnrzzQtge5crn7P8A5KHrP/YKsP8A0bd1c1Lw1oOs3C3GqaJpt9OqBFkurVJWC5JwCwJxkk49zWPoOk6bo3jrW7fS9PtLGBtMsXaO1hWJS3m3YyQoAzgAZ9hQB1lFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABVPUtUtNJt1mu3kAdwkaRRPLJI2CcIiAsxwCSADgKT0BNXKz9W0lNVig/0me1uLaXzre5g274n2shIDqynKO6/Mp+9kYIBABYsb631GzjurWTzIXyASpUggkMrKcFWBBBUgEEEEAirFU9L02HSbBbSFpHAd5HkkILSSO5d3OABlmZmwAAM4AAwKuUAc/4N/5Adz/2FdS/9LZq6Cuf8G/8gO5/7Cupf+ls1dBQAUUUUAFFFFABRRRQAUUUUAFc/Z/8lD1n/sFWH/o27roK5+z/AOSh6z/2CrD/ANG3dAHQUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQBz/g3/kB3P/YV1L/0tmroK5/wb/yA7n/sK6l/6WzV0FABRRRQAUUUUAFFFFABRRRQAVz9n/yUPWf+wVYf+jbuugrn7P8A5KHrP/YKsP8A0bd0AdBRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAVn6tqyaVFB/o091cXMvk29tBt3yvtZyAXZVGER2+Zh93AySAdCuD0fw7qV7cQx63FqSCK3JvbiXUWP2i8yoE1qUkLQJjzwQoiysqqVIyFAOw0vUodWsFu4VkQF3jeOQANHIjlHQ4JGVZWXIJBxkEjBq5VexsbfTrOO1tY/LhTJALFiSSSzMxyWYkkliSSSSSSasUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAc/4N/5Adz/2FdS/9LZq6Cuf8G/8gO5/7Cupf+ls1dBQAUUUUAFFFFABRRRQAUUUUAFc/Z/8lD1n/sFWH/o27roK5+z/AOSh6z/2CrD/ANG3dAHQUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQBz/g3/kB3P/YV1L/0tmroK5/wb/yA7n/sK6l/6WzV0FABRRRQAUUUUAFFFFAGHceL9HtrqW2eS7eWNimIbCeUOw+8qFEIcjuFyVwc4wa1LK9t9Rs47q1k3wyDglSpBBwQVIBUgggggEEEHmsSXwhGbtri21jUrQiZ54Fh8krA8hJkK742zuJOQ24DPGOK1NGsk0/ThbIk67ZJGZpypeVi5LSHbx85JbAxjd0XoBbag99C/XP2f/JQ9Z/7BVh/6Nu6ualqt5Y3CxW/h/UtQQoGMtrJbqoOT8p8yVDnjPTHI564x9BvZ77x1rctxpl3p7jTLFRFdNEzEebd/MPLdxjnHXPB46ZAOsooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigDn/AAb/AMgO5/7Cupf+ls1dBXP+Df8AkB3P/YV1L/0tmroKACiiigAooooAKKKKAODufB8p1G9mm8K+GNbM9w8wvNSmKzlWOQhBt5OFHyjDdFHArp/DmmzaRocFlO0e9C7bIiTHCrMWEaE4JVAQo4HCjgdBq0ULRWB6u4Vz9n/yUPWf+wVYf+jbuugrn7P/AJKHrP8A2CrD/wBG3dAHQUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQBz/g3/kB3P8A2FdS/wDS2augrn/Bv/IDuf8AsK6l/wCls1dBQAUUUUAFFFFABRRRQAUUUUAFc/Z/8lD1n/sFWH/o27roK5+z/wCSh6z/ANgqw/8ARt3QB0FFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAc/4N/5Adz/ANhXUv8A0tmroK5/wb/yA7n/ALCupf8ApbNXQUAFFFFABRRRQAUUUUAFFFFABXP2f/JQ9Z/7BVh/6Nu66Cufs/8Akoes/wDYKsP/AEbd0AdBRRRQAUUUUAFFFY+rateWuo2mm6bZQXV9cxS3AFzcmCNY4zGrfMqOd2ZUwNuMbuRgAgEfijWJtHsraSKe0tEnuBFLfXqloLRdjtvkG5eCyrGMsvzSLyfumx4e1KbVtEhvJ1jDs8iCSIEJMquyrKgJPySKodeTw4+ZupsaTqUOs6NY6pbrIsF7bx3EayABgrqGAOCRnB9TVygAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKAOf8G/8gO5/7Cupf+ls1dBXP+Df+QHc/wDYV1L/ANLZq6CgAooooAzPEOpT6Todze28KySR7cbgSqAsAXbHO1QSxx2U9K5/wj4wm8Q3q24utOv0WKYzz2AO2J0mKJn52AEifMozn5WOSCMXvG0dwNGS5g1jU9PMU8XyaekTPOzSoFT94OpPyj5gvzfNuGRWT4T1Wa+8QKl1ceJ2c284jXU/sSwny5VSTi3wS6sAPmHAJx15I7sJbI7uiiigAorg9R8cSWmpPp9zrGhaPO1zKqf2hyYok4UunmoW8zllYEADjk11ehX82paRDdXEaq7F13ICFlVWKiRQckK4AYDJ4YcnrQtVcHo7GjXP2f8AyUPWf+wVYf8Ao27roK5+z/5KHrP/AGCrD/0bd0AdBRRRQAUUUUAFU9S0nTdZt1t9U0+0voFcOsd1CsqhsEZAYEZwSM+5qv4h1KbSdEmvIFjLq8aGSUEpCrOqtK4BHyRqxduRwh+Zeor+F9Ym1iyuZJZ7S7SC4MUV9ZKVgu12I2+Mbm4DM0ZwzfNG3I+6ADcooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigDn/Bv/ACA7n/sK6l/6WzV0Fc/4N/5Adz/2FdS/9LZq6CgAooooA53xReTP5GjW2lxajPeRySmOW7NsqpHtywdVZg+5024A55yMVneE3s9X1aTXtO0O6trO4gJW8vLhwZGchmEUBJCqSAWf5dxAIDD5q3NX0E6pfWt7Dqt9p1zbRyRK9qITuVyhYESRuOqL0xUegeHZdAhhtl1zUry0ghEMVvdLBtQDABykSsSAMck9aI/1/XoEttDbooooA58+J55Z51sPDmrahBDK8JuIHtlRnU7WA8yZW4YEZx1BxmtDRb5NS0xbqN7ht0kgZbhVV4mDkNGdvHyEFeM529W6mnceEtKuLqa4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j3FdZXP2f/JQ9Z/7BVh/6Nu6AOgooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigDn/Bv/ACA7n/sK6l/6WzV0Fc/4N/5Adz/2FdS/9LZq6CgAooooA5zW9Gv9S8S6Xc2l/dWEMFrcpJcWohLbmaEquJUcYOxjkD+HqM839N0q8sbhpbjxBqWoIV2iK6jt1UHjn93Ehz+OOelalFAPUKKKKACiiigArn7P/koes/8AYKsP/Rt3XQVz9n/yUPWf+wVYf+jbugDoKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooA5/wb/wAgO5/7Cupf+ls1dBXP+Df+QHc/9hXUv/S2augoAKKKKACiiigAooooAKKKKACufs/+Sh6z/wBgqw/9G3ddBXP2f/JQ9Z/7BVh/6Nu6AOgoorH1bVry11G003TbKC6vrmKW4AubkwRrHGY1b5lRzuzKmBtxjdyMAEA2KKp6TqUOs6NY6pbrIsF7bx3EayABgrqGAOCRnB9TVygAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooA5/wb/yA7n/sK6l/6WzV0Fc/4N/5Adz/ANhXUv8A0tmroKACiiigAooooAKKKKACiiigArn7P/koes/9gqw/9G3ddBXP2f8AyUPWf+wVYf8Ao27oA6CuP8dWaaj9gtNQgnbSP3kksttpi30izjaIl8topcKVaYltnBVRuGcN2FFAFPSZL6bRrGXVIY4NQe3ja6ijOVSUqN6jk8BsjqfqauUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQ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ACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAoorA/4SaSXVryws9A1S7FnMsE1xE1usasUV/45VYgBx/D+dHkHmb9FUP7c0o6jLpqalZvqESF3tFnUzKMZyUzkcEdu4qrbeKdGnstKuZb+3s21SJJLSC6mSOWTcBgBc8n5gMDPJo3A2aKpy6tpsOpw6ZLqFrHfzLvitWmUSuvPKpnJHB6Dsapat4gOmala6fDpV9qN1cxSTKlqYRtRCoJJkkQdXXpmgDZorFh8VaSdJGo311FpcXntbOt/KkRSVSQUJ3FSflPQkEcjNXbvWdL0+5tra91Kztp7o7beKadUaY5AwgJyxyR09RQBdorBvvGGk6dqdvp93MkU9xdmziDTRcuIxJkjfkDlVwQDll4wwJv2es2N7p0d8lzCsTBN2Z422M4UqpZWK5O5ehOcjGcijzB6F+iqdpq2m6hc3NtZaha3M9q2y4ihmV2hbkYcA5U8Hr6GsifxZIl9qFtaeHtWvlsJBFPNbtbhd2xXwA8ysflYdqAsdHRWV/wk2hrbafcS6tZwJqKK9p9omWJpg2MbQxBJ+Yce9QW/i/Qp5NXVtStoF0mcQXck06KqMQCCTu4GTt5x8ysO1Abm5RUdvcQ3dvHcW80c0Eqh45I2DK6nkEEcEH1qSgAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAK5bS/DO3xLrWq3f22Npb5ZbYRX8qROghiXLRI4Q/MrD5lycemK6mihaO4dLHnsmleIZ/E9nI+nzxWltqE8xSH7KloUdJVWRefOMh3gtuwCS2B0NVf8AhH9dttH0m1t9MulvF0q2tJ2WW1ltnZM/JcJLltikk5iySGPoK9MooWlv6/r+vkN3OB1Hw5qs3jGeYf2k9ldXdrdB4JbVII/KCjD70abIKEgJwd+CVyxrY1rw62seLdMuZhdLZQWVwjy2t7JbsHZ4iozG6sQQre3HPaumooWiS7B3OTvtFfRbvS7nSNIlv7W2iuIXtI5k8wvKVbzS0zDccqwYltx3k881iXHhzW7Kx0+ytLKeW5XToLSWeKS3ktJShPyTxzjf5aljgx5Yhj3Ar0eihOwPU4S50LVl16S+SxaWI659pASRATE1kId/LDgOeR1wDgHjMOieF9XtG8P201usditnbSagPMUlLmBNqrgH5skocjj9yPWvQaKOlgbucF4K8OarpWowf2iNSIsbR7VZZ5bXyZNzqcxrEnmEHbuzIQRnGCSTRf8Agm71KbxLcJdX1ld3N2stm0WoSxwyqsMQxJHG4BVmVlOQGx0PSu9ooHfVnm/iXTPEOp6Q9rp+hzWC3WlC28qy+x5R8OPJmeQ/6oZG3yhnljkcCpNQ0DXJJr6aG2vYiurQajGbSS3MkqfZliZU80lNysMneACAMHPT0Sii4uljF8KafNpnh6C3uFuElLySslxJG7qXdnwTGqoD83RRgdASBk7VFFDAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKAP/Z" alt="plot of chunk unnamed-chunk-1"/> </p>
+
+<pre><code class="r"># How long does this take?
+system.time(roc1(train$y, pred, gran = 0.1))
+</code></pre>
+
+<pre><code>##    user  system elapsed 
+##    0.54    0.00    0.54
+</code></pre>
+
+<pre><code class="r">system.time(roc1(train$y, pred, gran = 0.01))
+</code></pre>
+
+<pre><code>##    user  system elapsed 
+##    5.11    0.00    5.13
+</code></pre>
+
+<pre><code class="r">
+# Kind of slow, but lets get a better estimate.
+Time10a &lt;- timer(roc1, 10, train$y, pred, gran = 0.1)
+Time100a &lt;- timer(roc1, 10, train$y, pred, gran = 0.01)
+# I don&#39;t want to wait for this one to go through a loop.
+Time1000a &lt;- system.time(roc1(train$y, pred, gran = 0.001))[3]
+</code></pre>
+
+<p>Not a rigorous asymptotic analysis but we can see that there is almost a 10x jump from 0.557 to 5.1. A 100x gives 50.87, which still seems to be linear still.</p>
+
+<p>Can we make this faster? Neither function follows all the idioms for fast R code. The roc function does pre-allocate s1 and s2, but it falls short by having a for loop and using cbind instead of pre-allocation.  This loop is small though, and the cbind only happens once.  Calls to cbind (or rbind) can be expensive if it is done in a loop, and loops are expensive in general. I have a good guess as to what is making it slow.  Maybe I will use some actual profiling to determine where the hot spots are. Let&#39;s revise the heart of the roc function though, params1.  Basically all it does is call params1, so let&#39;s start there. Nothing is growing or being appended, but there is alone big for loop. It is being used to sum the type of each observation. Let&#39;s vectorize this.</p>
+
+<h3>Version 2: Vectorized Operations</h3>
+
+<pre><code class="r">tpos &lt;- params1(test$y, pred, 0.5)$tp
+# We have 3490 true positives at a cutoff of .5.  These are the actual
+# predicted classes with that threshold.
+binPred &lt;- ifelse(pred &gt; 0.5, 1, 0)
+acc1 &lt;- sum(test$y == binPred)/length(binPred)
+# We did this calculation earlier which found all cases were the actual
+# was equal to the predicted in a vectorized manner.  We can take a
+# similar action on each case since they are binary.
+tpos1 &lt;- sum(test$y &amp; binPred)
+all(tpos1 == tpos)
+</code></pre>
+
+<pre><code>## [1] TRUE
+</code></pre>
+
+<p>It worked, now we can apply binary negations to calculate all of the rest of the cases.  These methods should be much faster. Lets create a vectorized version of the function.</p>
+
+<pre><code class="r">params2 &lt;- function(act, pred, cutoff = 0.5) {
+    pred &lt;- ifelse(pred &gt; cutoff, 1, 0)
+    tp &lt;- sum(act &amp; pred)
+    tn &lt;- sum(!act &amp; !pred)
+    fp &lt;- sum(!act &amp; pred)
+    fn &lt;- sum(act &amp; !pred)
+    return(list(tp = tp, fp = fp, fn = fn, tn = tn))
+}
+
+roc2 &lt;- function(act, pred, gran = 0.1) {
+    s1 &lt;- rep(NA, (1/gran) + 1)
+    s2 &lt;- rep(NA, (1/gran) + 1)
+    j &lt;- 1
+    for (i in seq(0, 1, gran)) {
+        x &lt;- params2(act, pred, cutoff = i)
+        s1[j] &lt;- (x$tp/(x$tp + x$fn))
+        s2[j] &lt;- (x$fp/(x$fp + x$tn))
+        j &lt;- j + 1
+    }
+    return(cbind(s2, s1))
+}
+
+# How long does this take
+system.time(roc2(test$y, pred, gran = 0.1))
+</code></pre>
+
+<pre><code>##    user  system elapsed 
+##    0.06    0.00    0.06
+</code></pre>
+
+<pre><code class="r">system.time(roc2(test$y, pred, gran = 0.01))
+</code></pre>
+
+<pre><code>##    user  system elapsed 
+##     0.5     0.0     0.5
+</code></pre>
+
+<pre><code class="r"># It already seems much faster
+Time10b &lt;- timer(roc2, 10, test$y, pred, gran = 0.1)
+Time100b &lt;- timer(roc2, 10, test$y, pred, gran = 0.01)
+
+# It looks like we have a 10x gain in speed
+Time1000b &lt;- system.time(roc2(test$y, pred, gran = 0.001))[3]
+</code></pre>
+
+<p>This took 0.056, 0.519 and 5.18 for the ten, one hundred, and one thousand iteration version respectively.</p>
+
+<p>Yep, now our for loop in roc could be hindering us.  This is a fairly short loop and we will overlook it here. This code is odd though, especially if you are not used to R, or don&#39;t come from a Matlab/octave background.  This can be very non-intuitive for anyone coming from something like C++ or java and are using R for modeling purposes.  It can also be weird for those new to R but coming from a background like SAS (without using IML).</p>
+
+<h3>Version 3: Compiled Function</h3>
+
+<p>The compiler library which is newer to the R framework may help. It could allow you to write code that is not vectorized but still get speed improvements.</p>
+
+<pre><code class="r">params3 &lt;- cmpfun(params1)
+
+roc3 &lt;- function(act, pred, gran = 0.1) {
+    s1 &lt;- rep(NA, (1/gran) + 1)
+    s2 &lt;- rep(NA, (1/gran) + 1)
+    j &lt;- 1
+    for (i in seq(0, 1, gran)) {
+        x &lt;- params3(act, pred, cutoff = i)
+        s1[j] &lt;- (x$tp/(x$tp + x$fn))
+        s2[j] &lt;- (x$fp/(x$fp + x$tn))
+        j &lt;- j + 1
+    }
+    return(cbind(s2, s1))
+}
+</code></pre>
+
+<p>You can try compiling the roc function as well but it provides very improvement. This is pretty interesting.  We did not have to rewrite anything.  We just compiled the function.  This can help those not used to thinking in terms of vectorization, the cases where it is not easy or impossible to vectorize, and in some cases vectorized code takes a little longer to understand.</p>
+
+<p>Is it any faster though?  We need to see how long it takes before we can say it has any merit.</p>
+
+<pre><code class="r">system.time(roc3(test$y, pred, gran = 0.1))
+</code></pre>
+
+<pre><code>##    user  system elapsed 
+##    0.17    0.00    0.18
+</code></pre>
+
+<pre><code class="r">system.time(roc3(test$y, pred, gran = 0.01))
+</code></pre>
+
+<pre><code>##    user  system elapsed 
+##     1.7     0.0     1.7
+</code></pre>
+
+<pre><code class="r">
+# It already seems much faster than the looping method.
+Time10c &lt;- timer(roc3, 10, test$y, pred, gran = 0.1)
+Time100c &lt;- timer(roc3, 10, test$y, pred, gran = 0.01)
+Time1000c &lt;- system.time(roc3(test$y, pred, gran = 0.001))[3]
+</code></pre>
+
+<p>This took 0.186, 1.706 and 16.88 for the ten, one hundred, and one thousand iterations respectively. It looks like we have almost 3x gain in speed, than the baseline method, but still slower than the vectorized version. I am sure that this will be improved over time as the functionality is fairly new.  Java was thought to be slow 15 years ago but continual work on its byte code compiler has led to a lot of improvements, so much so that it is now considered to be fast.  So these same improvements could start to appear in R in the future giving further speed improvements.</p>
+
+<h3>Version 4: Compiling the Vectorized Version</h3>
+
+<pre><code class="r"># Can we compile the vectorized for speed improvement?
+params4 &lt;- cmpfun(params2)
+
+roc4 &lt;- function(act, pred, gran = 0.1) {
+    s1 &lt;- rep(NA, (1/gran) + 1)
+    s2 &lt;- rep(NA, (1/gran) + 1)
+    j &lt;- 1
+    for (i in seq(0, 1, gran)) {
+        x &lt;- params4(act, pred, cutoff = i)
+        s1[j] &lt;- (x$tp/(x$tp + x$fn))
+        s2[j] &lt;- (x$fp/(x$fp + x$tn))
+        j &lt;- j + 1
+    }
+    return(cbind(s2, s1))
+}
+
+# How long does this take
+system.time(roc4(test$y, pred, gran = 0.1))
+</code></pre>
+
+<pre><code>##    user  system elapsed 
+##    0.05    0.00    0.05
+</code></pre>
+
+<pre><code class="r">system.time(roc4(test$y, pred, gran = 0.01))
+</code></pre>
+
+<pre><code>##    user  system elapsed 
+##    0.53    0.00    0.54
+</code></pre>
+
+<pre><code class="r">
+Time10d &lt;- timer(roc4, 10, test$y, pred, gran = 0.1)
+Time100d &lt;- timer(roc4, 10, test$y, pred, gran = 0.01)
+Time1000d &lt;- system.time(roc4(test$y, pred, gran = 0.001))[3]
+</code></pre>
+
+<h3>Results</h3>
+
+<p>Below is the final table.  We can see that we don&#39;t get any additional improvements from compiling the vectorized version.  Well I lied a bit, two are better and one is worse. More runs would give more accurate results. There could be other improvements to each case. I could compile/vectorize the roc functions respectively.  There could more places for pre-allocation.  There could also be better methods for vectorizing; it would be interesting if there was a way to vectorize the [tp, tn, fn, tp] all in one.  There are also some additional features of the compiler that may add some improvements like the enableJIT() which may help. Before looking into these types of things though it may be useful to explore some of the profiling mechanisms in R. This way we can know which areas are the most in need of work.  Effort can then be focused on making the biggest impacts.</p>
+
+<pre><code class="r">lst &lt;- c(Time10a, Time100a, Time1000a, Time10b, Time100b, Time1000b, Time10c, 
+    Time100c, Time1000c, Time10d, Time100d, Time1000d)
+
+times &lt;- matrix(lst, nrow = 3, ncol = 4, byrow = FALSE, dimnames = list(c(&quot;10 Iters&quot;, 
+    &quot;100 Iters&quot;, &quot;1000 Iters&quot;), c(&quot;Baseline&quot;, &quot;Vectorized&quot;, &quot;Compiled&quot;, &quot;Vect + Comp&quot;)))
+times
+</code></pre>
+
+<pre><code>##            Baseline Vectorized Compiled Vect + Comp
+## 10 Iters      0.557      0.056    0.186       0.054
+## 100 Iters     5.100      0.519    1.706       0.530
+## 1000 Iters   50.870      5.180   16.880       5.240
+</code></pre>
+
+<pre><code class="r">
+
+benchmark(roc1(test$y, pred, gran = 0.1), roc2(test$y, pred, gran = 0.1), roc3(test$y, 
+    pred, gran = 0.1), roc4(test$y, pred, gran = 0.1))
+</code></pre>
+
+<pre><code>##                             test replications elapsed relative user.self
+## 1 roc1(test$y, pred, gran = 0.1)          100   52.02    9.223     51.97
+## 2 roc2(test$y, pred, gran = 0.1)          100    5.66    1.004      5.66
+## 3 roc3(test$y, pred, gran = 0.1)          100   19.12    3.390     19.11
+## 4 roc4(test$y, pred, gran = 0.1)          100    5.64    1.000      5.64
+##   sys.self user.child sys.child
+## 1        0         NA        NA
+## 2        0         NA        NA
+## 3        0         NA        NA
+## 4        0         NA        NA
+</code></pre>
+
+</body>
+
+</html>
+

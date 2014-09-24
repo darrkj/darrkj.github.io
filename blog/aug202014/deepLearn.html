@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<!-- saved from url=(0014)about:internet -->
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+<meta http-equiv="x-ua-compatible" content="IE=9" >
+
+<title>Deep Learning</title>
+
+
+<link rel="stylesheet" type="text/css" href="../../stylesheets/blog.css">
+
+<!-- Styles for R syntax highlighter -->
+<link rel="stylesheet" type="text/css" href="../../stylesheets/blog2.css">
+
+
+    <link rel="stylesheet" type="text/css" href="../../stylesheets/stylesheet.css" media="screen" />
+    <link rel="stylesheet" type="text/css" href="../../stylesheets/pygment_trac.css" media="screen" />
+    <link rel="stylesheet" type="text/css" href="../../stylesheets/print.css" media="print" />
+
+<!-- R syntax highlighter -->
+<script src="../../javascripts/r.js"></script>
+
+<style>
+table, th, td {
+    border: 1px solid black;
+    border-collapse: collapse;
+}
+</style>
+
+
+</head>
+
+<body>
+
+<div class="container">
+
+
+    <header>
+      <div class="container">
+        <h1>Deep Learning, Is it Magic?</h1>
+        <h2></h2>
+
+<h4 class="author"><em>Kenny Darrell</em></h4>
+<h4 class="date"><em>August 20, 2014</em></h4>
+        </section>
+      </div>
+    </header>
+
+
+<h3>Introduction</h3>
+
+<p>A collection of things has led me to want to learn more about <a href="http://en.wikipedia.org/wiki/Deep_learning">Deep Learning</a>. I have heard the term for some time now but am not really sure what it is all about. I have had some experience with image processing from my days in undergraduate engineering and image mining from my days as an engineer. This has led to an interest in trying my luck at image mining as well. Both of these areas seem to be all of the rage now as tons of major <a href="http://venturebeat.com/2012/12/19/dropbox-buys-snapjoy/">companies</a> have been <a href="http://techcrunch.com/2014/04/17/dropbox-acquires-cloud-photos-startup-loom-service-to-be-shut-down-as-users-transferred-to-carousel/">buying</a> <a href="http://www.pcworld.com/article/2459620/twitter-acquires-image-search-firm-madbits.html">startups</a> related in any way to <a href="http://gigaom.com/2013/11/19/the-dropbox-computer-vision-acquisition-that-slipped-under-the-radar/">images</a> or <a href="http://techcrunch.com/2014/01/26/google-deepmind/">deep learning</a>. <a href="http://www.kaggle.com/c/cifar-10">Kaggle</a> <a href="http://www.kaggle.com/c/facial-keypoints-detection">has</a> <a href="http://www.kaggle.com/c/digit-recognizer">taken</a> <a href="http://www.kaggle.com/c/dogs-vs-cats">notice</a> <a href="http://www.kaggle.com/c/galaxy-zoo-the-galaxy-challenge">as well</a>.
+</p>
+
+
+<p>It appears one is also a great tool for solving the other. So where to start with learning some of these things. At one point when I was a graduate student I new a fair deal about neural networks. Some of that has since faded but I thought it sufficient enough to jump in and try to use some deep learning tools. Later I can try to dig into the math.</p>
+
+<p>There are tutorials all over, some are good and some are bad. Here is a <a href="http://radar.oreilly.com/2014/07/how-to-build-and-run-your-first-deep-learning-network.html">link</a> to one that gave me some some success.</p>
+
+<h3>Setting Up the Virtual Environment</h3>
+
+<p>The first requirement you need fulfill is install <a href="http://www.vagrantup.com/">Vagrant</a> and be able to use it. This was good learning experience in itself as I have been meaning to learn one of these virtual development environment tools. I can't say that I am expert but it was fairly easy to get up to speed and feel comfortable with this one. I am sure there are lots more that they can do but I already see the value in them. </p>
+
+<p>Once this is setup you can run the following from the command line.</p>
+<pre><code>mkdir ~/dl_webcast
+cd ~/dl_webcast
+
+vagrant box add dl_webcast https://d2rlgkokhpr1uq.cloudfront.net/dl_webcast.box
+
+vagrant init dl_webcast
+vagrant up
+
+vagrant ssh</code></pre>
+
+<p>The cool part about this virtual environment is that it already has a pre trained model included. In the tutorial it has you evaluate an image that comes preloaded.</p>
+
+<p>Now to jump right in and use the pre-build model.</p>
+<pre><code>cd ~/caffe
+python python/classify.py --print_results examples/images/cat.jpg foo</code></pre>
+
+<br>
+<br>
+
+
+<h3>Evaluation</h3>
+
+<p>Now let's try this with some images I found online since the example only comes with one image to evaluate.</p>
+
+<div class="separator" style="clear: both; text-align: center;"><img src="dog.5498.png" height="400" width="550"></a></div>
+
+
+
+<br>
+<table style="width:400" align="center">
+  <tr>
+    <td>beagle</td>
+    <td>0.49523</td> 
+  </tr>
+  <tr>
+    <td>English foxhound</td>
+    <td>0.07124</td> 
+  </tr>
+    <tr>
+    <td>Walker hound</td>
+    <td>0.05694</td> 
+  </tr>
+  <tr>
+    <td>basset</td>
+    <td>0.05413</td> 
+  </tr>
+    <tr>
+    <td>basset</td>
+    <td>0.01672</td> 
+  </tr>
+</table>
+<br>
+
+ 
+ <div class="separator" style="clear: both; text-align: center;"><img src="dog.5495.png" height="400" width="350"></a></div>
+
+
+<br>
+<table style="width:400" align="center">
+  <tr>
+    <td>Doberman</td>
+    <td>0.75929</td> 
+  </tr>
+  <tr>
+    <td>miniature pinscher</td>
+    <td>0.09810</td> 
+  </tr>
+    <tr>
+    <td>Rottweiler</td>
+    <td>0.07136</td> 
+  </tr>
+  <tr>
+    <td>toy terrier</td>
+    <td>0.02606</td> 
+  </tr>
+    <tr>
+    <td>black-and-tan coonhound</td>
+    <td>0.02000</td> 
+  </tr>
+</table>
+<br>
+
+
+<p>These images of dogs look pretty good. Now lets try something I think is a little harder. I can't tell the difference between an alligator and a crocodile. One image even has another animal to throw the model off. How well does it work?</p>
+
+ <div class="separator" style="clear: both; text-align: center;"><img src="gator2.png" height="400" width="550"></a></div>
+
+
+<br>
+<table style="width:400" align="center">
+  <tr>
+    <td>American alligator</td>
+    <td>0.72230</td> 
+  </tr>
+  <tr>
+    <td>African crocodile</td>
+    <td>0.27429</td> 
+  </tr>
+    <tr>
+    <td>common iguana</td>
+    <td>0.00146</td> 
+  </tr>
+  <tr>
+    <td>Komodo dragon</td>
+    <td>0.00028</td> 
+  </tr>
+    <tr>
+    <td>rock python</td>
+    <td>0.00024</td> 
+  </tr>
+</table>
+<br>
+
+
+
+ <div class="separator" style="clear: both; text-align: center;"><img src="gator3.png" height="400" width="550"></a></div>
+ 
+ <br>
+<table style="width:400" align="center">
+  <tr>
+    <td>African crocodile</td>
+    <td>0.39933</td> 
+  </tr>
+  <tr>
+    <td>American alligator</td>
+    <td>0.16945</td> 
+  </tr>
+    <tr>
+    <td>alligator lizard</td>
+    <td>0.05302</td> 
+  </tr>
+  <tr>
+    <td>agama</td>
+    <td>0.05002</td> 
+  </tr>
+    <tr>
+    <td>garter snake</td>
+    <td>0.04964</td> 
+  </tr>
+</table>
+ <br>
+
+<p>Wow, I am pretty impressed. I wanted to try an image I created from my phone. I sacrificed life and limb to get the picture below hoping it would be a harder test. I was also thinking this would be more of what I was thinking would be a cool application, a phone app that tells you what kind of wildlife you are looking at.</p>
+
+ <div class="separator" style="clear: both; text-align: center;"><img src="me.png" height="400" width="500"></a></div>
+
+
+
+ <br>
+<table style="width:400" align="center">
+  <tr>
+    <td>skunk</td>
+    <td>0.05580</td> 
+  </tr>
+  <tr>
+    <td>coho</td>
+    <td>0.04459</td> 
+  </tr>
+    <tr>
+    <td>American alligator</td>
+    <td>0.04231</td> 
+  </tr>
+  <tr>
+    <td>tench</td>
+    <td>0.03036</td> 
+  </tr>
+    <tr>
+    <td>banjo</td>
+    <td>0.02585</td> 
+  </tr>
+</table>
+ <br>
+
+
+<p>What it thinks I am a skunk. After the bike ride it took to get here my wife agree with that classification but I sure don't. I am a ease though after investigating the probability, very low confidence in its guess here. I then wondered what would happen if I modified the picture a bit. I took off a lot of the perimeter to see if I got any better.</p>
+
+
+ <div class="separator" style="clear: both; text-align: center;"><img src="m5.png" height="400" width="500"></a></div>
+
+
+
+ <br>
+<table style="width:400" align="center">
+  <tr>
+    <td>American alligator</td>
+    <td>0.04321</td> 
+  </tr>
+  <tr>
+    <td>banjo</td>
+    <td>0.03946</td> 
+  </tr>
+    <tr>
+    <td>apiary</td>
+    <td>0.03699</td> 
+  </tr>
+  <tr>
+    <td>jersey</td>
+    <td>0.03635</td> 
+  </tr>
+    <tr>
+    <td>neck brace</td>
+    <td>0.02906</td> 
+  </tr>
+</table>
+ <br>
+
+
+<p>That looks a little better. It does get the alligator and most importantly it does not think that I am a skunk. I think it sees me as the jersey.</p>
+
+
+<h3>Conclusion</h3>
+
+<p>What happens if I take myself out and just look at the alligator?</p>
+
+
+
+ <div class="separator" style="clear: both; text-align: center;"><img src="m6.png" height="400" width="500"></a></div>
+
+
+ <br>
+<table style="width:400" align="center">
+  <tr>
+    <td>aircraft carrier</td>
+    <td>0.08376</td> 
+  </tr>
+  <tr>
+    <td>snow leopard</td>
+    <td>0.07310</td> 
+  </tr>
+    <tr>
+    <td>grey whale</td>
+    <td>0.06862</td> 
+  </tr>
+  <tr>
+    <td>indri</td>
+    <td>0.05899</td> 
+  </tr>
+    <tr>
+    <td>steel arch bridge</td>
+    <td>0.04745</td> 
+  </tr>
+</table>
+ <br>
+
+<p>This is very interesting. Is is obviously wrong but I can see where it was going with the aircraft carrier, whale and the bridge. This is reassures me that these are not magic. They do a good job of classifying images but the problem is not solved to completion. I think they deserve the discussion they have been getting lately though. Perhaps I will be able to after deeper look at there inner workings in the future.</p>
+
+
+
+</div>
+
+
+
+
+
+<script>
+
+// add bootstrap table styles to pandoc tables
+$(document).ready(function () {
+  $('tr.header').parent('thead').parent('table').addClass('table table-condensed');
+});
+
+</script>
+
+<!-- dynamically load mathjax for compatibility with --self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://c328740.ssl.cf1.rackcdn.com/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>
+

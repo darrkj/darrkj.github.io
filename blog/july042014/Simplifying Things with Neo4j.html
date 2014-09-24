@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<!-- saved from url=(0014)about:internet -->
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+<meta http-equiv="x-ua-compatible" content="IE=9" >
+
+<title>Neo4j Soc Bal</title>
+
+
+<link rel="stylesheet" type="text/css" href="../../stylesheets/blog.css">
+
+<!-- Styles for R syntax highlighter -->
+<style type="text/css">
+   pre .operator,
+   pre .paren {
+     color: rgb(104, 118, 135)
+   }
+
+   pre .literal {
+     color: rgb(88, 72, 246)
+   }
+
+   pre .number {
+     color: rgb(0, 0, 205);
+   }
+
+   pre .comment {
+     color: rgb(76, 136, 107);
+   }
+
+   pre .keyword {
+     color: rgb(0, 0, 255);
+   }
+
+   pre .identifier {
+     color: rgb(0, 0, 0);
+   }
+
+   pre .string {
+     color: rgb(3, 106, 7);
+   }
+</style>
+
+    <link rel="stylesheet" type="text/css" href="../../stylesheets/stylesheet.css" media="screen" />
+    <link rel="stylesheet" type="text/css" href="../../stylesheets/pygment_trac.css" media="screen" />
+    <link rel="stylesheet" type="text/css" href="../../stylesheets/print.css" media="print" />
+
+<!-- R syntax highlighter -->
+<script src="../../javascripts/r.js"></script>
+
+
+</head>
+
+<body>
+
+<div class="container">
+
+
+    <header>
+      <div class="container">
+        <h1>Simplifying Things with Neo4j</h1>
+        <h2></h2>
+
+<h4 class="author"><em>Kenny Darrell</em></h4>
+<h4 class="date"><em>July 4, 2014</em></h4>
+        </section>
+      </div>
+    </header>
+
+
+
+<h3>Introduction</h3>
+<p>Last time I walked through the Social Balance problem on networks of terrorist organizations. One thing that was interesting is that after all of the data was collected the code became very awkward. Trying to create algorithms and traversals on graphs in R is not very natural. There is a really nice solution to this problem though. A few posts back I wrote about creating some wrappers around Neo4j to use from R. There is now a nice package that wraps a much larger set of functionality in one cohesive package. You can find more info on this at the packages Github <a href="https://github.com/nicolewhite/Rneo4j">repo</a>. This allows us to get rid of the code used to traverse the graph graph for triangles and evaluate social balance rules on them. We only have to worry about getting the data into a Neo4j database.</p>
+
+<p>Lets start with the data that was used last time in its cleanest state. This means that we have just used R for scraping and cleaning of the data. This code was all pretty standard.</p>
+
+You can download the data up to this point from the link below.
+<p><a href="terrorNet.rda">Cleaned Data</a></p>
+
+<pre class="r"><code>options(stringsAsFactors = FALSE)
+library(igraph)
+load('terrorNet.rda')</code></pre>
+
+<h3>Setup</h3>
+
+<p>First we need make sure we have an instance of Neo4j up and running. Without going into too many of the details you need to download Neo4J, instructions for doing this can be found <a href="http://www.neo4j.org/download">here</a>. Once installation has been done you can use the commands below on a Mac to get Neo4j up and running.</p>
+
+<pre><code>cd neo4j-community-2.0.3
+bin/neo4j start</code></pre>
+<p>If you use a browser and navigate to <code>http://localhost:7474/</code> you can validate that it is indeed up and running.</p>
+<p>Next we need to load the RNeo4j package. To get this setup there are instructions <a href="http://nicolewhite.github.io/RNeo4j/">here</a>. Once it is loaded we have to create a connection to the database instance.</p>
+<pre class="r"><code>library(RNeo4j)
+graph = startGraph(&quot;http://localhost:7474/db/data/&quot;)</code></pre>
+
+<h3>Load</h3>
+
+<p>There are a few steps of preparation needed, but these are minor. We need to insert the data into the database. This is done using the functionality provided by the RNeo4j package.</p>
+<pre class="r"><code># Create the unique set of all orgainzations
+nodes &lt;- unique(rbind(data.frame(id = net$from, name = net$fromn),
+                      data.frame(id = net$to,   name = net$ton)))
+
+# These will hold pointers to the node in the database when we create edges.
+neoNodes &lt;- list()
+
+# Loop through all nodes and insert into db, retaining pointer.
+for(i in 1:nrow(nodes)) {
+  neoNodes[[i]] = createNode(graph, label = &quot;Terror&quot;, name = nodes$id[i], 
+                           aka = nodes$name[i]) 
+}
+
+# Now we add each edge to the db as a relationship.
+for (i in 1:nrow(net)) {
+  # Get index for which nodes are in this edge.
+  from &lt;- which(nodes == net$from[i])
+  to &lt;- which(nodes == net$to[i])
+  # Add to db.
+  createRel(from]], net$conn[i], neoNodes[[to]], how = net$type[i])
+}</code></pre>
+
+<h3>Cypher</h3>
+
+<p>Now that all of the data is loaded we can use Cypher, a query language in Neo4j, to do all of the heavy lifting. This basically boils down to writing a query for the data that we want. We can do both steps in one, finding triangles and resolving there adherence to social balance.</p>
+
+
+<pre class="r"><code>q &lt;- 'MATCH (a)-[r:hates]-&gt;(b)&lt;-[s:likes]-(c), (a)-[t:hates]-&gt;(c) 
+      return a.aka, b.aka, c.aka;'
+tri &lt;- cypher(graph, query = q)</code></pre>
+<pre class="r"><code>devtools::source_url('http://darrkj.github.io/home/rcode/d3plot.R')
+
+triples &lt;- rbind(data.frame(Source = tri[, 1], Target = tri[, 2]),
+           data.frame(Source = tri[, 1], Target = tri[, 3]),
+           data.frame(Source = tri[, 2], Target = tri[, 3]))
+
+
+d3plot(triples, 700, 600)</code></pre>
+
+
+<div style="text-align:center;"> <iframe src="http://darrkj.github.io/home/blog/july042014/terrorNet" width="600" height="700"></iframe></div>
+
+
+<h3>Conclusion</h3>
+<p>The complexity and awkwardness of this code has decreased substantially. There was some added complexity of adding the data to Neo4j, but this was a one time thing. In the case where everything happened within R if you wanted to do a another type of traversal you would have to recode the structure and the traversal algorithm. Now you can just write another query. These queries are also very interesting, they are completely declarative. You specify the structure or shape of what you want and the database takes care of how to resolve it. I am looking forward to exploring this type of thing more as it seems to give you a lot of power to do a lot of things in a rather straightforward manner.</p>
+
+</div>
+
+
+
+
+
+
+<script>
+
+// add bootstrap table styles to pandoc tables
+$(document).ready(function () {
+  $('tr.header').parent('thead').parent('table').addClass('table table-condensed');
+});
+
+</script>
+
+<!-- dynamically load mathjax for compatibility with --self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://c328740.ssl.cf1.rackcdn.com/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>

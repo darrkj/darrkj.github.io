@@ -1,0 +1,132 @@
+
+        <!DOCTYPE html> 
+        <meta charset="utf-8">
+        <body> 
+ <style> 
+.link {  
+stroke: #666;
+opacity: 0.6;
+stroke-width: 1.5px; 
+} 
+.node circle { 
+stroke: #fff; 
+opacity: 0.6;
+stroke-width: 1.5px; 
+} 
+text { 
+font: 7px serif; 
+opacity: 0.6;
+pointer-events: none; 
+} 
+</style> 
+
+<script src=http://d3js.org/d3.v3.min.js></script>
+
+<script> 
+ var links = [ { "source" : "Action Directe", "target" : "Revolutionary Front for Proletarian Action" }, { "source" : "Action Directe", "target" : "Communist Combatant Cells" }, { "source" : "al-Fatah", "target" : "Hamas" }, { "source" : "al-Fatah", "target" : "Tanzim" }, { "source" : "al-Fatah", "target" : "Hamas" }, { "source" : "al-Fatah", "target" : "Popular Front for the Liberation of Palestine (PFLP)" }, { "source" : "al-Fatah", "target" : "Abu al-Rish Brigades" }, { "source" : "al-Fatah", "target" : "Black Panthers (West Bank/Gaza)" }, { "source" : "al-Fatah", "target" : "Popular Front for the Liberation of Palestine (PFLP)" }, { "source" : "al-Fatah", "target" : "Asbat al-Ansar" }, { "source" : "al-Fatah", "target" : "al-Aqsa Martyrs Brigades" }, { "source" : "al-Fatah", "target" : "Palestine Liberation Organization (PLO)" }, { "source" : "al-Fatah", "target" : "Black September" }, { "source" : "al-Fatah", "target" : "Hamas" }, { "source" : "al-Fatah", "target" : "al-Aqsa Martyrs Brigades" }, { "source" : "April 19 Movement", "target" : "National Liberation Army (Colombia)" }, { "source" : "April 19 Movement", "target" : "Jaime Bateman Cayon Group (JBC)" }, { "source" : "Asbat al-Ansar", "target" : "Hezbollah" }, { "source" : "Asbat al-Ansar", "target" : "Hamas" }, { "source" : "Bersatu", "target" : "Pattani United Liberation Organization (PULO)" }, { "source" : "Bersatu", "target" : "Barisan Revolusi Nasional Melayu Pattani (BRN)" }, { "source" : "Communist Combatant Cells", "target" : "Red Army Faction" }, { "source" : "Communist Combatant Cells", "target" : "Action Directe" }, { "source" : "Farabundo Marti National Liberation Front", "target" : "People's Liberation Forces (El Salvador)" }, { "source" : "Farabundo Marti National Liberation Front", "target" : "Armed Forces of National Resistance" }, { "source" : "Guatemalan National Revolutionary Unity (URNG)", "target" : "Guerrilla Army of the Poor" }, { "source" : "Guatemalan National Revolutionary Unity (URNG)", "target" : "Rebel Armed Forces" }, { "source" : "Guatemalan National Revolutionary Unity (URNG)", "target" : "Guatemalan Labor Party" }, { "source" : "Guatemalan National Revolutionary Unity (URNG)", "target" : "Rebel Armed Forces" }, { "source" : "Guatemalan National Revolutionary Unity (URNG)", "target" : "Guatemalan Labor Party" }, { "source" : "Guatemalan National Revolutionary Unity (URNG)", "target" : "Guerrilla Army of the Poor" }, { "source" : "Hamas", "target" : "Palestinian Islamic Jihad (PIJ)" }, { "source" : "Hezbollah", "target" : "Asbat al-Ansar" }, { "source" : "Informal Anarchist Federation", "target" : "Five C's" }, { "source" : "Informal Anarchist Federation", "target" : "International Solidarity" }, { "source" : "Informal Anarchist Federation", "target" : "July 20th Brigade" }, { "source" : "Informal Anarchist Federation", "target" : "Cooperative of Hand-Made Fire & Related Items" }, { "source" : "Informal Anarchist Federation", "target" : "International Solidarity" }, { "source" : "Informal Anarchist Federation", "target" : "July 20th Brigade" }, { "source" : "Informal Anarchist Federation", "target" : "Cooperative of Hand-Made Fire & Related Items" }, { "source" : "Informal Anarchist Federation", "target" : "Five C's" }, { "source" : "Informal Anarchist Federation", "target" : "July 20th Brigade" }, { "source" : "Informal Anarchist Federation", "target" : "Cooperative of Hand-Made Fire & Related Items" }, { "source" : "Informal Anarchist Federation", "target" : "Five C's" }, { "source" : "Informal Anarchist Federation", "target" : "International Solidarity" }, { "source" : "Irish Republican Army (IRA)", "target" : "Real Irish Republican Army (RIRA)" }, { "source" : "Irish Republican Army (IRA)", "target" : "Continuity Irish Republican Army (CIRA)" }, { "source" : "Islamic Salvation Front", "target" : "Armed Islamic Group" }, { "source" : "Islamic Salvation Front", "target" : "Unified Unit of Jihad" }, { "source" : "Islamic Salvation Front", "target" : "Armed Islamic Group" }, { "source" : "Kangleipak Communist Party", "target" : "United National Liberation Front (UNLF)" }, { "source" : "Lashkar-e-Taiba (LeT)", "target" : "al-Qanoon" }, { "source" : "Mujahideen Shura Council", "target" : "Jaish al-Taifa al-Mansoura" }, { "source" : "Mujahideen Shura Council", "target" : "al-Qaeda Organization in the Land of the Two Rivers" }, { "source" : "National Socialist Council of Nagaland-Isak-Muivah (NSCN-IM)", "target" : "United National Liberation Front (UNLF)" }, { "source" : "National Socialist Council of Nagaland-Isak-Muivah (NSCN-IM)", "target" : "National Socialist Council of Nagaland-Khaplang (NSCN-K)" }, { "source" : "Palestine Liberation Organization (PLO)", "target" : "Popular Front for the Liberation of Palestine (PFLP)" }, { "source" : "People's Revolutionary Party of Kangleipak (PREPAK)", "target" : "Kangleipak Communist Party" }, { "source" : "Popular Revolutionary Army", "target" : "Group of Guerilla Combatants of Jose Maria Morelos y Pavon (CGNJMMP)" }, { "source" : "Revolutionary Armed Forces of Colombia (FARC)", "target" : "United Self-Defense Forces of Colombia (AUC)" }, { "source" : "Revolutionary Armed Forces of Colombia (FARC)", "target" : "Self-Defense Groups of Cordoba and Uraba (ACCU)" }, { "source" : "United National Liberation Front (UNLF)", "target" : "Kangleipak Communist Party" }, { "source" : "United National Liberation Front (UNLF)", "target" : "National Socialist Council of Nagaland-Isak-Muivah (NSCN-IM)" }, { "source" : "United National Liberation Front (UNLF)", "target" : "Kanglei Yawol Kanna Lup (KYKL)" }, { "source" : "Action Directe", "target" : "Communist Combatant Cells" }, { "source" : "Action Directe", "target" : "Revolutionary Front for Proletarian Action" }, { "source" : "al-Fatah", "target" : "Abu al-Rish Brigades" }, { "source" : "al-Fatah", "target" : "al-Aqsa Martyrs Brigades" }, { "source" : "al-Fatah", "target" : "Black Panthers (West Bank/Gaza)" }, { "source" : "al-Fatah", "target" : "Black September" }, { "source" : "al-Fatah", "target" : "Hamas" }, { "source" : "al-Fatah", "target" : "Hamas" }, { "source" : "al-Fatah", "target" : "Hamas" }, { "source" : "al-Fatah", "target" : "Jund al-Sham" }, { "source" : "al-Fatah", "target" : "Palestinian Islamic Jihad (PIJ)" }, { "source" : "al-Fatah", "target" : "Palestinian Popular Struggle Front (PSF)" }, { "source" : "al-Fatah", "target" : "Popular Front for the Liberation of Palestine (PFLP)" }, { "source" : "al-Fatah", "target" : "Popular Front for the Liberation of Palestine (PFLP)" }, { "source" : "al-Fatah", "target" : "Tanzim" }, { "source" : "April 19 Movement", "target" : "Jaime Bateman Cayon Group (JBC)" }, { "source" : "April 19 Movement", "target" : "National Liberation Army (Colombia)" }, { "source" : "Asbat al-Ansar", "target" : "Hamas" }, { "source" : "Asbat al-Ansar", "target" : "Hezbollah" }, { "source" : "Bersatu", "target" : "New Pattani United Liberation Organization (New PULO)" }, { "source" : "Bersatu", "target" : "Pattani United Liberation Organization (PULO)" }, { "source" : "Communist Combatant Cells", "target" : "Action Directe" }, { "source" : "Communist Combatant Cells", "target" : "Red Army Faction" }, { "source" : "Farabundo Marti National Liberation Front", "target" : "Armed Forces of National Resistance" }, { "source" : "Farabundo Marti National Liberation Front", "target" : "People's Liberation Forces (El Salvador)" }, { "source" : "Guatemalan National Revolutionary Unity (URNG)", "target" : "Guatemalan Labor Party" }, { "source" : "Guatemalan National Revolutionary Unity (URNG)", "target" : "Guatemalan Labor Party" }, { "source" : "Guatemalan National Revolutionary Unity (URNG)", "target" : "Guerrilla Army of the Poor" }, { "source" : "Guatemalan National Revolutionary Unity (URNG)", "target" : "Guerrilla Army of the Poor" }, { "source" : "Guatemalan National Revolutionary Unity (URNG)", "target" : "Rebel Armed Forces" }, { "source" : "Guatemalan National Revolutionary Unity (URNG)", "target" : "Rebel Armed Forces" }, { "source" : "Hamas", "target" : "Jenin Martyr's Brigade" }, { "source" : "Hezbollah", "target" : "Jund al-Sham" }, { "source" : "Informal Anarchist Federation", "target" : "Cooperative of Hand-Made Fire & Related Items" }, { "source" : "Informal Anarchist Federation", "target" : "Cooperative of Hand-Made Fire & Related Items" }, { "source" : "Informal Anarchist Federation", "target" : "Cooperative of Hand-Made Fire & Related Items" }, { "source" : "Informal Anarchist Federation", "target" : "Five C's" }, { "source" : "Informal Anarchist Federation", "target" : "Five C's" }, { "source" : "Informal Anarchist Federation", "target" : "Five C's" }, { "source" : "Informal Anarchist Federation", "target" : "International Solidarity" }, { "source" : "Informal Anarchist Federation", "target" : "International Solidarity" }, { "source" : "Informal Anarchist Federation", "target" : "International Solidarity" }, { "source" : "Informal Anarchist Federation", "target" : "July 20th Brigade" }, { "source" : "Informal Anarchist Federation", "target" : "July 20th Brigade" }, { "source" : "Informal Anarchist Federation", "target" : "July 20th Brigade" }, { "source" : "Irish Republican Army (IRA)", "target" : "Continuity Irish Republican Army (CIRA)" }, { "source" : "Irish Republican Army (IRA)", "target" : "Real Irish Republican Army (RIRA)" }, { "source" : "Islamic Salvation Front", "target" : "al-Qaeda Organization in the Islamic Maghreb" }, { "source" : "Islamic Salvation Front", "target" : "Armed Islamic Group" }, { "source" : "Islamic Salvation Front", "target" : "Unified Unit of Jihad" }, { "source" : "Kangleipak Communist Party", "target" : "Kanglei Yawol Kanna Lup (KYKL)" }, { "source" : "Lashkar-e-Taiba (LeT)", "target" : "al-Arifeen" }, { "source" : "Mujahideen Shura Council", "target" : "al-Qaeda Organization in the Land of the Two Rivers" }, { "source" : "Mujahideen Shura Council", "target" : "Jaish al-Taifa al-Mansoura" }, { "source" : "National Socialist Council of Nagaland-Isak-Muivah (NSCN-IM)", "target" : "National Socialist Council of Nagaland-Khaplang (NSCN-K)" }, { "source" : "National Socialist Council of Nagaland-Isak-Muivah (NSCN-IM)", "target" : "United National Liberation Front (UNLF)" }, { "source" : "Palestine Liberation Organization (PLO)", "target" : "Democratic Front for the Liberation of Palestine (DFLP)" }, { "source" : "People's Revolutionary Party of Kangleipak (PREPAK)", "target" : "Kanglei Yawol Kanna Lup (KYKL)" }, { "source" : "Popular Revolutionary Army", "target" : "Revolutionary Armed Forces of the People (FARP)" }, { "source" : "Revolutionary Armed Forces of Colombia (FARC)", "target" : "Self-Defense Groups of Cordoba and Uraba (ACCU)" }, { "source" : "Revolutionary Armed Forces of Colombia (FARC)", "target" : "United Self-Defense Forces of Colombia (AUC)" }, { "source" : "United National Liberation Front (UNLF)", "target" : "Kanglei Yawol Kanna Lup (KYKL)" }, { "source" : "United National Liberation Front (UNLF)", "target" : "Kanglei Yawol Kanna Lup (KYKL)" }, { "source" : "United National Liberation Front (UNLF)", "target" : "National Socialist Council of Nagaland-Isak-Muivah (NSCN-IM)" }, { "source" : "Revolutionary Front for Proletarian Action", "target" : "Communist Combatant Cells" }, { "source" : "Communist Combatant Cells", "target" : "Revolutionary Front for Proletarian Action" }, { "source" : "Hamas", "target" : "Abu al-Rish Brigades" }, { "source" : "Tanzim", "target" : "al-Aqsa Martyrs Brigades" }, { "source" : "Hamas", "target" : "Black Panthers (West Bank/Gaza)" }, { "source" : "Popular Front for the Liberation of Palestine (PFLP)", "target" : "Black September" }, { "source" : "Abu al-Rish Brigades", "target" : "Hamas" }, { "source" : "Black Panthers (West Bank/Gaza)", "target" : "Hamas" }, { "source" : "Popular Front for the Liberation of Palestine (PFLP)", "target" : "Hamas" }, { "source" : "Asbat al-Ansar", "target" : "Jund al-Sham" }, { "source" : "al-Aqsa Martyrs Brigades", "target" : "Palestinian Islamic Jihad (PIJ)" }, { "source" : "Palestine Liberation Organization (PLO)", "target" : "Palestinian Popular Struggle Front (PSF)" }, { "source" : "Black September", "target" : "Popular Front for the Liberation of Palestine (PFLP)" }, { "source" : "Hamas", "target" : "Popular Front for the Liberation of Palestine (PFLP)" }, { "source" : "al-Aqsa Martyrs Brigades", "target" : "Tanzim" }, { "source" : "National Liberation Army (Colombia)", "target" : "Jaime Bateman Cayon Group (JBC)" }, { "source" : "Jaime Bateman Cayon Group (JBC)", "target" : "National Liberation Army (Colombia)" }, { "source" : "Hezbollah", "target" : "Hamas" }, { "source" : "Hamas", "target" : "Hezbollah" }, { "source" : "Pattani United Liberation Organization (PULO)", "target" : "New Pattani United Liberation Organization (New PULO)" }, { "source" : "Barisan Revolusi Nasional Melayu Pattani (BRN)", "target" : "Pattani United Liberation Organization (PULO)" }, { "source" : "Red Army Faction", "target" : "Action Directe" }, { "source" : "Action Directe", "target" : "Red Army Faction" }, { "source" : "People's Liberation Forces (El Salvador)", "target" : "Armed Forces of National Resistance" }, { "source" : "Armed Forces of National Resistance", "target" : "People's Liberation Forces (El Salvador)" }, { "source" : "Guerrilla Army of the Poor", "target" : "Guatemalan Labor Party" }, { "source" : "Rebel Armed Forces", "target" : "Guatemalan Labor Party" }, { "source" : "Guatemalan Labor Party", "target" : "Guerrilla Army of the Poor" }, { "source" : "Rebel Armed Forces", "target" : "Guerrilla Army of the Poor" }, { "source" : "Guatemalan Labor Party", "target" : "Rebel Armed Forces" }, { "source" : "Guerrilla Army of the Poor", "target" : "Rebel Armed Forces" }, { "source" : "Palestinian Islamic Jihad (PIJ)", "target" : "Jenin Martyr's Brigade" }, { "source" : "Asbat al-Ansar", "target" : "Jund al-Sham" }, { "source" : "Five C's", "target" : "Cooperative of Hand-Made Fire & Related Items" }, { "source" : "International Solidarity", "target" : "Cooperative of Hand-Made Fire & Related Items" }, { "source" : "July 20th Brigade", "target" : "Cooperative of Hand-Made Fire & Related Items" }, { "source" : "Cooperative of Hand-Made Fire & Related Items", "target" : "Five C's" }, { "source" : "International Solidarity", "target" : "Five C's" }, { "source" : "July 20th Brigade", "target" : "Five C's" }, { "source" : "Cooperative of Hand-Made Fire & Related Items", "target" : "International Solidarity" }, { "source" : "Five C's", "target" : "International Solidarity" }, { "source" : "July 20th Brigade", "target" : "International Solidarity" }, { "source" : "Cooperative of Hand-Made Fire & Related Items", "target" : "July 20th Brigade" }, { "source" : "Five C's", "target" : "July 20th Brigade" }, { "source" : "International Solidarity", "target" : "July 20th Brigade" }, { "source" : "Real Irish Republican Army (RIRA)", "target" : "Continuity Irish Republican Army (CIRA)" }, { "source" : "Continuity Irish Republican Army (CIRA)", "target" : "Real Irish Republican Army (RIRA)" }, { "source" : "Armed Islamic Group", "target" : "al-Qaeda Organization in the Islamic Maghreb" }, { "source" : "Unified Unit of Jihad", "target" : "Armed Islamic Group" }, { "source" : "Armed Islamic Group", "target" : "Unified Unit of Jihad" }, { "source" : "United National Liberation Front (UNLF)", "target" : "Kanglei Yawol Kanna Lup (KYKL)" }, { "source" : "al-Qanoon", "target" : "al-Arifeen" }, { "source" : "Jaish al-Taifa al-Mansoura", "target" : "al-Qaeda Organization in the Land of the Two Rivers" }, { "source" : "al-Qaeda Organization in the Land of the Two Rivers", "target" : "Jaish al-Taifa al-Mansoura" }, { "source" : "United National Liberation Front (UNLF)", "target" : "National Socialist Council of Nagaland-Khaplang (NSCN-K)" }, { "source" : "National Socialist Council of Nagaland-Khaplang (NSCN-K)", "target" : "United National Liberation Front (UNLF)" }, { "source" : "Popular Front for the Liberation of Palestine (PFLP)", "target" : "Democratic Front for the Liberation of Palestine (DFLP)" }, { "source" : "Kangleipak Communist Party", "target" : "Kanglei Yawol Kanna Lup (KYKL)" }, { "source" : "Group of Guerilla Combatants of Jose Maria Morelos y Pavon (CGNJMMP)", "target" : "Revolutionary Armed Forces of the People (FARP)" }, { "source" : "United Self-Defense Forces of Colombia (AUC)", "target" : "Self-Defense Groups of Cordoba and Uraba (ACCU)" }, { "source" : "Self-Defense Groups of Cordoba and Uraba (ACCU)", "target" : "United Self-Defense Forces of Colombia (AUC)" }, { "source" : "Kangleipak Communist Party", "target" : "Kanglei Yawol Kanna Lup (KYKL)" }, { "source" : "National Socialist Council of Nagaland-Isak-Muivah (NSCN-IM)", "target" : "Kanglei Yawol Kanna Lup (KYKL)" }, { "source" : "Kanglei Yawol Kanna Lup (KYKL)", "target" : "National Socialist Council of Nagaland-Isak-Muivah (NSCN-IM)" } ] ; 
+ var nodes = {}
+
+// Compute the distinct nodes from the links.
+links.forEach(function(link) {
+link.source = nodes[link.source] || 
+(nodes[link.source] = {name: link.source});
+link.target = nodes[link.target] || 
+(nodes[link.target] = {name: link.target});
+link.value = +link.value;
+});
+
+var width = 600
+height = 700;
+
+var force = d3.layout.force() 
+.nodes(d3.values(nodes)) 
+.links(links) 
+.size([width, height]) 
+.linkDistance(50) 
+.charge(-200) 
+.on("tick", tick) 
+.start(); 
+
+var svg = d3.select("body").append("svg") 
+.attr("width", width) 
+.attr("height", height); 
+
+var link = svg.selectAll(".link") 
+.data(force.links()) 
+.enter().append("line") 
+.attr("class", "link"); 
+
+var node = svg.selectAll(".node") 
+.data(force.nodes()) 
+.enter().append("g") 
+.attr("class", "node") 
+.on("mouseover", mouseover) 
+.on("mouseout", mouseout) 
+.on("click", click)
+.on("dblclick", dblclick)
+.call(force.drag); 
+
+node.append("circle") 
+.attr("r", 8)
+.style("fill", "#3182bd");
+
+node.append("text") 
+.attr("x", 12) 
+.attr("dy", ".35em") 
+.style("fill", "#3182bd")
+.text(function(d) { return d.name; }); 
+
+function tick() { 
+link 
+.attr("x1", function(d) { return d.source.x; }) 
+.attr("y1", function(d) { return d.source.y; }) 
+.attr("x2", function(d) { return d.target.x; }) 
+.attr("y2", function(d) { return d.target.y; }); 
+
+node.attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; }); 
+} 
+
+function mouseover() { 
+d3.select(this).select("circle").transition() 
+.duration(750) 
+.attr("r", 16); 
+} 
+
+function mouseout() { 
+d3.select(this).select("circle").transition() 
+.duration(750) 
+.attr("r", 8); 
+} 
+// action to take on mouse click
+function click() {
+d3.select(this).select("text").transition()
+.duration(750)
+.attr("x", 22)
+.style("stroke-width", ".5px")
+.style("opacity", 1)
+.style("fill", "#E34A33")
+.style("font", "17.5px serif");
+d3.select(this).select("circle").transition()
+.duration(750)
+.style("fill", "#E34A33")
+.attr("r", 16)
+}
+
+// action to take on mouse double click
+function dblclick() {
+d3.select(this).select("circle").transition()
+.duration(750)
+.attr("r", 6)
+.style("fill", "#E34A33");
+d3.select(this).select("text").transition()
+.duration(750)
+.attr("x", 12)
+.style("stroke", "none")
+.style("fill", "#E34A33")
+.style("stroke", "none")
+.style("opacity", 0.6)
+.style("font", "7px serif");
+}
+
+</script>
+ </body>

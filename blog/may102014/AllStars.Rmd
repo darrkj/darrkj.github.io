@@ -1,0 +1,202 @@
+---
+title: "Detecting All Stars Using CADE"
+author: "Kenny Darrell"
+date: "May 10, 2014"
+output: html_document
+---
+
+
+
+I recentely listend to [David Jensen](https://www.cs.umass.edu/faculty/directory/jensen_david) give a brief overview of an anomaly detection method called [CADE](http://people.cs.umass.edu/~lfriedl/pubs/SDM2014-paper.pdf) or [Classifier Adjusted Density Estimation](http://people.cs.umass.edu/~lfriedl/pubs/SDM2014-supp.pdf). The method seemed very easy to grasp at first which is not usualy the case for recently published machine learning work. I can never resist trying to implement these things myself on a toy example to learn what makes them tick and if they really deliver on what they promise.
+
+I wanted to try to create an example that will find anomolous players in the NBA. I think in order to do this I may have to expand on some of the later steps of this methodolgy though. But first we need some data. Lets walk through the steps I am using to get this data.
+
+### Setup
+
+I have a [package](https://github.com/darrkj/CadeAllStar) on Github that we will utilize to get data. First we need to get this functionality installed. The code is actaully very similar to some code I have used in previous posts except I realized some of the sites have changed and we only need a subset of that functionality.
+
+```{r gistImport, eval = FALSE}
+require(plyr)
+require(XML)
+require(devtools)
+require(randomForest)
+
+install_github('darrkj/CadeAllStar')
+
+require(CadeAllStar)
+```
+
+```{r, echo=F, message=FALSE}
+require(plyr, quietly = TRUE)
+require(XML, quietly = TRUE)
+require(devtools, quietly = TRUE)
+require(randomForest, quietly = TRUE)
+
+options(stringsAsFactors = FALSE)
+options("width"=120)
+require(CadeAllStar, quietly = TRUE)
+```
+
+Before we proceed I should explain a bit more about what I am attempting to do here. I am hoping to find the best players in the league, All Stars, in order to do that I am going to try to find those which are the largest outliers. In doing this I may find some players that are not all stars but different for some other reason which will also be interesting. The methodology being used looks at player-days, statistics from a single game for a specific player. It then finds the player-games that are anomolous to the rest of the player-game population. My intuition tells me that I can aggregate these games up to the player level and have and ordering of players. Those that are the furthest out should contain the group of all stars, possibly including other groups of players as well. I will attempt to explain the details of the actual outlier detection method as it is needed.  
+
+
+```{r eval = F}
+# You can pull all data for the 2013 season via the following code.
+season <- seasonify(2013)
+```
+
+```{r}
+# Or use the 2013 season that comes with the R package.
+data(season)
+
+head(season[, 1:3])
+```
+
+Now we have an entire season of NBA games. This is still only the games though. We need to capture each players' stats for each of these games. We are only going to pull the basic statistics. This will also take a while so I would recomend using the data in the package.
+
+
+```{r eval = F}
+# Pull statistics for a season of games
+stats <- pull_stats(season)
+```
+
+Or load it from the package.
+
+```{r}
+data(stats)
+
+head(stats[, 1:3])
+```
+
+
+### Implement the Algorithm
+
+Now on to the technichal aspects. The heart of CADE relies on two things: 
+
+ 1. Creating uniform distributions over variables
+ 2. Generate a classifier which can produce a probability 
+
+The followng function takes care of the uniform distribution by taking a varaible that may have any type of distribution and returns one with the same length and range but is uniformly distributed.
+
+```{r}
+uni <- function(x, len = length(x)) {
+  if ( is.integer(x) ) {
+    sample(min(x):max(x), len, replace = TRUE)
+  } else if ( is.numeric(x) ) {
+    runif(len, min(x), max(x))
+  } else if ( is.factor(x) ) {
+    factor(sample(levels(x), len, replace = TRUE))
+  } else {
+    sample(unique(x), len, replace = TRUE)
+  }
+}
+```
+
+Here is how this looks for a Poisson distribution.
+
+```{r}
+test <- rpois(10000, 35)
+par(mfrow = c(2, 1))
+
+hist(test)
+hist(uni(test))
+```
+
+Now the rest of CADE is just about creating predictions. The predictions are of cases that are outliers. To do this we make a naive assumption that none of our data is an outlier. Thus we will create a new target varaible y, and give it all values of 0. Then we need to take the fake uniform data that is tructurally the same and give it the same target variable y but only call of the outliers so they get a value of 1. Then we combine these data sets into one and run a machine learning algorithm on them which is able to return a probability instead of a predicted class outcome. Then we use this classifier to evaluate our original data. We call this predicted probability the probability of being an outlier.
+
+```{r}
+
+cade <- function(df, numTree = 500) {
+  stopifnot(is.data.frame(df))
+
+  # This is the data we will make the 'no' case
+  real <- df
+  
+  # Create similar but uniform data
+  fake <- as.data.frame(lapply(real, uni))
+  
+  real$y <- 0
+  fake$y <- 1
+  
+  # Combine real and fake data
+  data <- rbind(real, fake)
+  
+  # Build classifier
+  tree <- randomForest(as.factor(y) ~ ., data = data, ntree = numTree)
+  
+  # The classifier probabilities
+  df$prob <- predict(tree, newdata = df, type = 'prob')[, 2]
+  df$prob <- df$prob / (1 - df$prob)
+  
+  df
+}
+```
+
+### Application
+
+Everything is now in place to try out our experiment. We need to pass the data into the CADE function, only the fields that are needed though. Since the result of the function is a new data frame with a field called prob, we can just take take that field and assign it to the data we pass into the function.
+
+```{r eval = T}
+# Run cade on data, this takes a minute, for analysis only use relevent fields.
+stats$prob <- cade(subset(stats, select = -c(player, date, guid)), 30)$prob
+
+# Order by most likely to be an outlier.
+stats <- stats[order(stats$prob, decreasing = TRUE), ]
+
+# Do people appear in the top frequently.
+rev(sort(table(stats$player[1:30])))
+```
+
+Even though it is somehat subjective to as to who is better than who in the NBA, I think there would be little down that these are not some of the best players of 2013. How would these results line up against the actual 2013 Allstar Game?
+
+First we have to find a way to get rid of player-game values and just get values based on player. I thhought over just counts under some threshold but I could not think of any way to determine this threshold. It was all kind of arbitrary. Adding probabilities up is not something that commonly pops up. This may be okay here though, I know the sum is no longer any way a probability, some will rise above 1. 
+
+```{r}
+# Aggregate the per game score up to just the player
+rank <- ddply(stats, .(player), summarise, score = sum(prob))
+
+# Order largest sum
+rank <- rank[order(rank$score, decreasing = TRUE), ]
+
+# Rank each player by there sum total.
+rank$rank <- 1:nrow(rank)
+head(rank)
+```
+
+This look great
+
+
+### Results
+
+```{r}
+# Load all star game data
+al2013 <- 'http://www.allstarnba.es/editions/2013.htm'
+al2013 <- readHTMLTable(al2013)
+
+# Join and clean these fields.
+al2013 <- setdiff(c(al2013[[1]]$` EAST`, al2013[[2]]$` WEST`), 'TOTALS')
+
+# Move all text to lower to be safe(er) in joining data.
+al2013 <- data.frame(player = tolower(al2013))
+rank$player <- tolower(rank$player)
+
+# Join data
+al2013 <- merge(al2013, rank)
+
+# Order data by rank
+al2013 <- al2013[order(al2013$rank), ]
+
+# How far into the list do you need to go to capture the whole all star lineup
+al2013$depth <- al2013$rank / nrow(rank)
+
+al2013
+```
+
+
+### Conclusion
+
+It seems to work pretty well. There are few ways I think it can be expanded. I only pulled the basic stats but there are is whole plethora of [advanced](http://www.basketball-reference.com/playoffs/NBA_2014_ECS.html) stats available from the same source. There is also some newly available [statistics](http://stats.nba.com/gameDetail.html?GameID=0041300211&tabView=playertracking) that come from the [SportVU](http://www.stats.com/sportvu/basketball.asp) [cameras](http://stats.nba.com/playerTracking.html). These data points may give better lift over some of the more basic stats used here.
+
+I also wanted to try it compared to a few outer methods to see how well it worked. I started down the path to do a comparison but but hit a roadbloack with the data preprocessing, most other methods depend on lost of up front normalization. One major advantage is that I had to do very little cleaning to get this method to work. Everything else depends on certain normal like distributions, this method is pretty robust leading to quicker results.
+
+I also should look at some of the players between those in the Allstar game. Were they the outliers on the other side, the worst players in the league. Often figureing out what makes them an outlier is harder than finding out who are the actual outliers. It also takes a lot of domain knowledge.

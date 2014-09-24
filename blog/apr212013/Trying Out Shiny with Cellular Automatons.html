@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<!-- saved from url=(0014)about:internet -->
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+<meta http-equiv="x-ua-compatible" content="IE=9" >
+
+<title>Shiny CA</title>
+
+<link rel="stylesheet" type="text/css" href="../../stylesheets/blog.css">
+
+<!-- Styles for R syntax highlighter -->
+<style type="text/css">
+   pre .operator,
+   pre .paren {
+     color: rgb(104, 118, 135)
+   }
+
+   pre .literal {
+     color: rgb(88, 72, 246)
+   }
+
+   pre .number {
+     color: rgb(0, 0, 205);
+   }
+
+   pre .comment {
+     color: rgb(76, 136, 107);
+   }
+
+   pre .keyword {
+     color: rgb(0, 0, 255);
+   }
+
+   pre .identifier {
+     color: rgb(0, 0, 0);
+   }
+
+   pre .string {
+     color: rgb(3, 106, 7);
+   }
+</style>
+
+    <link rel="stylesheet" type="text/css" href="../../stylesheets/stylesheet.css" media="screen" />
+    <link rel="stylesheet" type="text/css" href="../../stylesheets/pygment_trac.css" media="screen" />
+    <link rel="stylesheet" type="text/css" href="../../stylesheets/print.css" media="print" />
+
+<!-- R syntax highlighter -->
+<script src="../../javascripts/r.js"></script>
+
+
+</head>
+
+<body>
+
+<div class="container">
+
+
+    <header>
+      <div class="container">
+        <h1>Trying Out Shiny with Cellular Automatons</h1>
+        <h2></h2>
+
+<h4 class="author"><em>Kenny Darrell</em></h4>
+<h4 class="date"><em>April 21, 2013</em></h4>
+        </section>
+      </div>
+    </header>
+
+<p>I created an implementation of the Elementary Cellular Automaton from Stephen Wolfram&#39;s book A New Kind of Science a while back.  This was done using the Manipulate package.  It allows you to have a very simple interactive interface within the RStudio IDE. </p>
+
+<p>A little background before we dive in may be useful if you are not familiar with this concept.  The premise is that we have a two dimensional grid, each cell can be in one of two states, on or off.  The top row is initialized with the center cell being on and all other cells being off.  The state of each cell in a row is determined by the state of the cells in the row directly above that row. A given cell determines its state by looking at the cell directly above it and the diagonals. Thus it is dependent on three cells. Since each of these three cells can be in one of two states, we have 2 to the third power of permutations or eight ways the child can determine its state based on its three parents. If we take each of these eight permutations as being able to define the alive or dead state of the child we end up with 2 to the eighth power of permutations or 256 different rules we can follow. Each of these rules leads to very different outcomes. Below you can see one of these 256 sets of rules.</p>
+
+
+<div class="separator" style="clear: both; text-align: center;"><img src="cell.png" height="400" width="550"></a></div>
+
+
+
+
+<p>For every child here we could have alive or dead for each of the eight combinations of parents. Now we shall proceed to construct an image for this model. To do this we need to create a few functions that will handle the computations required. First we create function that will capture the state of a child&#39;s parents and return a value to indicate the specific sequence. We denote this sequence of the parent cells by return a value of one to eight. We then compile this function to make it faster, about 3x to 5x faster.</p>
+
+<pre><code class="r">cellEval &lt;- function(parents) {
+    if (all(parents == c(1, 1, 1))) {
+        child &lt;- 1
+    } else if (all(parents == c(1, 1, 0))) {
+        child &lt;- 2
+    } else if (all(parents == c(1, 0, 1))) {
+        child &lt;- 3
+    } else if (all(parents == c(1, 0, 0))) {
+        child &lt;- 4
+    } else if (all(parents == c(0, 1, 1))) {
+        child &lt;- 5
+    } else if (all(parents == c(0, 1, 0))) {
+        child &lt;- 6
+    } else if (all(parents == c(0, 0, 1))) {
+        child &lt;- 7
+    } else if (all(parents == c(0, 0, 0))) {
+        child &lt;- 8
+    }
+    return(child)
+}
+require(compiler, quietly = T)
+# Compile this functon for speed.
+ccEval &lt;- cmpfun(cellEval)
+</code></pre>
+
+<p>Next we need to define a grid to contain each cell and apply this function to each cell below the first row. This function needs a parameter so that we can changes the size of the grid. We also need to pass this function a rule, what to assign the child based on the parents. The rule we give here is just an integer, similar to how an integer is represented in binary.</p>
+
+<ul>
+<li>00000000 -&gt; 1</li>
+<li>00000001 -&gt; 2</li>
+<li>00000010 -&gt; 3</li>
+<li>  &hellip;</li>
+<li>11111111 -&gt; 256</li>
+</ul>
+
+<p>So this integer will be broken back down into a rule to specify the state of the child based on parents.  We also force the length of a row to be odd so that we have a center cell.  We construct the grid by using a matrix with the size argument as the height and the length of the row is this doubled and made odd. We then set the midpoint of the first row to one. We also transform the rule to binary as mentioned above. You can investigate the details of this function but the purpose here is to explore the interface so I will leave this to the reader.</p>
+
+<p>You may notice the cmpfun function as well, this is used to compile functions. If you take a look at my previous post you will see some discussion of vectorizing and compiling, namely that using for loops is bad and you should vectorize when feasible.  The problem here is that it is hard to vectorize problems that are sequential, we don't have a full vector at the beginning. Vectorization is hard when things are sequentially dependent.  For loops are slow, very slow, and we can&#39;t easily vectorize this so to get some speedup we can compile these functions.</p>
+
+<pre><code class="r">cellAut &lt;- function(rule, size = 101) {
+    x1 &lt;- size * 2 + 1
+    grid &lt;- matrix(0, nrow = x1, ncol = size, byrow = FALSE)
+
+    mid &lt;- ceiling(x1/2)
+    grid[mid, 1] &lt;- 1
+    d &lt;- rev(sapply(rule, function(x) {
+        as.integer(intToBits(x))
+    })[1:8])
+
+    val &lt;- mid + x1 - 2
+    for (x in val:length(grid)) {
+        grid[x] &lt;- d[ccEval(grid[(x - (x1 + 1)):(x - (x1 - 1))])]
+    }
+    grid &lt;- grid[, ncol(grid):1]
+    image(1 - grid, axes = F)
+}
+cAut &lt;- cmpfun(cellAut)
+</code></pre>
+
+<p>Below is one of the more interesting rules, Rule 30. It demonstrates that given a very small set of 'simple' rules complexity can still arise. I have placed emphasis on simple here because all of this may seem complex but the rules are static whilst the outcome seems very dynamic. Even though the rules are static deterministic it is hard to say what will happen a few rows down without actually going through each step. You can also see very dramatic changes by changing the rules, a change to Rule 100 leads to a result which is very boring.</p>
+
+<pre><code class="r">cAut(30, 101)
+</code></pre>
+
+
+<div class="separator" style="clear: both; text-align: center;"><img src="cell1.png" height="400" width="550"></a></div>
+
+
+<pre><code class="r">cAut(100, 101)
+</code></pre>
+
+
+<div class="separator" style="clear: both; text-align: center;"><img src="cell2.png" height="400" width="550"></a></div>
+
+
+<p>If you load the manipulate package you can explore these rules interactively by running the following code.</p>
+
+<pre><code class="r">require(manipulate)
+manipulate(cAut(Rule, Size), Rule = slider(1, 256), Size = slider(11, 201))
+</code></pre>
+
+<p>I want to try to use Shiny to have this same interface in the browser. After reading parts of the wonderful <a href="http://rstudio.github.io/shiny/tutorial/">tutorial</a> it seemed that it would be pretty straightforward to do this. The only things needed to do this was to create ui.R and server.R files. The above code for the cellEval (ccEval) and cellAut (cAut) functions need to be visible as well. This can be done by having these functions in the workspace, sourcing the file within the server.R code, or adding the function definiton into the server.R file. The code below assumes they are in the workspace. This is cleaner for the post but probably the least robust.</p>
+
+<p>First lets see the contents of the ui.R file. </p>
+
+<pre><code class="r">shinyUI(pageWithSidebar(
+  # Application title
+  headerPanel(&quot;Elementary Cellular Automata&quot;),
+
+  # Sidebar with a slider input for number of observations
+  sidebarPanel(
+    numericInput(&quot;size&quot;, &quot;Size of Grid:&quot;, 51),
+    numericInput(&quot;rule&quot;, &quot;Rule:&quot;, 30)
+  ),
+
+  # Show a plot of the generated distribution
+  mainPanel(
+    plotOutput(&quot;CAPlot&quot;)
+  )
+))
+</code></pre>
+
+<p>Basically all that is happening here is that we are using the shinyUI function with three parts;</p>
+
+<ul>
+<li>headerPanel</li>
+<li>sidebarPanel</li>
+<li>mainPanel</li>
+</ul>
+
+<p>The headerPanel just gets a string that is displayed in the browser tab and the title on the page. The sidebarPanel gets two numericInputs.  The arguments to these are the names of variables we will refer to in server.R, the text displayed to inform the user what they do and an initial value. In the mainPanel we specify that we will have a plotOutput and it comes from CAPlot.</p>
+
+<p>The contents of the server.R file can be seen below.</p>
+
+<pre><code class="r">shinyServer(function(input, output) {
+    output$CAPlot &lt;- renderPlot({
+        cAut(input$rule, input$size)
+    })
+})
+</code></pre>
+
+<p>This is even easier and more concise than the ui.R file.  We just use the shinyServer function and say the output is CAPlot, which is what we wanted in the mainPanel of ui.R, is set in the renderPlot function.  The renderPlot function calls our cAut function with the two input values.  The reactive nature is really cool as well, any time the user changes the rule or the size, the plot is automatically updated.</p>
+
+<p>To make all of this work you just need to have the server.R file and the ui.R file in a directory called say test and run the following from a directory above the test directory.</p>
+
+<pre><code class="r">require(shiny)
+
+runApp(&quot;test&quot;)
+</code></pre>
+
+<p>You can see a screenshot of the result below. I wish I was able to include the result here but my I am yet unsure how to do this. I hope to try some other features out in this package in the future. I hope this presents how simple it is to make something with Shiny.</p>
+
+
+<div class="separator" style="clear: both; text-align: center;"><img src="ui.png" height="400" width="650"></a></div>
+
+
+</html>

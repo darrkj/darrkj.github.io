@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<!-- saved from url=(0014)about:internet -->
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+<meta http-equiv="x-ua-compatible" content="IE=9" >
+
+<title>I Seconf the Notion</title>
+
+<link rel="stylesheet" type="text/css" href="../../stylesheets/blog.css">
+
+<!-- Styles for R syntax highlighter -->
+<style type="text/css">
+   pre .operator,
+   pre .paren {
+     color: rgb(104, 118, 135)
+   }
+
+   pre .literal {
+     color: rgb(88, 72, 246)
+   }
+
+   pre .number {
+     color: rgb(0, 0, 205);
+   }
+
+   pre .comment {
+     color: rgb(76, 136, 107);
+   }
+
+   pre .keyword {
+     color: rgb(0, 0, 255);
+   }
+
+   pre .identifier {
+     color: rgb(0, 0, 0);
+   }
+
+   pre .string {
+     color: rgb(3, 106, 7);
+   }
+</style>
+
+    <link rel="stylesheet" type="text/css" href="../../stylesheets/stylesheet.css" media="screen" />
+    <link rel="stylesheet" type="text/css" href="../../stylesheets/pygment_trac.css" media="screen" />
+    <link rel="stylesheet" type="text/css" href="../../stylesheets/print.css" media="print" />
+
+<!-- R syntax highlighter -->
+<script src="../../javascripts/r.js"></script>
+
+
+</head>
+
+<body>
+
+<div class="container">
+
+
+    <header>
+      <div class="container">
+        <h1>I Second the Notion</h1>
+        <h2></h2>
+
+<h4 class="author"><em>Kenny Darrell</em></h4>
+<h4 class="date"><em>April 20, 2014</em></h4>
+        </section>
+      </div>
+    </header>
+
+
+
+
+
+<p>I recently read a <a href="http://www.econometricsbysimulation.com/2014/03/it-is-time-for-rdata-files-to-become.html">blog</a> with some <a href="http://davegiles.blogspot.com/2014/03/data-transfer-advice-from-francis-smart.html">support</a> that got me thinking. I thought it was an interesting idea that seems valid, but there are other problems with data transmission in general that this method could help to solve. The three issues that R solved were all valid:</p>
+<ul>
+<li>The storage mechanism is efficient</li>
+<li>The platform is open source</li>
+<li>Various functions and data can be bundled together</li>
+</ul>
+<p>The potential really lies in the last item. Aside from a standalone data file you can add comments and metadata to this file to explain to the recipient what they are actually getting. You can also include functions that operate on the data or were used preprocessing and cleaning of the data.</p>
+<p>I created a function, which is still in its infancy, to capture some of this idea. I was hoping to get other insights on how this could be useful. The notes part was added since it is hard to capture input calling it from knitr, not really a part of the function. Some functionality would also be useful to allow it to only save out a subset of the workspace.</p>
+<pre class="r"><code>library(plyr)
+
+write.manifest &lt;- function(hist = F, file = stop(&quot;'file' must be specified&quot;)) {
+  loc &lt;- setdiff(ls(envir = .GlobalEnv), c('read.manifest', 'write.manifest'))
+  evl &lt;- function(x) eval(parse(text = x))
+  print('Comments: ')
+  notes &lt;- scan(what = character(), quiet = T)
+  if (length(notes) == 0) notes &lt;- 'These are the notes you would have typed to explain the data.'
+
+  manifest &lt;- list(summary = ldply(loc, function(a) c(name = a, 
+                                                      class = class(evl(a)), 
+                                                      type = typeof(evl(a)), 
+                                                      mode = mode(evl(a)), 
+                                                      size = object.size(evl(a)))),
+                   session = sessionInfo(),
+                   time = Sys.time(),
+                   createdby = Sys.getenv()[['USER']],
+                   notes = paste(notes, collapse = ' '))
+  
+  manifest$history &lt;- if (hist) readLines('.RHistory') else NULL
+  
+  loc &lt;- c(loc, 'manifest')
+  save(list = loc, file = file)
+}</code></pre>
+<p>Now to show how this would work lets create some simple data.</p>
+<pre class="r"><code>x &lt;- 1
+y &lt;- 2
+z &lt;- 3
+
+myData &lt;- cars
+
+myData$date &lt;- Sys.Date() + sample(1:10, nrow(myData), replace = TRUE)
+
+myData2 &lt;- myData[myData$date &gt; Sys.Date()+1, ]
+
+myData2$rand &lt;- sample(c(x, y, z), nrow(myData2), replace = TRUE)</code></pre>
+<p>We now have three variables in our workspace. If I were to send this data out to someone it would not make much sense. Instead of using the save method lets create the output using the manifest. Ignore the comments, it makes more sense when you are running interactively.</p>
+<pre class="r"><code>write.manifest(file = 'x.RData')</code></pre>
+<pre><code>## [1] &quot;Comments: &quot;</code></pre>
+<p>Now let’s act like we are the recipients of this data.</p>
+<pre class="r"><code># Clear our workspace.
+rm(list = ls())
+ls()</code></pre>
+<pre><code>## character(0)</code></pre>
+<pre class="r"><code>read.manifest &lt;- function(file) {
+  load(file, envir = .GlobalEnv)
+  disp &lt;- paste('The file ' , file, ' was created by ', manifest$createdby, 
+                ' on ', manifest$time, '.', sep = '')
+  message(disp)
+  cat('\n')
+  message(manifest$notes)
+  cat('\n')
+  manifest['summary']
+}
+
+
+
+read.manifest('x.RData')</code></pre>
+<pre><code>## The file x.RData was created by kdarrell on 2014-04-20 10:12:04.</code></pre>
+<pre><code>## These are the notes you would have typed to explain the data.</code></pre>
+<pre><code>## $summary
+##       name      class      type      mode size
+## 1 metadata       list      list      list  800
+## 2   myData data.frame      list      list 2304
+## 3  myData2 data.frame      list      list 2808
+## 4        x  character character character   96
+## 5        y    numeric    double   numeric   48
+## 6        z    numeric    double   numeric   48</code></pre>
+<pre class="r"><code>ls()</code></pre>
+<pre><code>## [1] &quot;manifest&quot;      &quot;metadata&quot;      &quot;myData&quot;        &quot;myData2&quot;      
+## [5] &quot;read.manifest&quot; &quot;x&quot;             &quot;y&quot;             &quot;z&quot;</code></pre>
+<pre class="r"><code>manifest$summary</code></pre>
+<pre><code>##       name      class      type      mode size
+## 1 metadata       list      list      list  800
+## 2   myData data.frame      list      list 2304
+## 3  myData2 data.frame      list      list 2808
+## 4        x  character character character   96
+## 5        y    numeric    double   numeric   48
+## 6        z    numeric    double   numeric   48</code></pre>
+<p>You can also see the session that was used to build the data.</p>
+<pre class="r"><code>manifest$session</code></pre>
+<pre><code>## R version 3.1.0 (2014-04-10)
+## Platform: x86_64-apple-darwin13.1.0 (64-bit)
+## 
+## locale:
+## [1] en_US.UTF-8/en_US.UTF-8/en_US.UTF-8/C/en_US.UTF-8/en_US.UTF-8
+## 
+## attached base packages:
+## [1] stats     graphics  grDevices utils     datasets  methods   base     
+## 
+## other attached packages:
+## [1] plyr_1.8.1
+## 
+## loaded via a namespace (and not attached):
+## [1] evaluate_0.5.3   formatR_0.10     knitr_1.5        Rcpp_0.11.1     
+## [5] rmarkdown_0.1.77 stringr_0.6.2    tools_3.1.0      yaml_2.1.11</code></pre>
+<p>There were other things I thought that would be useful to add to this train of thought as well, it would be nice to check for comments on every R object being written to this file. If there are no comments it should prompt you to explain what the object is. If you have never used comments before they are pretty easy to grasp.</p>
+<pre class="r"><code>value &lt;- 1
+value</code></pre>
+<pre><code>## [1] 1</code></pre>
+<pre class="r"><code>comment(value)</code></pre>
+<pre><code>## NULL</code></pre>
+<pre class="r"><code>comment(value) &lt;- 'This value is not useful but the example may be.'
+
+value</code></pre>
+<pre><code>## [1] 1</code></pre>
+<pre class="r"><code>comment(value)</code></pre>
+<pre><code>## [1] &quot;This value is not useful but the example may be.&quot;</code></pre>
+<div id="changning-directions" class="section level3">
+<h3>Changing Directions</h3>
+<p>At the onset this was what I thought would be very useful. As with any learning experience or solving any problem you usually end up facing a greater learning experience or a larger problem yet to solve but slightly more capable. When I got to this point I thought it would be useful to see more about the data than just some comments, size and type. My first idea was to add a list of each variable that has some informative summary to display, the comment above would be the first go. I think I know how to go about this and it should not bring much difficulty. After thinking more about it though, I thought it would be really useful to capture how the data was created, this way you could recreate the data yourself, or at least inspect how it was done, maybe even modify it at some intermediate point.</p>
+<p>One interesting feature of R is that it captures the history of what you do inside its interpreter. The one downside I still need to figure out is how to get it to write to the .Rhistory file real time instead of storing it and writing once the session closes. (At least I think this is what it is doing, I still need to do some exploration)</p>
+<p>Once the .Rhistory file has been created we can read it in.</p>
+<pre class="r"><code>read.hist &lt;- function() {
+  hist &lt;- readLines('.Rhistory')
+
+  # Comments id
+  comments_index &lt;- gregexpr('^#', hist, perl = T) == 1
+  comments &lt;- hist[comments_index]
+  hist &lt;- hist[!comments_index]
+
+  # Does not account for for loops
+
+  # Break the code up into assignments
+  assignments &lt;- grep('&lt;-', hist, value = TRUE)
+  assignments &lt;- grep(&quot;'&lt;-'&quot;, assignments, value = TRUE, invert = TRUE)
+  assignments &lt;- grep('&quot;&lt;-&quot;', assignments, value = TRUE, invert = TRUE)
+  assignments &lt;- strsplit(assignments, '&lt;-')
+
+  history &lt;- list(code = hist, comments = comments, 
+                  name = lapply(assignments, `[`, 1),
+                  value = lapply(assignments, `[`, 2))
+  
+  # Need better cleaning of leading and trailing spaces
+  last &lt;- function(str) substr(str, nchar(str), nchar(str))
+  first &lt;- function(str) substr(str, 1, 1)
+  
+  history$name &lt;- ifelse(last(history$name) == ' ', 
+                         substr(history$name, 1, nchar(history$name) - 1), 
+                         history$name)
+  history$value &lt;- ifelse(first(history$value) == ' ', 
+                          substr(history$value, 2, nchar(history$value)), 
+                          history$value)
+  history$name &lt;- unlist(history$name)
+  history$value &lt;- unlist(history$value)
+  history
+}
+
+history &lt;- read.hist()</code></pre>
+<p>You can now use this history to create the history of any data element. I had the sense that you could use attach the code for this purpose. However most of the time I realize that parts of the code may have been added via the command line as a quick fix. This may be a problem with some of the idioms around R, check out this <a href="http://shape-of-code.coding-guidelines.com/2013/02/22/does-native-r-usage-exist/">blog</a> for more info. A script is kind of like a claim that this was the process, it can, but should’t, be fudged. The history cannot be fudged.</p>
+<p>To get the history of a variable (value, list, data frame, etc) we need to construct more machinery to process the history file.</p>
+<p>Can we recreate how we arrived at the small analysis above? The final data set under consideration was data2. How did it come to be?</p>
+<pre class="r"><code>origin &lt;- function(var, all = F) {
+  name &lt;- lapply(strsplit(history$name, split = '$', fixed = T), `[`, 1)
+  x &lt;- which(var == name)
+  if( length(x) == 0) return(c())
+  if (all) {
+    unique(paste(history$name[x], '&lt;-', history$value[x]))
+  } else { 
+    head(paste(history$name[x], '&lt;-', history$value[x]), 1)
+  }
+}
+
+
+origin('myData2')</code></pre>
+<pre><code>## [1] &quot;myData2 &lt;- myData[myData$date &gt; Sys.Date()+1, ]&quot;</code></pre>
+<p>We can see its origin or also trace it’s history.</p>
+<pre class="r"><code>origin('myData2', T)</code></pre>
+<pre><code>## [1] &quot;myData2 &lt;- myData[myData$date &gt; Sys.Date()+1, ]&quot;                  
+## [2] &quot;myData2$rand &lt;- sample(c(x, y, z), nrow(myData2), replace = TRUE)&quot;</code></pre>
+<p>This piece of data stems from another piece of data though. We can see its origins by running the same code on this set but it would be useful if there was a recursive way to do this.</p>
+<pre class="r"><code>origin('myData')</code></pre>
+<pre><code>## [1] &quot;myData &lt;- cars&quot;</code></pre>
+<pre class="r"><code>origin('myData', T)</code></pre>
+<pre><code>## [1] &quot;myData &lt;- cars&quot;                                                        
+## [2] &quot;myData$date &lt;- Sys.Date() + sample(1:10, nrow(myData), replace = TRUE)&quot;</code></pre>
+<pre class="r"><code>condense &lt;- function(str) {
+  if(is.null(origin(str))) return(str)
+  # Just take the first and call recursively.
+  elem &lt;- gregexpr('$', str, fixed = T)[[1]][1]
+  if (elem &gt; 0) {
+    chars &lt;- strsplit(str, NULL)[[1]]
+    ind &lt;- chars %in% c(letters, LETTERS, as.character(0:9))
+    # The plus one is to offset the dollar sign
+    ind[1:elem] &lt;- TRUE
+    str &lt;- paste(chars[c(1:(elem-1), min(which(!ind)):nchar(str))], collapse = '')
+  }
+  str
+}
+
+# Adds infix functions predicate, eg(&lt;-, &lt;&lt;-, +)
+is.func &lt;- function(str) {
+  if (exists(str)) {
+    eval(parse(text = paste('is.function(`', str, '`)', sep = '')))
+  } else {
+    FALSE
+  }
+}
+
+
+#rm(myData, myData2)
+
+depends &lt;- function(str) {
+  x &lt;- condense(origin(str))
+  if(!is.null(x)) {
+    x &lt;- all.names(parse(text = x), unique = TRUE)
+    x &lt;- setdiff(x, str)
+    x &lt;- x[!unlist(lapply(x, is.func))]
+    if (length(x) &gt; 0) unique(c(x, depends(x))) else x
+  } else {
+    str
+  }
+}</code></pre>
+<p>Now lets try this out.</p>
+<pre class="r"><code>depends('myData2')</code></pre>
+<pre><code>## [1] &quot;myData&quot; &quot;cars&quot;</code></pre>
+<p>There are some major problems starting to appear. Having to close R to persist the session’s history to the .Rhistory file is a real burden, it means you can’t work with an objects history interactively. You are forced to close everything up before writing utilizing any of this, while it would be very useful for interactiveness, tracing back through your current analysis. There is also a lot of intelligent code needed to read through all of the R code and determine what is really part of the object’s history, did you run something twice because you wanted to walk back through it all or does it recurse on itself, things like loops also become a big deal here. R is a very complicated language (or it gives you the freedom to do some very strange things that are hard to deal with in this manner).</p>
+<p>I realized after writing a few more functions that I was basically creating a layer to sit on top and analysis all of my code, re-parsing the whole language is not the path I want to go down. So I think parts of this may be useful but the overall design needs some thought. I would enjoy hearing if anyone else has ever done this or has any ideas of how implement this or requirements that may be useful. I do think that the early portion of adding metadata to your output files is pretty sound though.</p>
+<div class="references">
+
+</div>
+</div>
+
+
+</div>
+
+<script>
+
+// add bootstrap table styles to pandoc tables
+$(document).ready(function () {
+  $('tr.header').parent('thead').parent('table').addClass('table table-condensed');
+});
+
+</script>
+
+<!-- dynamically load mathjax for compatibility with --self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://c328740.ssl.cf1.rackcdn.com/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>

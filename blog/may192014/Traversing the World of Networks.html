@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<!-- saved from url=(0014)about:internet -->
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+<meta http-equiv="x-ua-compatible" content="IE=9" >
+
+<title>Networks</title>
+
+<link rel="stylesheet" type="text/css" href="../../stylesheets/blog.css">
+
+<!-- Styles for R syntax highlighter -->
+<style type="text/css">
+   pre .operator,
+   pre .paren {
+     color: rgb(104, 118, 135)
+   }
+
+   pre .literal {
+     color: rgb(88, 72, 246)
+   }
+
+   pre .number {
+     color: rgb(0, 0, 205);
+   }
+
+   pre .comment {
+     color: rgb(76, 136, 107);
+   }
+
+   pre .keyword {
+     color: rgb(0, 0, 255);
+   }
+
+   pre .identifier {
+     color: rgb(0, 0, 0);
+   }
+
+   pre .string {
+     color: rgb(3, 106, 7);
+   }
+</style>
+
+    <link rel="stylesheet" type="text/css" href="../../stylesheets/stylesheet.css" media="screen" />
+    <link rel="stylesheet" type="text/css" href="../../stylesheets/pygment_trac.css" media="screen" />
+    <link rel="stylesheet" type="text/css" href="../../stylesheets/print.css" media="print" />
+
+<!-- R syntax highlighter -->
+<script src="../../javascripts/r.js"></script>
+
+
+</head>
+
+<body>
+
+<div class="container">
+
+
+    <header>
+      <div class="container">
+        <h1>Traversing the Network</h1>
+        <h2></h2>
+
+<h4 class="author"><em>Kenny Darrell</em></h4>
+<h4 class="date"><em>May 19, 2014</em></h4>
+        </section>
+      </div>
+    </header>
+
+
+
+
+<p>The areas of Graph Theory, Link Analysis and Social Network Analysis all hinge on similar underlying concepts. I find this area fascinating in respects to data science. One issue in this area is the large number of very diverse technologies. In many ways a more limited set of tools would free you to think about the problem at hand. If you have no constraints there are probably to many choices bogging you down.</p>
+<p>If you need a <a href="http://en.wikipedia.org/wiki/Graph_database">graph database</a> there are lots of options:</p>
+<ul>
+<li><a href="http://www.neo4j.org/">Neo4j</a></li>
+<li><a href="http://thinkaurelius.com/">Titan</a></li>
+<li><a href="http://www.objectivity.com/">InfiniteGraph</a></li>
+<li><a href="https://github.com/twitter/flockdb">FlockDB</a></li>
+</ul>
+<p>There are even different options for query languages such as <a href="http://www.neo4j.org/learn/cypher">Cypher</a> and <a href="https://github.com/tinkerpop/gremlin/wiki">Gremlin</a> and even the whole <a href="http://www.tinkerpop.com/">Tinkerpop</a> stack to do all sorts of tasks.</p>
+<p>For tools to do real analytic work there are different options. I think this consists of two main types.</p>
+<p>Graph Processing engines</p>
+<ul>
+<li><a href="http://thinkaurelius.github.io/faunus/">Fuanus</a></li>
+<li><a href="https://giraph.apache.org/">Giraph</a></li>
+<li><a href="http://graphlab.org/projects/index.html">GraphLab</a></li>
+<li><a href="http://amplab.github.io/graphx/">Graphx</a></li>
+</ul>
+<p>Graph Analytic libraries</p>
+<ul>
+<li><a href="http://igraph.org/redirect.html">igraph</a>
+<ul>
+<li><a href="http://igraph.org/redirect.html">r</a><br /></li>
+<li><a href="http://igraph.org/python/">python</a></li>
+</ul></li>
+<li><a href="https://networkx.github.io/">networkx</a></li>
+<li><a href="http://statnet.org/">statnet</a></li>
+</ul>
+<p>As well as libraries in most general purpose languages</p>
+<ul>
+<li><a href="https://github.com/JuliaLang/Graphs.jl">Julia</a></li>
+<li><a href="https://github.com/prismatic/plumbing">Clojure</a></li>
+<li><a href="http://ogre.clojurewerkz.org/">Clojure</a></li>
+<li><a href="https://github.com/scala-graph/scala-graph">Scala</a></li>
+<li><a href="http://www.boost.org/doc/libs/1_55_0/libs/graph/doc/index.html">C++</a></li>
+<li><a href="http://snap.stanford.edu/snap/">SNAP</a></li>
+</ul>
+<p>Once you do your analysis you need to visualize the data. There are tons of tools to visualize networks that offer point and click functionality:</p>
+<ul>
+<li><a href="https://gephi.org/">Gephi</a></li>
+<li><a href="http://pajek.imfm.si/doku.php">Pajek</a></li>
+</ul>
+<p>If you need to make your own plots programmatically javascript has tons of tools:</p>
+<ul>
+<li><a href="http://visjs.org/">visjs</a></li>
+<li><a href="http://sigmajs.org/">sigmajs</a></li>
+<li><a href="http://felix-kling.de/JSNetworkX/">jsnetworkx</a></li>
+<li><a href="http://d3js.org/">d3</a></li>
+</ul>
+<p>What about file formats, there are tons here as well depending on what tool generates the data, can the data change over time, is it directed, can nodes have attributes, can edges? To many choices. Here is actually a <a href="https://gephi.org/users/supported-graph-formats/">site</a> of the options you can use inside of Gephi. I am actually getting overwhelmed with the shear number of different types of tools, much less the specific tools in that domain.</p>
+<p>I want to try to walk through a way that you can utilize some of the best methods and tools and have them all communicate with each other.</p>
+
+<h3>Getting and Loading the Data</h3>
+<p>The first thing to address is file formats for graphs. This is really about storing graphs which graph databases would come to mind first but that is a bigger topic. One that allows lots of flexibility in the types of graphs you describe is the <a href="http://gexf.net/format/">gexf</a> format. This was created by Gephi. It may be a little more complicated that some of the simpler methods but it adds a lot of flexibility. As an example the amazing <a href="http://moviegalaxies.com/">site</a> has gexf files related to movies. I thought it would be very fitting to use The Social Network but it was not there so we have to settle for Pulp Fiction.</p>
+<p>Once we have this file we can use the rgexf package to load the data into R.</p>
+<pre class="r"><code>require(rgexf)
+require(httr)
+options(stringsAsFactors = F)
+
+# Get the gexf file from the site an place it into a file
+gex &lt;- as.character(GET('http://media.moviegalaxies.com/gexf/660.gexf'))
+cat(gex, file = 'movie.gexf')
+
+# Read it in with the gexf reader
+pulp &lt;- read.gexf('movie.gexf')
+
+# Investigate file
+class(pulp)</code></pre>
+<pre><code>## [1] &quot;gexf&quot;</code></pre>
+<pre class="r"><code>summary(pulp)</code></pre>
+<pre><code>## GEXF graph object</code></pre>
+<pre><code>## $`N of nodes`
+## [1] 38
+## 
+## $`N of edges`
+## [1] 102
+## 
+## $`Node Attrs`
+## NULL
+## 
+## $`Edge Attrs`
+## NULL</code></pre>
+<pre class="r"><code># plot(pulp)</code></pre>
+
+
+
+<div class="separator" style="clear: both; text-align: center;"><img src="gexfplot.png" height="300" width="550"></a></div>
+
+
+<p>I am not sure how to go about including the plot here. This plot is okay, it is using sigmajs, not as great as what Gephi could have done but it is in the browser over stuck in Gephi. Once we have this graph though what do we do with it. Usually we want to know something about the structure of the network. Who is the most central person in the network, does it have any interesting features, does it follow a power law distribution. The file type and the plot have no relevance here, technically I guess you could use the plot to get at these with the old pencil and paper method. We need to turn our network from its gexf form into something more capable for analysis.</p>
+<p>Lets try igraph. The gexf package comes with a function to transform gexf to igraph. There is also the reverse to go from igraph to a gexf which can then be consumed by Gephi.</p>
+<pre class="r"><code>library(igraph)
+
+# Transform to igraph class
+ipulp &lt;- gexf.to.igraph(pulp)
+
+plot(ipulp)</code></pre>
+
+
+
+
+<div class="separator" style="clear: both; text-align: center;"><img src="net.png" height="300" width="550"></a></div>
+
+
+
+
+<p>The plot looks pretty bad but we were interested in analysis over aesthetics.</p>
+<pre class="r"><code># Analysis at the individual level
+scores &lt;- data.frame(alpha = alpha.centrality(ipulp),
+                     authority = authority.score(ipulp)[[1]],
+                     closeness = closeness(ipulp))
+head(scores)</code></pre>
+<pre><code>##              alpha authority closeness
+## BRETT            1    0.2136   0.01250
+## BUDDY            1    0.0790   0.01075
+## BUTCH            2    0.3828   0.01429
+## CAPT KOONS       3    0.1124   0.01250
+## ED SULLIVAN      1    0.0790   0.01075
+## ENGLISH DAVE     3    0.1763   0.01053</code></pre>
+<pre class="r"><code># Analysis at the network level
+cliques(ipulp, min = 6, max = 7)</code></pre>
+<pre><code>## [[1]]
+## [1]  1  3 14 17 18 27
+## 
+## [[2]]
+## [1]  1  3 14 17 18 32
+## 
+## [[3]]
+## [1]  1  3 14 17 27 32
+## 
+## [[4]]
+## [1]  1  3 14 18 27 32
+## 
+## [[5]]
+## [1]  1  3 17 18 27 32
+## 
+## [[6]]
+## [1]  1 14 17 18 27 32
+## 
+## [[7]]
+## [1]  3  4 20 21 32 35
+## 
+## [[8]]
+## [1]  3 14 17 18 27 32
+## 
+## [[9]]
+## [1] 11 14 16 22 25 32
+## 
+## [[10]]
+## [1]  1  3 14 17 18 27 32</code></pre>
+
+
+<h3>Plotting with D3</h3>
+<p>Now that we did the math thing and know everything there is to know about this network we want to present our findings. The plot from igraph was pretty rough, the plot from gexf was good but only offered us the ability to zoom in and out and gave us some over capability. We need to give people the ability to interact with the presentation. What we really need here some d3. There is always a package to help us, here it comes in the form of <a href="http://christophergandrud.github.io/d3Network/">d3network</a>. There is a pretty good tutorial on the website.</p>
+<p>We need a way to transform our igraph into the appropriate data structure for d3. The following function takes an igraph class and returns the data frame to send to d3Network plots.</p>
+<pre class="r"><code>igraph_2_d3 &lt;- function(igr) {
+  Source &lt;- c()
+  Target &lt;- c()
+  
+  for (i in seq(length(E(igr)))) {
+    e &lt;- get.edge(igr, i)
+    x &lt;- V(igr)
+    
+    s &lt;- if(is.null(x[e[1]]$name)) x[e[1]] else x[e[1]]$name
+    t &lt;- if(is.null(x[e[2]]$name)) x[e[2]] else x[e[2]]$name
+    Source &lt;- c(Source, s)
+    Target &lt;- c(Target, t)
+  }
+  
+  data.frame(Source, Target)
+}
+
+
+library(d3Network)</code></pre>
+<p>Now we can just use one of the network plots provided by the package and we get an interactive network that is quite fun to play with.</p>
+
+<pre class="r"><code>d3SimpleNetwork(igraph_2_d3(ipulp))</code></pre>
+
+<div style="text-align:center;"> <iframe src="http://darrkj.github.io/home/blog/may192014/grf" width="550" height="450"></iframe></div>
+
+
+<p>We can add more details by changing the the size and color of nodes and edges to have certain features from out analysis, for instance size the nodes by there closeness and color them to differentiate the 7-clique from the rest of the network.</p>
+<p>If you are using RStudio you can use this function to make the plot appear in the viewer, which is very useful having everything in one IDE.</p>
+<pre class="r"><code>d3plot &lt;- function(network, h = 300, w = 700) {
+  # Create temporary html file
+  htmlFile &lt;- tempfile(fileext=&quot;.html&quot;)
+  
+  if(is.igraph(network)) network &lt;- igraph_2_d3(network)
+  # Write d3 network viz to html file
+  d3SimpleNetwork(network, height = h, width = w, file = htmlFile)
+  
+  # (code to write some content to the file)
+  rstudio::viewer(htmlFile)
+}
+
+d3plot(barabasi.game(20))</code></pre>
+
+
+
+<h3>Persisting with Neo4j</h3>
+<p>I think my next step would be to persist this data to a graph database. I am going to use Neo4j as the database. Once you <a href="http://www.neo4j.org/download">download</a> and unzip you just need to run the following at the command line.</p>
+<pre><code>bin/neo4j start</code></pre>
+<p>To persist the data we need to be able to talk to the database. I looked around and found a few older examples but none actually worked. I think you could use rcurl but I am just going to write my own using system commands as a first go.</p>
+<pre class="r"><code>library(bitops)
+library(RCurl)
+library(rjson)
+
+# Put data into format for neo4j
+neo_pulp &lt;- igraph_2_d3(ipulp)
+head(neo_pulp)</code></pre>
+<pre><code>##   Source    Target
+## 1  BRETT MARSELLUS
+## 2  BRETT    MARVIN
+## 3  BRETT     ROGER
+## 4  BRETT   VINCENT
+## 5  BUDDY       MIA
+## 6  BUDDY   VINCENT</code></pre>
+<pre class="r"><code># List of all nodes
+nodes &lt;- unique(c(neo_pulp$Source, neo_pulp$Target))
+head(nodes)</code></pre>
+<pre><code>## [1] &quot;BRETT&quot;      &quot;BUDDY&quot;      &quot;BUTCH&quot;      &quot;FABIENNE&quot;   &quot;FOURTH MAN&quot;
+## [6] &quot;GAWKER #2&quot;</code></pre>
+<pre class="r"><code># Create some common strings.
+neoA &lt;- 'Accept:application/json'
+neoB &lt;- 'http://localhost:7474/db/data/node/'
+neoC &lt;- 'Content-Type:application/json'
+
+# Common helper functions.
+qy &lt;- function(x) fromJSON(paste(system(x, intern = T), collapse = ' '))
+prep &lt;- function(lst) paste(&quot;'&quot;, toJSON(lst), &quot;'&quot;, sep = '')
+
+
+# Function to write a node to a database.
+create_node &lt;- function(at) {
+  x &lt;- qy(paste('curl -H ', neoA, ' -H ', neoC, ' -X POST -d ', 
+                prep(at), ' ', neoB, sep = ''))$self
+  as.integer(gsub(neoB, '', x))
+}
+
+# Function to pull node from database.
+get_node &lt;- function(id) {
+  stopifnot(is.numeric(id))
+  qy(paste('curl -H ', neoA, ' ', neoB, id, sep = ''))$data
+}
+
+# Add node and check it exists.
+lookup &lt;- create_node(list(name = nodes[1]))
+get_node(lookup)</code></pre>
+<pre><code>## $name
+## [1] &quot;BRETT&quot;</code></pre>
+<pre class="r"><code># Need to create a lookup table, nodes are key: value
+nodes_lk &lt;- c()
+
+# Now we just need to loop through all nodes and add them to the database.
+for (i in nodes) {
+  nodes_lk &lt;- c(nodes_lk, create_node(list(name = i)))
+}
+
+# Check the lookup table
+get_node(nodes_lk[10])</code></pre>
+<pre><code>## $name
+## [1] &quot;JULES&quot;</code></pre>
+<pre class="r"><code># You can query the database with the following query.
+# MATCH (n) OPTIONAL MATCH (n)-[r]-() DELETE n,r;
+
+# Function to create edges between two nodes.
+create_edge &lt;- function(to, from) {
+  from &lt;- nodes_lk[which(nodes == from)]
+  to &lt;- nodes_lk[which(nodes == to)]
+  x &lt;- system(paste('curl -H ', neoA, ' -H ', neoC, ' -X POST -d ', 
+    '\'{&quot;to&quot;: &quot;', neoB, to, '&quot;, &quot;type&quot;: &quot;KNOWS&quot;}\' ', neoB, from, 
+    '/relationships', sep = ''), intern = T)
+}
+
+
+# Add each edge to the database
+for (i in 1:nrow(neo_pulp)) {
+  create_edge(neo_pulp$Target[i], neo_pulp$Source[i])
+}</code></pre>
+
+<p>This is what the console looks like in the Neo4j dashboard.</p>
+
+
+
+<div class="separator" style="clear: both; text-align: center;"><img src="neoplot.png" height="300" width="600"></a></div>
+
+
+
+<h3>Conclusion</h3>
+<p>I think I may have actually gone in a very strange order. I started with data from Gephi and did some work to get it into R. After doing some analysis with I plot the data in D3. Then put the data in a graph database. Usually you start with data in a database then do the analysis and then one of the either presentation graphics in Gephi or interactive graphics in D3. It does do what I had hoped in making a bunch of desperate functionality together.</p>
+<p>Another technology that I have not worked with here are the large scale graph processing frameworks like Graphx. I have managed to get <a href="http://spark.apache.org/">spark</a> setup so that I can try Graphx but there seems to be a lot more to learn before interacting with it.</p>
+<div class="references">
+
+
+</div>
+
+
+</div>
+
+<script>
+
+// add bootstrap table styles to pandoc tables
+$(document).ready(function () {
+  $('tr.header').parent('thead').parent('table').addClass('table table-condensed');
+});
+
+</script>
+
+<!-- dynamically load mathjax for compatibility with --self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://c328740.ssl.cf1.rackcdn.com/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>
