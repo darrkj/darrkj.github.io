@@ -1,0 +1,72 @@
+<canvas id="myCanvas" width="400" height="300"></canvas>
+
+<div onclick="clickHandler2();">Clicks Here</div>
+
+<div onclick="clickHandler();">Random</div>
+
+
+<script>
+var mode = 0;
+//Math.floor( Math.random() * 7 )
+var destA = 7;
+var destB = 6;
+var startA = 1;
+var startB = 1;
+var SIZE = 20;
+var X = 30;
+var Y = 25;
+var CELLS = X * Y;
+var colors = ['#000000', '#1A0000', '#330000', '#4C0000', '#660000', '#800000',
+ 		          '#990000', '#B20000', '#CC0000', '#E60000', '#FF0000', '#FF1919',
+              '#FF3333', '#FF4D4D', '#FF6666', '#FF8080', '#FF9999', '#FFB2B2', 
+              '#FFCCCC'];
+
+
+function makeGrid(x, y) {
+  var grid = [];
+  for(var i = 0; i < x; i++) {
+    grid[i] = [];
+    for(var j = 0; j < y; j++) {
+      grid[i][j] = 0;
+    }
+  }
+  return t;
+}
+  
+var matrix = [];
+for(var i = 0; i < X; i++) {
+    matrix[i] = [];
+    for(var j = 0; j < Y; j++) {
+      if ((j + i) % 2 == 0) {
+        matrix[i][j] = 1;
+      }
+      else {
+        matrix[i][j] = 0;
+      }
+    }
+}
+
+
+function clickHandler2() {
+  var canvas=document.getElementById('myCanvas');
+  var ctx=canvas.getContext('2d');
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+ 
+  for(var i = 0; i < X; i++) {
+    for(var j = 0; j < Y; j++) {
+      var index = Math.floor( Math.random() * 18 )
+      if (i == destA & j == destB) {
+        ctx.fillStyle = '#00FF00'
+      } else if (i == startA & j == startB) {
+        ctx.fillStyle = '#FFFF00'
+      } else if (matrix[i][j] == 1) {
+        ctx.fillStyle = colors[index];
+      } else {
+        ctx.fillStyle = colors[index];
+      }
+      ctx.fillRect(i*SIZE, j*SIZE, SIZE, SIZE);
+    }
+  } 
+    
+}
+</script> 
