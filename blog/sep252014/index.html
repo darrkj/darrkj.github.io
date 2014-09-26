@@ -31,11 +31,11 @@
 
     <header>
       <div class="container">
-        <h1>Simplifying Things with Neo4j</h1>
+        <h1>Interactive Movie Network</h1>
         <h2></h2>
 
 <h4 class="author"><em>Kenny Darrell</em></h4>
-<h4 class="date"><em>July 4, 2014</em></h4>
+<h4 class="date"><em>Sept 25, 2014</em></h4>
         </section>
       </div>
     </header>
@@ -43,7 +43,7 @@
 
 
 
-<p>I just created an account on <a href="https://www.shinyapps.io/">shinyapps</a>. It seems pretty cool to be able to launch an app that can be hosted more globally. Taking a break from my last few posts about temporal data and jump back to one of my other interests, graph data. I used the graph of <a href="http://moviegalaxies.com/movies/660-Pulp-Fiction">Pulp Fiction</a> from <a href="moviegalaxies.com">moviegalaxies.com</a>. I thought it would be cool to create an interactive application using <a href="http://d3js.org/">d3</a> and <a href="http://shiny.rstudio.com/">Shiny</a>.</p>
+<p>I just created an account on <a href="https://www.shinyapps.io/">shinyapps</a>. It seems pretty cool to be able to launch an app that can be hosted more globally. Taking a break from my last few posts about temporal data and jump back to one of my other interests, graph data. I used the graph of <a href="http://moviegalaxies.com/movies/660-Pulp-Fiction">Pulp Fiction</a> from <a href="www.moviegalaxies.com">moviegalaxies.com</a>. I thought it would be cool to create an interactive application using <a href="http://d3js.org/">d3</a> and <a href="http://shiny.rstudio.com/">Shiny</a>.</p>
 <pre class="r"><code>require(rgexf)
 require(httr)
 library(XML)
@@ -173,6 +173,9 @@ shinyUI(fluidPage(
 
 
 </div>
+
+
+<div style="text-align:center;"> <iframe src="https://darrkj.shinyapps.io/ioApp/" width="600" height="700"></iframe></div>
 
 
 
