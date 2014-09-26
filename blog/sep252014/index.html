@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<!-- saved from url=(0014)about:internet -->
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+<meta http-equiv="x-ua-compatible" content="IE=9" >
+
+<title>Movie Net</title>
+
+
+<link rel="stylesheet" type="text/css" href="../../stylesheets/blog.css">
+
+<!-- Styles for R syntax highlighter -->
+<link rel="stylesheet" type="text/css" href="../../stylesheets/blog2.css">
+
+
+    <link rel="stylesheet" type="text/css" href="../../stylesheets/stylesheet.css" media="screen" />
+    <link rel="stylesheet" type="text/css" href="../../stylesheets/pygment_trac.css" media="screen" />
+    <link rel="stylesheet" type="text/css" href="../../stylesheets/print.css" media="print" />
+
+<!-- R syntax highlighter -->
+<script src="../../javascripts/r.js"></script>
+
+
+</head>
+
+<body>
+
+<div class="container">
+
+
+    <header>
+      <div class="container">
+        <h1>Simplifying Things with Neo4j</h1>
+        <h2></h2>
+
+<h4 class="author"><em>Kenny Darrell</em></h4>
+<h4 class="date"><em>July 4, 2014</em></h4>
+        </section>
+      </div>
+    </header>
+
+</div>
+
+
+<p>I just created an account on <a href="https://www.shinyapps.io/">shinyapps</a>. It seems pretty cool to be able to launch an app that can be hosted more globally. Taking a break from my last few posts about temporal data and jump back to one of my other interests, graph data. I used the graph of <a href="http://moviegalaxies.com/movies/660-Pulp-Fiction">Pulp Fiction</a> from <a href="moviegalaxies.com">moviegalaxies.com</a>. I thought it would be cool to create an interactive application using <a href="http://d3js.org/">d3</a> and <a href="http://shiny.rstudio.com/">Shiny</a>.</p>
+<pre class="r"><code>require(rgexf)
+require(httr)
+library(XML)
+options(stringsAsFactors = FALSE)
+
+# Site of movie files.
+home &lt;- 'moviegalaxies.com/'
+# Directory on server of gexf files.
+g &lt;- 'http://media.moviegalaxies.com/gexf'
+
+# Init structure to store movie info.
+info &lt;- list()
+
+# Loop over all movies, hack becuase I have no idea how to start,
+# the have names that are random numbers from 1 to 914.
+for (i in 1:925) {
+  
+  html &lt;- strsplit(as.character(GET(paste(home, i, sep = ''))), '\n')[[1]]
+  
+  title &lt;- grep('og:title', html, value = T)[1]
+  title &lt;- gsub('\&quot; /&gt; ', '', strsplit(title, ' - ')[[1]][2])
+  gex &lt;- grep('com/gexf', html, value = T)
+  gex &lt;- strsplit(gex, 'gexf')[[1]][2]
+  gex &lt;- paste(g, gex, 'gexf', sep = '')
+  misc &lt;- grep('keywords', html, value = T)[1]
+  
+  # There is an issue with 'Face/Off' so take out /
+  if (i == 297) title &lt;- 'Face Off'
+  if (title != '') {
+    # Get the gexf file from the site an place it into a file
+    gex &lt;- as.character(GET(gex))
+    cat(gex, file = paste('gex/', title, '.gexf', sep = ''))
+    
+    info[[title]] &lt;- misc
+  }
+  cat(i, title, '\n')
+}
+
+
+
+# Once you have the value and the movie name scrapped from each site that
+# is actually a movie, pull that file from the server.
+ig &lt;- list()
+
+for (i in names(info)) {
+  print(i)
+  # This file is corrupt
+  if (i != &quot;12&quot;) {
+    ig[[i]] &lt;- gexf.to.igraph(read.gexf(paste('gex/', i, '.gexf', sep = '')))
+  }
+}
+
+info &lt;- info[-2]
+
+save(ig, info, file = 'movies.RData')</code></pre>
+<p>You can also embed plots, for example:</p>
+<pre class="r"><code>library(igraph)
+library(d3Network)
+#library(rgexf)
+#.libPaths('/home/likewise-open/CHO/kdarrell/R/x86_64-pc-linux-gnu-library/3.1')
+
+igraph_2_d3 &lt;- function(igr) {
+  Source &lt;- c()
+  Target &lt;- c()
+  
+  x &lt;- V(igr)
+  for (i in seq(length(E(igr)))) {
+    e &lt;- get.edge(igr, i)
+    
+    s &lt;- if(is.null(x[e[1]]$name)) x[e[1]] else x[e[1]]$name
+    t &lt;- if(is.null(x[e[2]]$name)) x[e[2]] else x[e[2]]$name
+    Source &lt;- c(Source, s)
+    Target &lt;- c(Target, t)
+  }
+  
+  data.frame(Source, Target)
+}
+
+load('info.RData')
+load('ig.RData')
+
+
+clean &lt;- function(x) {
+  x &lt;- gsub('&lt;link href=\&quot;/images/favicon.ico\&quot; type=\&quot;image/x-icon\&quot; rel=\&quot;icon\&quot;', '', x)
+  x &lt;- gsub(' /&gt;&lt;link href=\&quot;/images/favicon.ico\&quot; type=\&quot;image/x-icon\&quot; ', '', x)
+  x &lt;- gsub('rel=\&quot;shortcut icon\&quot; /&gt;&lt;meta name=\&quot;keywords\&quot;', '', x)
+  x &lt;- gsub(' content=\&quot;social graph, movies, social network, moviegalaxies, ', '', x)
+  x &lt;- gsub('\&quot; /&gt;', '', x)
+  x &lt;- gsub(',', ',&lt;br&gt;', x)
+  x
+}
+
+shinyServer(function(input, output) {
+  output$networkPlot &lt;- renderPrint({
+    #x &lt;- gexf.to.igraph(read.gexf(paste('gex/', input$x, '.gexf', sep = '')))
+    #cat(info[[input$x]])
+    cat(clean(info[[which(names(info) == input$x)]]))
+    d3SimpleNetwork(igraph_2_d3(ig[[input$x]]), 
+                    width = 500, height = 450,
+                    textColour = 'orange', linkColour = 'red',
+                    parentElement = '#networkPlot')
+  })
+})</code></pre>
+<p>Note that the <code>echo = FALSE</code> parameter was added to the code chunk to prevent printing of the R code that generated the plot.</p>
+<pre class="r"><code>library(shiny)
+load('info.RData')
+
+shinyUI(fluidPage(
+  tags$head(
+    tags$script(src = 'd3.min.js')
+  ),  
+  
+  titlePanel(&quot;Movie Network&quot;),
+  
+  sidebarLayout(
+    sidebarPanel(
+      selectInput('x','Select Movie', setdiff(names(info), &quot;12&quot;))
+    ),
+  
+  mainPanel(
+   # includeHTML(&quot;d3.js&quot;),
+    textOutput('txt', container = div),
+    htmlOutput('networkPlot')
+  )
+ )
+))</code></pre>
+
+
+</div>
+
+
+
+
+
+
+
+<script>
+
+// add bootstrap table styles to pandoc tables
+$(document).ready(function () {
+  $('tr.header').parent('thead').parent('table').addClass('table table-condensed');
+});
+
+</script>
+
+<!-- dynamically load mathjax for compatibility with --self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://c328740.ssl.cf1.rackcdn.com/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>
+

@@ -1,0 +1,146 @@
+---
+title: "Movie Network"
+author: "Kenny Darrell"
+date: "September 25, 2014"
+output: html_document
+---
+
+I just created an account on [shinyapps](https://www.shinyapps.io/). It seems pretty cool to be able to launch an app that can be hosted more globally. Taking a break from my last few posts about temporal data and jump back to one of my other interests, graph data. I used the graph of [Pulp Fiction](http://moviegalaxies.com/movies/660-Pulp-Fiction) from [moviegalaxies.com](moviegalaxies.com). I thought it would be cool to create an interactive application using [d3](http://d3js.org/) and [Shiny](http://shiny.rstudio.com/).
+
+```{r, eval = FALSE}
+require(rgexf)
+require(httr)
+library(XML)
+options(stringsAsFactors = FALSE)
+
+# Site of movie files.
+home <- 'moviegalaxies.com/'
+# Directory on server of gexf files.
+g <- 'http://media.moviegalaxies.com/gexf'
+
+# Init structure to store movie info.
+info <- list()
+
+# Loop over all movies, hack becuase I have no idea how to start,
+# the have names that are random numbers from 1 to 914.
+for (i in 1:925) {
+  
+  html <- strsplit(as.character(GET(paste(home, i, sep = ''))), '\n')[[1]]
+  
+  title <- grep('og:title', html, value = T)[1]
+  title <- gsub('\" /> ', '', strsplit(title, ' - ')[[1]][2])
+  gex <- grep('com/gexf', html, value = T)
+  gex <- strsplit(gex, 'gexf')[[1]][2]
+  gex <- paste(g, gex, 'gexf', sep = '')
+  misc <- grep('keywords', html, value = T)[1]
+  
+  # There is an issue with 'Face/Off' so take out /
+  if (i == 297) title <- 'Face Off'
+  if (title != '') {
+    # Get the gexf file from the site an place it into a file
+    gex <- as.character(GET(gex))
+    cat(gex, file = paste('gex/', title, '.gexf', sep = ''))
+    
+    info[[title]] <- misc
+  }
+  cat(i, title, '\n')
+}
+
+
+
+# Once you have the value and the movie name scrapped from each site that
+# is actually a movie, pull that file from the server.
+ig <- list()
+
+for (i in names(info)) {
+  print(i)
+  # This file is corrupt
+  if (i != "12") {
+    ig[[i]] <- gexf.to.igraph(read.gexf(paste('gex/', i, '.gexf', sep = '')))
+  }
+}
+
+info <- info[-2]
+
+save(ig, info, file = 'movies.RData')
+
+```
+
+You can also embed plots, for example:
+
+```{r, eval=FALSE}
+library(igraph)
+library(d3Network)
+#library(rgexf)
+#.libPaths('/home/likewise-open/CHO/kdarrell/R/x86_64-pc-linux-gnu-library/3.1')
+
+igraph_2_d3 <- function(igr) {
+  Source <- c()
+  Target <- c()
+  
+  x <- V(igr)
+  for (i in seq(length(E(igr)))) {
+    e <- get.edge(igr, i)
+    
+    s <- if(is.null(x[e[1]]$name)) x[e[1]] else x[e[1]]$name
+    t <- if(is.null(x[e[2]]$name)) x[e[2]] else x[e[2]]$name
+    Source <- c(Source, s)
+    Target <- c(Target, t)
+  }
+  
+  data.frame(Source, Target)
+}
+
+load('info.RData')
+load('ig.RData')
+
+
+clean <- function(x) {
+  x <- gsub('<link href=\"/images/favicon.ico\" type=\"image/x-icon\" rel=\"icon\"', '', x)
+  x <- gsub(' /><link href=\"/images/favicon.ico\" type=\"image/x-icon\" ', '', x)
+  x <- gsub('rel=\"shortcut icon\" /><meta name=\"keywords\"', '', x)
+  x <- gsub(' content=\"social graph, movies, social network, moviegalaxies, ', '', x)
+  x <- gsub('\" />', '', x)
+  x <- gsub(',', ',<br>', x)
+  x
+}
+
+shinyServer(function(input, output) {
+  output$networkPlot <- renderPrint({
+    #x <- gexf.to.igraph(read.gexf(paste('gex/', input$x, '.gexf', sep = '')))
+    #cat(info[[input$x]])
+    cat(clean(info[[which(names(info) == input$x)]]))
+    d3SimpleNetwork(igraph_2_d3(ig[[input$x]]), 
+                    width = 500, height = 450,
+                    textColour = 'orange', linkColour = 'red',
+                    parentElement = '#networkPlot')
+  })
+})
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+```{r, eval = F}
+library(shiny)
+load('info.RData')
+
+shinyUI(fluidPage(
+  tags$head(
+    tags$script(src = 'd3.min.js')
+  ),  
+  
+  titlePanel("Movie Network"),
+  
+  sidebarLayout(
+    sidebarPanel(
+      selectInput('x','Select Movie', setdiff(names(info), "12"))
+    ),
+  
+  mainPanel(
+   # includeHTML("d3.js"),
+    textOutput('txt', container = div),
+    htmlOutput('networkPlot')
+  )
+ )
+))
+```
