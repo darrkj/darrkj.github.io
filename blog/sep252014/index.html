@@ -100,23 +100,22 @@ info &lt;- info[-2]
 
 save(ig, info, file = 'movies.RData')</code></pre>
 <p>You can also embed plots, for example:</p>
-<pre class="r"><code>library(igraph)
+<pre class="r"><code>
+library(igraph)
 library(d3Network)
-#library(rgexf)
-#.libPaths('/home/likewise-open/CHO/kdarrell/R/x86_64-pc-linux-gnu-library/3.1')
 
-igraph_2_d3 &lt;- function(igr) {
-  Source &lt;- c()
-  Target &lt;- c()
+igraph_2_d3 <- function(igr) {
+  Source <- c()
+  Target <- c()
   
-  x &lt;- V(igr)
+  x <- V(igr)
   for (i in seq(length(E(igr)))) {
-    e &lt;- get.edge(igr, i)
+    e <- get.edge(igr, i)
     
-    s &lt;- if(is.null(x[e[1]]$name)) x[e[1]] else x[e[1]]$name
-    t &lt;- if(is.null(x[e[2]]$name)) x[e[2]] else x[e[2]]$name
-    Source &lt;- c(Source, s)
-    Target &lt;- c(Target, t)
+    s <- if(is.null(x[e[1]]$name)) x[e[1]] else x[e[1]]$name
+    t <- if(is.null(x[e[2]]$name)) x[e[2]] else x[e[2]]$name
+    Source <- c(Source, s)
+    Target <- c(Target, t)
   }
   
   data.frame(Source, Target)
@@ -126,29 +125,72 @@ load('info.RData')
 load('ig.RData')
 
 
-clean &lt;- function(x) {
-  x &lt;- gsub('&lt;link href=\&quot;/images/favicon.ico\&quot; type=\&quot;image/x-icon\&quot; rel=\&quot;icon\&quot;', '', x)
-  x &lt;- gsub(' /&gt;&lt;link href=\&quot;/images/favicon.ico\&quot; type=\&quot;image/x-icon\&quot; ', '', x)
-  x &lt;- gsub('rel=\&quot;shortcut icon\&quot; /&gt;&lt;meta name=\&quot;keywords\&quot;', '', x)
-  x &lt;- gsub(' content=\&quot;social graph, movies, social network, moviegalaxies, ', '', x)
-  x &lt;- gsub('\&quot; /&gt;', '', x)
-  x &lt;- gsub(',', ',&lt;br&gt;', x)
+clean <- function(x) {
+  x <- gsub('<link href=\"/images/favicon.ico\" type=\"image/x-icon\" rel=\"icon\"', '', x)
+  x <- gsub(' /><link href=\"/images/favicon.ico\" type=\"image/x-icon\" ', '', x)
+  x <- gsub('rel=\"shortcut icon\" /><meta name=\"keywords\"', '', x)
+  x <- gsub(' content=\"social graph, movies, social network, moviegalaxies, ', '', x)
+  x <- gsub('\" />', '', x)
+  x <- gsub('<!-- G+ -->', '', x, fixed = T)
+  ind <- as.numeric(gregexpr('<meta name', x))
+  x <- substr(x, 1, ind-1)
   x
 }
 
+nodeAttr <- function(graph) {
+  data.frame(
+    name = vertex.attributes(graph)$name,
+    degree = centralization.degree(graph)$res,
+    closeness = centralization.closeness(graph)$res,
+    betweeness = centralization.betweenness(graph, directed = FALSE)$res,
+    eigenvector = centralization.evcent(graph, directed = FALSE)$vector)
+}
+
+
+graphAttr <- function(graph) { data.frame(
+  Property = c('Degree Centralization', 'Closeness Centralization',
+               'Betweenness Centralization', 'Eigenvector Centralization',
+               'Assortativity Coefficient', 'Average Path Length',
+               'Clique Number', 'Diameter', 'Radius', 'Girth',
+               'Adhesion', 'Density', 'Chordal', 'Connected'),
+  value = c(centralization.degree(graph)$centralization,
+            centralization.closeness(graph)$centralization,
+            centralization.betweenness(graph, directed = FALSE)$centralization,
+            centralization.evcent(graph, directed = FALSE)$centralization,
+            assortativity.degree(graph),
+            average.path.length(graph, directed = FALSE, unconnected = TRUE),
+            clique.number(graph), diameter(graph),
+            radius(graph), girth(graph)$girth,
+            graph.adhesion(graph), graph.density(graph),
+            is.chordal(graph)$chordal, is.connected(graph)))
+}
+
+
+
+
 shinyServer(function(input, output) {
-  output$networkPlot &lt;- renderPrint({
-    #x &lt;- gexf.to.igraph(read.gexf(paste('gex/', input$x, '.gexf', sep = '')))
-    #cat(info[[input$x]])
-    cat(clean(info[[which(names(info) == input$x)]]))
+  output$txt <- renderText({ clean(info[[which(names(info) == input$x)]])})
+
+  output$mytable = renderDataTable({
+    nodeAttr(ig[[input$x]])
+  }, options = list(aLengthMenu = c(5, 30, 50), iDisplayLength = 5))
+  
+  output$mytable2 = renderDataTable({
+    graphAttr(ig[[input$x]])
+  }, options = list(aLengthMenu = c(5, 30, 50), iDisplayLength = 5))
+  
+  output$networkPlot <- renderPrint({    
     d3SimpleNetwork(igraph_2_d3(ig[[input$x]]), 
-                    width = 500, height = 450,
+                    width = 500, height = 350,
                     textColour = 'orange', linkColour = 'red',
                     parentElement = '#networkPlot')
   })
-})</code></pre>
+})
+  
+</code></pre>
 <p>Note that the <code>echo = FALSE</code> parameter was added to the code chunk to prevent printing of the R code that generated the plot.</p>
-<pre class="r"><code>library(shiny)
+<pre class="r"><code>
+library(shiny)
 load('info.RData')
 
 shinyUI(fluidPage(
@@ -156,19 +198,21 @@ shinyUI(fluidPage(
     tags$script(src = 'd3.min.js')
   ),  
   
-  titlePanel(&quot;Movie Network&quot;),
-  
-  sidebarLayout(
-    sidebarPanel(
-      selectInput('x','Select Movie', setdiff(names(info), &quot;12&quot;))
-    ),
-  
+  titlePanel("Movie Network"),
+
   mainPanel(
-   # includeHTML(&quot;d3.js&quot;),
+    selectInput('x','Select Movie', setdiff(names(info), c("12", "1492: Conquest of Paradise"))),
     textOutput('txt', container = div),
-    htmlOutput('networkPlot')
+
+    htmlOutput('networkPlot'),
+    h2('The mtcars data'),
+    tabsetPanel(
+      tabPanel('Nodes',
+               dataTableOutput('mytable')),
+      tabPanel('Graph',
+               dataTableOutput("mytable2"))
+    )
   )
- )
 ))</code></pre>
 
 
