@@ -100,22 +100,21 @@ info &lt;- info[-2]
 
 save(ig, info, file = 'movies.RData')</code></pre>
 <p>You can also embed plots, for example:</p>
-<pre class="r"><code>
-library(igraph)
+<pre class="r"><code>library(igraph)
 library(d3Network)
 
-igraph_2_d3 <- function(igr) {
-  Source <- c()
-  Target <- c()
+igraph_2_d3 &lt;- function(igr) {
+  Source &lt;- c()
+  Target &lt;- c()
   
-  x <- V(igr)
+  x &lt;- V(igr)
   for (i in seq(length(E(igr)))) {
-    e <- get.edge(igr, i)
+    e &lt;- get.edge(igr, i)
     
-    s <- if(is.null(x[e[1]]$name)) x[e[1]] else x[e[1]]$name
-    t <- if(is.null(x[e[2]]$name)) x[e[2]] else x[e[2]]$name
-    Source <- c(Source, s)
-    Target <- c(Target, t)
+    s &lt;- if(is.null(x[e[1]]$name)) x[e[1]] else x[e[1]]$name
+    t &lt;- if(is.null(x[e[2]]$name)) x[e[2]] else x[e[2]]$name
+    Source &lt;- c(Source, s)
+    Target &lt;- c(Target, t)
   }
   
   data.frame(Source, Target)
@@ -125,19 +124,19 @@ load('info.RData')
 load('ig.RData')
 
 
-clean <- function(x) {
-  x <- gsub('<link href=\"/images/favicon.ico\" type=\"image/x-icon\" rel=\"icon\"', '', x)
-  x <- gsub(' /><link href=\"/images/favicon.ico\" type=\"image/x-icon\" ', '', x)
-  x <- gsub('rel=\"shortcut icon\" /><meta name=\"keywords\"', '', x)
-  x <- gsub(' content=\"social graph, movies, social network, moviegalaxies, ', '', x)
-  x <- gsub('\" />', '', x)
-  x <- gsub('<!-- G+ -->', '', x, fixed = T)
-  ind <- as.numeric(gregexpr('<meta name', x))
-  x <- substr(x, 1, ind-1)
+clean &lt;- function(x) {
+  x &lt;- gsub('&lt;link href=\&quot;/images/favicon.ico\&quot; type=\&quot;image/x-icon\&quot; rel=\&quot;icon\&quot;', '', x)
+  x &lt;- gsub(' /&gt;&lt;link href=\&quot;/images/favicon.ico\&quot; type=\&quot;image/x-icon\&quot; ', '', x)
+  x &lt;- gsub('rel=\&quot;shortcut icon\&quot; /&gt;&lt;meta name=\&quot;keywords\&quot;', '', x)
+  x &lt;- gsub(' content=\&quot;social graph, movies, social network, moviegalaxies, ', '', x)
+  x &lt;- gsub('\&quot; /&gt;', '', x)
+  x &lt;- gsub('&lt;!-- G+ --&gt;', '', x, fixed = T)
+  ind &lt;- as.numeric(gregexpr('&lt;meta name', x))
+  x &lt;- substr(x, 1, ind-1)
   x
 }
 
-nodeAttr <- function(graph) {
+nodeAttr &lt;- function(graph) {
   data.frame(
     name = vertex.attributes(graph)$name,
     degree = centralization.degree(graph)$res,
@@ -147,7 +146,7 @@ nodeAttr <- function(graph) {
 }
 
 
-graphAttr <- function(graph) { data.frame(
+graphAttr &lt;- function(graph) { data.frame(
   Property = c('Degree Centralization', 'Closeness Centralization',
                'Betweenness Centralization', 'Eigenvector Centralization',
                'Assortativity Coefficient', 'Average Path Length',
@@ -169,7 +168,7 @@ graphAttr <- function(graph) { data.frame(
 
 
 shinyServer(function(input, output) {
-  output$txt <- renderText({ clean(info[[which(names(info) == input$x)]])})
+  output$txt &lt;- renderText({ clean(info[[which(names(info) == input$x)]])})
 
   output$mytable = renderDataTable({
     nodeAttr(ig[[input$x]])
@@ -179,18 +178,15 @@ shinyServer(function(input, output) {
     graphAttr(ig[[input$x]])
   }, options = list(aLengthMenu = c(5, 30, 50), iDisplayLength = 5))
   
-  output$networkPlot <- renderPrint({    
+  output$networkPlot &lt;- renderPrint({    
     d3SimpleNetwork(igraph_2_d3(ig[[input$x]]), 
                     width = 500, height = 350,
                     textColour = 'orange', linkColour = 'red',
                     parentElement = '#networkPlot')
   })
-})
-  
-</code></pre>
+})</code></pre>
 <p>Note that the <code>echo = FALSE</code> parameter was added to the code chunk to prevent printing of the R code that generated the plot.</p>
-<pre class="r"><code>
-library(shiny)
+<pre class="r"><code>library(shiny)
 load('info.RData')
 
 shinyUI(fluidPage(
@@ -198,23 +194,22 @@ shinyUI(fluidPage(
     tags$script(src = 'd3.min.js')
   ),  
   
-  titlePanel("Movie Network"),
+  titlePanel(&quot;Movie Network&quot;),
 
   mainPanel(
-    selectInput('x','Select Movie', setdiff(names(info), c("12", "1492: Conquest of Paradise"))),
+    selectInput('x','Select Movie', setdiff(names(info), c(&quot;12&quot;, &quot;1492: Conquest of Paradise&quot;))),
     textOutput('txt', container = div),
 
     htmlOutput('networkPlot'),
-    h2('The mtcars data'),
+    h2('Graph Properties'),
     tabsetPanel(
       tabPanel('Nodes',
                dataTableOutput('mytable')),
       tabPanel('Graph',
-               dataTableOutput("mytable2"))
+               dataTableOutput(&quot;mytable2&quot;))
     )
   )
 ))</code></pre>
-
 
 </div>
 
