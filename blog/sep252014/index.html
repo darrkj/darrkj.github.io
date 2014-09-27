@@ -43,6 +43,8 @@
 
 <p>I am going to take a break from my last few posts about temporal type data and jump back to one of my other interests, graph data. I used the social network graph of <a href="http://moviegalaxies.com/movies/660-Pulp-Fiction">Pulp Fiction</a> from <a href="http://www.moviegalaxies.com">moviegalaxies.com</a> to explore a bunch of graph related technologies. I thought it would be cool to create an interactive application using <a href="http://d3js.org/">d3</a> and <a href="http://shiny.rstudio.com/">Shiny</a> to show off this technology using a bunch of movie network.</p>
 
+<p>The movie networks are really cool. I bet there is also some cool technology behind developing them. I would imagine it would be some algorithm that examins the script and determines who talks to who or who is present in particular scenes. I would not imagine a person sitting with stack of DVDs or a huge queue from Netflix with a pen and paper. I was wondering if this type of thing could be used for books or even TV shows like Survivor.</p>
+
 <p>The app uses a lot of code a mentioned in prior posts, mainly how to get gexf files into R and how to turn an igraph object into something more suited for d3. I have trying a new approach to making code available when I am working at any of the various various project locations I may find myself. It is often hard to get new packages so I often find myself working on a function or two and then needing it. I have placed an import function into my Rprofile that allows me to pull them from my webiste directly and only what I need. It may be a little flakey compared to a full blown package on CRAN or even on Github, but it works. You can get the core of what I used here.</p>
 
 <pre class="r"><code>
@@ -53,7 +55,7 @@ import('d3plot')
 </code></pre>
 
 
-
+<p>I wanted to do something other than just create an app that had a plot so I gave it a dropdown where you can select which movie and it will use d3 to plot it. It will also calculate a collection of parameters from the network as a whole as well as centraility measures for each node in the network.</p>
 
 <pre class="r"><code>library(igraph)
 
@@ -85,6 +87,12 @@ graphAttr &lt;- function(graph) { data.frame(
             is.chordal(graph)$chordal, is.connected(graph)))
 }
 
+</code></pre>
+
+
+<p>Core shiny code.</p>
+
+<pre class="r"><code>library(igraph)
 
 
 
