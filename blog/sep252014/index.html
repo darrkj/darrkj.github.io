@@ -56,40 +56,6 @@ import('d3plot')
 
 
 <pre class="r"><code>library(igraph)
-library(d3Network)
-
-igraph_2_d3 &lt;- function(igr) {
-  Source &lt;- c()
-  Target &lt;- c()
-  
-  x &lt;- V(igr)
-  for (i in seq(length(E(igr)))) {
-    e &lt;- get.edge(igr, i)
-    
-    s &lt;- if(is.null(x[e[1]]$name)) x[e[1]] else x[e[1]]$name
-    t &lt;- if(is.null(x[e[2]]$name)) x[e[2]] else x[e[2]]$name
-    Source &lt;- c(Source, s)
-    Target &lt;- c(Target, t)
-  }
-  
-  data.frame(Source, Target)
-}
-
-load('info.RData')
-load('ig.RData')
-
-
-clean &lt;- function(x) {
-  x &lt;- gsub('&lt;link href=\&quot;/images/favicon.ico\&quot; type=\&quot;image/x-icon\&quot; rel=\&quot;icon\&quot;', '', x)
-  x &lt;- gsub(' /&gt;&lt;link href=\&quot;/images/favicon.ico\&quot; type=\&quot;image/x-icon\&quot; ', '', x)
-  x &lt;- gsub('rel=\&quot;shortcut icon\&quot; /&gt;&lt;meta name=\&quot;keywords\&quot;', '', x)
-  x &lt;- gsub(' content=\&quot;social graph, movies, social network, moviegalaxies, ', '', x)
-  x &lt;- gsub('\&quot; /&gt;', '', x)
-  x &lt;- gsub('&lt;!-- G+ --&gt;', '', x, fixed = T)
-  ind &lt;- as.numeric(gregexpr('&lt;meta name', x))
-  x &lt;- substr(x, 1, ind-1)
-  x
-}
 
 nodeAttr &lt;- function(graph) {
   data.frame(
