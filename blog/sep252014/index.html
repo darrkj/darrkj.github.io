@@ -1,49 +1,47 @@
 <!DOCTYPE html>
 <!-- saved from url=(0014)about:internet -->
 <html>
-<head>
-<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
-<meta http-equiv="x-ua-compatible" content="IE=9" >
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <meta http-equiv="x-ua-compatible" content="IE=9" >
 
-<title>Movie Net</title>
+    <title>Movie Net</title>
 
+    <link rel="stylesheet" type="text/css" href="../../stylesheets/blog.css">
 
-<link rel="stylesheet" type="text/css" href="../../stylesheets/blog.css">
-
-<!-- Styles for R syntax highlighter -->
-<link rel="stylesheet" type="text/css" href="../../stylesheets/blog2.css">
-
+    <!-- Styles for R syntax highlighter -->
+    <link rel="stylesheet" type="text/css" href="../../stylesheets/blog2.css">
 
     <link rel="stylesheet" type="text/css" href="../../stylesheets/stylesheet.css" media="screen" />
+    
     <link rel="stylesheet" type="text/css" href="../../stylesheets/pygment_trac.css" media="screen" />
+    
     <link rel="stylesheet" type="text/css" href="../../stylesheets/print.css" media="print" />
 
-<!-- R syntax highlighter -->
-<script src="../../javascripts/r.js"></script>
+    <!-- R syntax highlighter -->
+    <script src="../../javascripts/r.js"></script>
+  </head>
 
+  <body>
 
-</head>
-
-<body>
-
-<div class="container">
-
+  <div class="container">
 
     <header>
       <div class="container">
         <h1>Interactive Movie Network</h1>
         <h2></h2>
 
-<h4 class="author"><em>Kenny Darrell</em></h4>
-<h4 class="date"><em>Sept 25, 2014</em></h4>
+        <h4 class="author"><em>Kenny Darrell</em></h4>
+        <h4 class="date"><em>Sept 25, 2014</em></h4>
         </section>
       </div>
     </header>
+    
+    
 
+<p>I just created an account on <a href="https://www.shinyapps.io/">shinyapps</a>. It seems pretty easy to launch an app that can be hosted here. I have heard the term <a href="http://en.wikipedia.org/wiki/Platform_as_a_service"> Platform as a Servece</a>, or more succinctly PaaS, but never really new what it meant. It seems cool though, htey offer the platform and you deploy applications onto it. It takes care of all of the overhead type stuff, you only need to focus on a the core what the app does. There is a great <a href="http://shiny.rstudio.com/articles/shinyapps.html">tutorial</a> that can be found on the Shiny website fo rhow to get started.
 
-
-
-<p>I just created an account on <a href="https://www.shinyapps.io/">shinyapps</a>. It seems pretty cool to be able to launch an app that can be hosted more globally. Taking a break from my last few posts about temporal data and jump back to one of my other interests, graph data. I used the graph of <a href="http://moviegalaxies.com/movies/660-Pulp-Fiction">Pulp Fiction</a> from <a href="www.moviegalaxies.com">moviegalaxies.com</a>. I thought it would be cool to create an interactive application using <a href="http://d3js.org/">d3</a> and <a href="http://shiny.rstudio.com/">Shiny</a>.</p>
+I am going to take a break from my last few posts about temporal type data and jump back to one of my other interests, graph data. I used the social network graph of <a href="http://moviegalaxies.com/movies/660-Pulp-Fiction">Pulp Fiction</a> from <a href="http://www.moviegalaxies.com">moviegalaxies.com</a> to explore a bunch of graph related technologies. I thought it would be cool to create an interactive application using <a href="http://d3js.org/">d3</a> and <a href="http://shiny.rstudio.com/">Shiny</a> to show off this technology using a bunch of movie network.</p>
 <pre class="r"><code>require(rgexf)
 require(httr)
 library(XML)
