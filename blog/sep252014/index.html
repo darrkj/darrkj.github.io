@@ -42,62 +42,19 @@
 <p>I just created an account on <a href="https://www.shinyapps.io/">shinyapps</a>. It seems pretty easy to launch an app that can be hosted here. I have heard the term <a href="http://en.wikipedia.org/wiki/Platform_as_a_service"> Platform as a Servece</a>, or more succinctly PaaS, but never really new what it meant. It seems cool though, htey offer the platform and you deploy applications onto it. It takes care of all of the overhead type stuff, you only need to focus on a the core what the app does. There is a great <a href="http://shiny.rstudio.com/articles/shinyapps.html">tutorial</a> that can be found on the Shiny website fo rhow to get started.</p>
 
 <p>I am going to take a break from my last few posts about temporal type data and jump back to one of my other interests, graph data. I used the social network graph of <a href="http://moviegalaxies.com/movies/660-Pulp-Fiction">Pulp Fiction</a> from <a href="http://www.moviegalaxies.com">moviegalaxies.com</a> to explore a bunch of graph related technologies. I thought it would be cool to create an interactive application using <a href="http://d3js.org/">d3</a> and <a href="http://shiny.rstudio.com/">Shiny</a> to show off this technology using a bunch of movie network.</p>
-<pre class="r"><code>require(rgexf)
-require(httr)
-library(XML)
-options(stringsAsFactors = FALSE)
 
-# Site of movie files.
-home &lt;- 'moviegalaxies.com/'
-# Directory on server of gexf files.
-g &lt;- 'http://media.moviegalaxies.com/gexf'
+<p>The app uses a lot of code a mentioned in prior posts, mainly how to get gexf files into R and how to turn an igraph object into something more suited for d3. I have trying a new approach to making code available when I am working at any of the various various project locations I may find myself. It is often hard to get new packages so I often find myself working on a function or two and then needing it. I have placed an import function into my Rprofile that allows me to pull them from my webiste directly and only what I need. It may be a little flakey compared to a full blown package on CRAN or even on Github, but it works. You can get the core of what I used here.</p>
 
-# Init structure to store movie info.
-info &lt;- list()
+<pre class="r"><code>
+devtools::source_url('https://raw.githubusercontent.com/darrkj/home/gh-pages/rcode/import.R')
+import('igrpah_2_d3')
+import('d3plot')
 
-# Loop over all movies, hack becuase I have no idea how to start,
-# the have names that are random numbers from 1 to 914.
-for (i in 1:925) {
-  
-  html &lt;- strsplit(as.character(GET(paste(home, i, sep = ''))), '\n')[[1]]
-  
-  title &lt;- grep('og:title', html, value = T)[1]
-  title &lt;- gsub('\&quot; /&gt; ', '', strsplit(title, ' - ')[[1]][2])
-  gex &lt;- grep('com/gexf', html, value = T)
-  gex &lt;- strsplit(gex, 'gexf')[[1]][2]
-  gex &lt;- paste(g, gex, 'gexf', sep = '')
-  misc &lt;- grep('keywords', html, value = T)[1]
-  
-  # There is an issue with 'Face/Off' so take out /
-  if (i == 297) title &lt;- 'Face Off'
-  if (title != '') {
-    # Get the gexf file from the site an place it into a file
-    gex &lt;- as.character(GET(gex))
-    cat(gex, file = paste('gex/', title, '.gexf', sep = ''))
-    
-    info[[title]] &lt;- misc
-  }
-  cat(i, title, '\n')
-}
+</code></pre>
 
 
 
-# Once you have the value and the movie name scrapped from each site that
-# is actually a movie, pull that file from the server.
-ig &lt;- list()
 
-for (i in names(info)) {
-  print(i)
-  # This file is corrupt
-  if (i != &quot;12&quot;) {
-    ig[[i]] &lt;- gexf.to.igraph(read.gexf(paste('gex/', i, '.gexf', sep = '')))
-  }
-}
-
-info &lt;- info[-2]
-
-save(ig, info, file = 'movies.RData')</code></pre>
-<p>You can also embed plots, for example:</p>
 <pre class="r"><code>library(igraph)
 library(d3Network)
 
