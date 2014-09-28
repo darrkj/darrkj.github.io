@@ -48,7 +48,8 @@
 <p>The app uses a lot of code a mentioned in prior posts, mainly how to get gexf files into R and how to turn an igraph object into something more suited for d3. I have trying a new approach to making code available when I am working at any of the various various project locations I may find myself. It is often hard to get new packages so I often find myself working on a function or two and then needing it. I have placed an import function into my Rprofile that allows me to pull them from my website directly and only what I need. It may be a little flakey compared to a full blown package on CRAN or even on Github, but it works. You can get the core of what I used here.</p>
 
 <pre class="r"><code>
-devtools::source_url('https://raw.githubusercontent.com/darrkj/home/gh-pages/rcode/import.R')
+library(devtools)
+source_url('https://raw.githubusercontent.com/darrkj/home/gh-pages/rcode/import.R')
 import('igrpah_2_d3')
 import('d3plot')
 
@@ -92,10 +93,7 @@ graphAttr &lt;- function(graph) { data.frame(
 
 <p>After we have the code to get the various network measures we need the actual shiny app code. This is a fairly standard app, many of the aspects of it come directly from sites tutorial. You can make apps that can do some pretty complex stuff way beyond what is happening here.</p>
 
-<pre class="r"><code>library(igraph)
-
-
-
+<pre class="r"><code>
 shinyServer(function(input, output) {
   output$txt &lt;- renderText({ clean(info[[which(names(info) == input$x)]])})
 
@@ -116,8 +114,6 @@ shinyServer(function(input, output) {
 })
 
 
-library(shiny)
-load('info.RData')
 
 shinyUI(fluidPage(
   tags$head(
