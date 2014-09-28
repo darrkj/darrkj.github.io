@@ -55,7 +55,7 @@ import('d3plot')
 </code></pre>
 
 
-<p>I wanted to do something other than just create an app that had a plot so I gave it a dropdown where you can select which movie and it will use d3 to plot it. It will also calculate a collection of parameters from the network as a whole as well as centraility measures for each node in the network.</p>
+<p>I wanted to do something other than just create an app that had a plot so I gave it a dropdown where you can select which movie and it will use d3 to plot it. It will also calculate a collection of parameters from the network as a whole as well as centraility measures for each node in the network. After playing with it a bit it got me thinking about some interesting questions. Would closeness or degree centraility be highly correlated to pay, the most prevalent actor/actress would recieve largest paycheck? Would the overall sales depend on the complexity of the whole network, not to simple and not too confusing, just to right level of complexity?</p>
 
 <pre class="r"><code>library(igraph)
 
@@ -90,7 +90,7 @@ graphAttr &lt;- function(graph) { data.frame(
 </code></pre>
 
 
-<p>Core shiny code.</p>
+<p>After we have the code to get the various network measures we need the actual shiny app code. This is a fairly standard app, many of the aspects of it come directly from sites tutorial. You can make apps that can do some pretty complex stuff way beyond what is ahppening here.</p>
 
 <pre class="r"><code>library(igraph)
 
@@ -143,7 +143,7 @@ shinyUI(fluidPage(
 </div>
 
 
-<div style="text-align:center;"> <iframe src="https://darrkj.shinyapps.io/ioApp/" width="700" height="700"></iframe></div>
+<div style="text-align:center;"> <iframe src="https://darrkj.shinyapps.io/ioApp/" width="700" height="900"></iframe></div>
 
 
 
