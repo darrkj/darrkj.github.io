@@ -47,13 +47,11 @@
 
 <p>The app uses a lot of code a mentioned in prior posts, mainly how to get gexf files into R and how to turn an igraph object into something more suited for d3. I have trying a new approach to making code available when I am working at any of the various various project locations I may find myself. It is often hard to get new packages so I often find myself working on a function or two and then needing it. I have placed an import function into my Rprofile that allows me to pull them from my website directly and only what I need. It may be a little flakey compared to a full blown package on CRAN or even on Github, but it works. You can get the core of what I used here.</p>
 
-<pre class="r"><code>
-library(devtools)
+
+<pre class="r"><code>library(devtools)
 source_url('https://raw.githubusercontent.com/darrkj/home/gh-pages/rcode/import.R')
 import('igrpah_2_d3')
-import('d3plot')
-
-</code></pre>
+import('d3plot')</code></pre>
 
 
 <p>I wanted to do something other than just create an app that had a plot so I gave it a drop-down where you can select which movie and it will use d3 to plot it. It will also calculate a collection of parameters from the network as a whole as well as centrality measures for each node in the network. After playing with it a bit it got me thinking about some interesting questions. Would closeness or degree centrality be highly correlated to pay, the most prevalent actor/actress would receive largest paycheck? Would the overall sales depend on the complexity of the whole network, not to simple and not too confusing, just to right level of complexity?</p>
