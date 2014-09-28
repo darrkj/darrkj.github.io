@@ -39,13 +39,13 @@
     
     
 
-<p>I just created an account on <a href="https://www.shinyapps.io/">shinyapps</a>. It seems pretty easy to launch an app that can be hosted here. I have heard the term <a href="http://en.wikipedia.org/wiki/Platform_as_a_service"> Platform as a Service</a>, or more succinctly PaaS, but never really new what it meant. It seems cool though, they offer the platform and you deploy applications onto it. It takes care of all of the overhead type stuff, you only need to focus on a the core what the app does. There is a great <a href="http://shiny.rstudio.com/articles/shinyapps.html">tutorial</a> that can be found on the Shiny website for how to get started.</p>
+<p>I just created an account on <a href="https://www.shinyapps.io/">shinyapps</a>. It seems pretty easy to launch an app that can be hosted here. I have heard the term <a href="http://en.wikipedia.org/wiki/Platform_as_a_service"> Platform as a Service</a>, or more succinctly PaaS, but never really new what it meant. It seems cool though, they offer the platform and you deploy applications onto it. It takes care of all of the overhead type stuff, you only need to focus on the core of what the app does. There is a great <a href="http://shiny.rstudio.com/articles/shinyapps.html">tutorial</a> that can be found on the Shiny website to get you up and running.</p>
 
 <p>I am going to take a break from my last few posts about temporal type data and jump back to one of my other interests, graph data. I used the social network graph of <a href="http://moviegalaxies.com/movies/660-Pulp-Fiction">Pulp Fiction</a> from <a href="http://www.moviegalaxies.com">moviegalaxies.com</a> to explore a bunch of graph related technologies. I thought it would be cool to create an interactive application using <a href="http://d3js.org/">d3</a> and <a href="http://shiny.rstudio.com/">Shiny</a> to show off this technology using a bunch of movie network.</p>
 
-<p>The movie networks are really cool. I bet there is also some cool technology behind developing them. I would imagine it would be some algorithm that examines the script and determines who talks to who or who is present in particular scenes. I would not imagine a person sitting with stack of DVDs or a huge queue from Netflix with a pen and paper. I was wondering if this type of thing could be used for books or even TV shows like Survivor.</p>
+<p>The movie networks are really cool. I bet there is also some cool technology behind developing them. I would imagine it would be some algorithm that examines the script and determines who talks to who or who is present in particular scenes. I would not imagine a person sitting with stack of DVDs or a huge queue from Netflix with a pen and paper. I was wondering if this type of thing could be used for books or even TV shows like Survivor that have a huge social aspect.</p>
 
-<p>The app uses a lot of code a mentioned in prior posts, mainly how to get gexf files into R and how to turn an igraph object into something more suited for d3. I have trying a new approach to making code available when I am working at any of the various various project locations I may find myself. It is often hard to get new packages so I often find myself working on a function or two and then needing it. I have placed an import function into my Rprofile that allows me to pull them from my website directly and only what I need. It may be a little flakey compared to a full blown package on CRAN or even on Github, but it works. You can get the core of what I used here.</p>
+<p>The app uses a lot of code I have mentioned in prior posts, mainly how to get gexf files into R and how to turn an igraph object into something more suited for d3. I am trying a new approach to making code available for when I am working at any of the various project locations I may find myself. It is often hard to get new packages and I often find myself working on a function or two and then needing to pull it from somewhere. I have placed an import function into my Rprofile that allows me to pull them from my website directly and only what I need. It may be a little flakey compared to a full blown package on CRAN or even on Github, but it works. You can get the core of what I used here.</p>
 
 
 <pre class="r"><code>library(devtools)
@@ -54,7 +54,7 @@ import('igrpah_2_d3')
 import('d3plot')</code></pre>
 
 
-<p>I wanted to do something other than just create an app that had a plot so I gave it a drop-down where you can select which movie and it will use d3 to plot it. It will also calculate a collection of parameters from the network as a whole as well as centrality measures for each node in the network. After playing with it a bit it got me thinking about some interesting questions. Would closeness or degree centrality be highly correlated to pay, the most prevalent actor/actress would receive largest paycheck? Would the overall sales depend on the complexity of the whole network, not to simple and not too confusing, just to right level of complexity?</p>
+<p>I wanted to do something other than just create an app that had a plot so I gave it a drop-down where you can select which movie and it will use d3 to plot it. It will calculate a collection of parameters from the network as a whole as well as centrality measures for each node in the network. After playing with it a bit it got me thinking about some interesting questions. Would closeness or degree centrality be highly correlated to pay, the most prevalent actor/actress would receive largest paycheck? Would the overall sales depend on the complexity of the whole network, not to simple and not too confusing, just to right level of complexity? This also strengthens my thoughts on apps like these, they can be made as the final output from some analysis but if done correctly they should also conjure up new thoughts to be the starting point for future work.</p>
 
 <pre class="r"><code>library(igraph)
 
@@ -89,10 +89,9 @@ graphAttr &lt;- function(graph) { data.frame(
 </code></pre>
 
 
-<p>After we have the code to get the various network measures we need the actual shiny app code. This is a fairly standard app, many of the aspects of it come directly from sites tutorial. You can make apps that can do some pretty complex stuff way beyond what is happening here.</p>
+<p>After we have the code to get the various network measures we need the actual shiny app code. This is a fairly standard app, many of the aspects of it come directly from the site''s tutorial pages. You can make apps that can do some pretty complex stuff, way beyond what is happening here. Below is the server code.</p>
 
-<pre class="r"><code>
-shinyServer(function(input, output) {
+<pre class="r"><code>shinyServer(function(input, output) {
   output$txt &lt;- renderText({ clean(info[[which(names(info) == input$x)]])})
 
   output$mytable = renderDataTable({
@@ -109,11 +108,11 @@ shinyServer(function(input, output) {
                     textColour = 'orange', linkColour = 'red',
                     parentElement = '#networkPlot')
   })
-})
+})</code></pre>
 
+<p>And here is the UI code.</p>
 
-
-shinyUI(fluidPage(
+<pre class="r"><code>shinyUI(fluidPage(
   tags$head(
     tags$script(src = 'd3.min.js')
   ),  
@@ -134,6 +133,9 @@ shinyUI(fluidPage(
     )
   )
 ))</code></pre>
+
+
+<p>An the icing on the cake, the app itself.</p>
 
 </div>
 
