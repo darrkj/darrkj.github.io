@@ -216,10 +216,7 @@ require(devtools)
 
 devtools::source_url('https://raw.githubusercontent.com/darrkj/gh-pages/analysis/MicroWins/R/game.R')</code></pre>
 <p>We need to get data. This will get data from the 2013 season. This is all games from that season.</p>
-<pre class="r"><code>season &lt;- seasonify(2013)</code></pre>
-
-<p>This data can be downloaded <a href="season.RData">here</a>.</p>
-<pre class="r"><code>load('season.RData')
+<pre class="r"><code>season &lt;- seasonify(2013)
 head(season[, 1:5])</code></pre>
 <pre><code>##                       away                home       date  as  hs
 ## 72          Boston Celtics          Miami Heat 2012-10-30 107 120
