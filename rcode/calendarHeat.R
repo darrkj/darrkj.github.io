@@ -1,8 +1,8 @@
 
-#library(quantmod)
-#library(ggplot2)
-#library(plyr)
-#library(lubridate)
+library(quantmod)
+library(ggplot2)
+library(plyr)
+library(lubridate)
 
 ###############################################################################
 #
