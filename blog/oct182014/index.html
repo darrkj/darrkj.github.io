@@ -43,13 +43,18 @@
 
 
 
-<p>Summer movies</p>
-<pre class="r"><code>devtools::source_url('https://raw.githubusercontent.com/darrkj/darrkj.github.io/master/rcode/import.R')
-import('calendarHeat')
-import('recurBind')
+<p>After creating the app in my last <a href="http://darrkj.github.io/blog/sep252014/">post</a> related to character networks got me thinking about a much older <a href="http://darrkj.github.io/blog/may262013/">post</a> about movie data. This post focused on making things reporducable, but the underlying data was very interesting, the daily revenue of movies over time. There were interesting trends in this time series data, it almost looked like a bouncing ball, lots of revenue over the weekend and then a slump through the week, only to repeat with lower revenue. I thought it would be interesting to look at this summer's movies. It is also a great place to use some of the visualization methods I have created recently. 
+</p>
+
+<p>To start we should look at the date from a high level. We should expect to see hotspots over weekends when more people frequent theaters.</p>
+<pre class="r"><code>devtools::source_url('https://raw.githubusercontent.com/darrkj/darrkj.github.io/master/rcode/calendarHeat.R')
 
 load(&quot;~/Desktop/darrkj.github.io/blog/oct182014/daily.rda&quot;)</code></pre>
-<p>Put a link to the data here</p>
+
+
+<p><a href="daily.rda">Movie Data</a></p>
+
+
 <pre class="r"><code>library(dplyr)
 
 daily %&gt;% 
@@ -61,8 +66,12 @@ daily %&gt;%
   
   
 <div class="separator" style="clear: both; text-align: center;"><img src="movie_heatmap.png" height="400" width="750"></a></div>
+
+<p>This is pretty close to what I expected. The one thing of interest is that there seems to be a gradual increas in weekdays leading up to July and then it starts to fall of again. There also seems to be some weekends that draw a larger cround than others. What could be causing this, perphaps more or better movies in the middle of the summer? Maybe just lots of opening weekends at the same time.</p>
+
+
   
-<p>What were teh good oviews though.</p>
+<p>How would we determine which movies are better and compare when they come out? We can calculate the total revenue fro each movie to get the top earners.</p>
 <pre class="r"><code># What movies were good.
 
 # Lets remove movies that we dont have there open
@@ -90,6 +99,25 @@ top_mv</code></pre>
 ## 9  Teenage Mutant Ninja Turtles (2014) 187182309
 ## 10          How to Train Your Dragon 2 175859659</code></pre>
 <pre class="r"><code>mv &lt;- top_mv$name</code></pre>
+
+
+
+<pre class="r"><code>library(dplyr)
+
+daily %&gt;% 
+  filter(name %in% top_mv$name) %&gt;%
+  group_by(date) %&gt;% 
+  summarise(sum = sum(daily)) %&gt;%
+  select(Date = date, value = sum) %&gt;%
+  ts %&gt;%
+  calheat</code></pre>
+  
+<p>It apears that the better movies come out earlier in the summer. By mid August they are all out.</p>  
+  
+<div class="separator" style="clear: both; text-align: center;"><img src="top_movies.png" height="400" width="750"></a></div>
+
+<p> One plot from d3 that could shine some light on this is the stream graph.</p>
+
 <pre class="r"><code>daily %&gt;%
   filter(name %in% top_mv$name) %&gt;%
   select(key = name, value = daily, date) %&gt;%

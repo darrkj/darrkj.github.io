@@ -33,6 +33,7 @@ Put a link to the data here
 library(dplyr)
 
 daily %>% 
+  filter(name %in% top_mv$name) %>%
   group_by(date) %>% 
   summarise(sum = sum(daily)) %>%
   select(Date = date, value = sum) %>%
