@@ -227,7 +227,7 @@ stream_plot <- function(data, file) {
   sink(file)
   stream(data)
   sink()
-  suppressWarnings(html('tmp2.html'))
+  suppressWarnings(html('file'))
 }
 
 
