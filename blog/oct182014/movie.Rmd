@@ -1,0 +1,124 @@
+---
+title: "summer movie"
+author: "Kenny Darrell"
+date: "October 18, 2014"
+output: html_document
+---
+
+Summer movies
+
+```{r echo = F, message=FALSE, warning=FALSE}
+
+devtools::source_url('https://raw.githubusercontent.com/darrkj/darrkj.github.io/master/rcode/import.R')
+import('calendarHeat')
+
+
+load("~/Desktop/darrkj.github.io/blog/oct182014/daily.rda")
+library(dplyr)
+```
+
+
+```{r eval = F}
+devtools::source_url('https://raw.githubusercontent.com/darrkj/darrkj.github.io/master/rcode/import.R')
+import('calendarHeat')
+import('recurBind')
+
+load("~/Desktop/darrkj.github.io/blog/oct182014/daily.rda")
+
+```
+
+Put a link to the data here
+
+```{r, eval=FALSE}
+library(dplyr)
+
+daily %>% 
+  group_by(date) %>% 
+  summarise(sum = sum(daily)) %>%
+  select(Date = date, value = sum) %>%
+  ts %>%
+  calheat
+
+```
+
+What were teh good oviews though.
+
+```{r eval = T}
+# What movies were good.
+
+# Lets remove movies that we dont have there open
+
+
+daily %>%
+  group_by(name) %>%
+  summarise(sum = sum(daily)) %>%
+  arrange(desc(sum)) %>%
+  slice(c(1:10)) ->
+  top_mv
+  
+top_mv
+
+
+mv <- top_mv$name
+
+```
+
+
+
+```{r eval = F}
+
+daily %>%
+  filter(name %in% top_mv$name) %>%
+  select(key = name, value = daily, date) %>%
+  mutate(value = value / 1000000) %>%
+  arrange(key, date) %>% 
+  write.csv(file = 'daily.csv', row.names = FALSE)
+
+stream_plot('daily.csv', 'daily.html')
+
+```
+
+
+
+http://darrkj.github.io/blog/oct182014/daily
+
+
+
+```{r eval = F}
+
+# There is too much noise here
+# New movies start on Friday so first day in dataset will be dropped, and last three becuase
+
+weeks <- data.frame(date = as.Date("2014-05-02") + 0:146, 
+                    w = rep(1:21, each = 7))
+
+daily %>%
+  filter(name %in% top_mv$name) %>%
+  inner_join(weeks, by = 'date') %>%
+  arrange(name, date) %>%
+  group_by(name, w) %>%
+  summarise(sum = sum(daily), date = min(date)) %>%
+  select(key = name, value = sum, date) %>%
+  write.csv(file = 'weekly.csv', row.names = FALSE)
+
+
+stream_plot('weekly.csv', 'weekly.html')
+```
+
+
+http://darrkj.github.io/blog/oct182014/weekly
+
+
+
+
+# Now try a bunp chart
+
+ 
+
+
+
+https://public.tableausoftware.com/views/movie/Sheet1?:embed=y&:display_count=no
+
+<script type='text/javascript' src='https://public.tableausoftware.com/javascripts/api/viz_v1.js'></script><div class='tableauPlaceholder' style='width: 699px; height: 458px;'><noscript><a href='#'><img alt='Sheet 1 ' src='https:&#47;&#47;public.tableausoftware.com&#47;static&#47;images&#47;mo&#47;movie&#47;Sheet1&#47;1_rss.png' style='border: none' /></a></noscript><object class='tableauViz' width='699' height='458' style='display:none;'><param name='host_url' value='https%3A%2F%2Fpublic.tableausoftware.com%2F' /> <param name='site_root' value='' /><param name='name' value='movie&#47;Sheet1' /><param name='tabs' value='no' /><param name='toolbar' value='yes' /><param name='static_image' value='https:&#47;&#47;public.tableausoftware.com&#47;static&#47;images&#47;mo&#47;movie&#47;Sheet1&#47;1.png' /> <param name='animate_transition' value='yes' /><param name='display_static_image' value='yes' /><param name='display_spinner' value='yes' /><param name='display_overlay' value='yes' /><param name='display_count' value='yes' /></object></div><div style='width:699px;height:22px;padding:0px 10px 0px 0px;color:black;font:normal 8pt verdana,helvetica,arial,sans-serif;'><div style='float:right; padding-right:8px;'><a href='http://www.tableausoftware.com/public/about-tableau-products?ref=https://public.tableausoftware.com/views/movie/Sheet1' target='_blank'>Learn About Tableau</a></div></div>
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.

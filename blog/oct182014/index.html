@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<!-- saved from url=(0014)about:internet -->
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+<meta http-equiv="x-ua-compatible" content="IE=9" >
+
+<title>Summer Movies</title>
+
+
+<link rel="stylesheet" type="text/css" href="../../stylesheets/blog.css">
+
+<!-- Styles for R syntax highlighter -->
+<link rel="stylesheet" type="text/css" href="../../stylesheets/blog2.css">
+
+    <link rel="stylesheet" type="text/css" href="../../stylesheets/stylesheet.css" media="screen" />
+    <link rel="stylesheet" type="text/css" href="../../stylesheets/pygment_trac.css" media="screen" />
+    <link rel="stylesheet" type="text/css" href="../../stylesheets/print.css" media="print" />
+
+<!-- R syntax highlighter -->
+<script src="../../javascripts/r.js"></script>
+
+
+</head>
+
+<body>
+
+<div class="container">
+
+
+    <header>
+      <div class="container">
+        <h1>Analyzing Summer Movies</h1>
+        <h2></h2>
+
+<h4 class="author"><em>Kenny Darrell</em></h4>
+<h4 class="date"><em>October 18, 2014</em></h4>
+        </section>
+      </div>
+    </header>
+
+
+
+
+
+<p>Summer movies</p>
+<pre class="r"><code>devtools::source_url('https://raw.githubusercontent.com/darrkj/darrkj.github.io/master/rcode/import.R')
+import('calendarHeat')
+import('recurBind')
+
+load(&quot;~/Desktop/darrkj.github.io/blog/oct182014/daily.rda&quot;)</code></pre>
+<p>Put a link to the data here</p>
+<pre class="r"><code>library(dplyr)
+
+daily %&gt;% 
+  group_by(date) %&gt;% 
+  summarise(sum = sum(daily)) %&gt;%
+  select(Date = date, value = sum) %&gt;%
+  ts %&gt;%
+  calheat</code></pre>
+<p>What were teh good oviews though.</p>
+<pre class="r"><code># What movies were good.
+
+# Lets remove movies that we dont have there open
+
+
+daily %&gt;%
+  group_by(name) %&gt;%
+  summarise(sum = sum(daily)) %&gt;%
+  arrange(desc(sum)) %&gt;%
+  slice(c(1:10)) -&gt;
+  top_mv
+  
+top_mv</code></pre>
+<pre><code>## Source: local data frame [10 x 2]
+## 
+##                                   name       sum
+## 1              Guardians of the Galaxy 319169216
+## 2      Transformers: Age of Extinction 245370666
+## 3                           Maleficent 236412469
+## 4           X-Men: Days of Future Past 233893992
+## 5       Dawn of the Planet of the Apes 207604640
+## 6             The Amazing Spider-Man 2 201911219
+## 7                      Godzilla (2014) 200676069
+## 8                       22 Jump Street 190849261
+## 9  Teenage Mutant Ninja Turtles (2014) 187182309
+## 10          How to Train Your Dragon 2 175859659</code></pre>
+<pre class="r"><code>mv &lt;- top_mv$name</code></pre>
+<pre class="r"><code>daily %&gt;%
+  filter(name %in% top_mv$name) %&gt;%
+  select(key = name, value = daily, date) %&gt;%
+  mutate(value = value / 1000000) %&gt;%
+  arrange(key, date) %&gt;% 
+  write.csv(file = 'daily.csv', row.names = FALSE)
+
+stream_plot('daily.csv', 'daily.html')</code></pre>
+<p><a href="http://darrkj.github.io/blog/oct182014/daily">http://darrkj.github.io/blog/oct182014/daily</a></p>
+<pre class="r"><code># There is too much noise here
+# New movies start on Friday so first day in dataset will be dropped, and last three becuase
+
+weeks &lt;- data.frame(date = as.Date(&quot;2014-05-02&quot;) + 0:146, 
+                    w = rep(1:21, each = 7))
+
+daily %&gt;%
+  filter(name %in% top_mv$name) %&gt;%
+  inner_join(weeks, by = 'date') %&gt;%
+  arrange(name, date) %&gt;%
+  group_by(name, w) %&gt;%
+  summarise(sum = sum(daily), date = min(date)) %&gt;%
+  select(key = name, value = sum, date) %&gt;%
+  write.csv(file = 'weekly.csv', row.names = FALSE)
+
+
+stream_plot('weekly.csv', 'weekly.html')</code></pre>
+<p><a href="http://darrkj.github.io/blog/oct182014/weekly">http://darrkj.github.io/blog/oct182014/weekly</a></p>
+<div id="now-try-a-bunp-chart" class="section level1">
+<h1>Now try a bunp chart</h1>
+<p><a href="https://public.tableausoftware.com/views/movie/Sheet1">https://public.tableausoftware.com/views/movie/Sheet1</a>?:embed=y&amp;:display_count=no</p>
+
+<div class="tableauPlaceholder" style="width: 699px; height: 458px;">
+<noscript>
+
+</noscript><object class="tableauViz" width="699" height="458" style="display:none;">
+<param name="host_url" value="https%3A%2F%2Fpublic.tableausoftware.com%2F"></param> <param name="site_root" value></param><param name="name" value="movie/Sheet1"></param><param name="tabs" value="no"></param><param name="toolbar" value="yes"></param><param name="static_image" value="https://public.tableausoftware.com/static/images/mo/movie/Sheet1/1.png"></param> <param name="animate_transition" value="yes"></param><param name="display_static_image" value="yes"></param><param name="display_spinner" value="yes"></param><param name="display_overlay" value="yes"></param><param name="display_count" value="yes"></param>
+</object>
+</div>
+<div style="width:699px;height:22px;padding:0px 10px 0px 0px;color:black;font:normal 8pt verdana,helvetica,arial,sans-serif;">
+<div style="float:right; padding-right:8px;">
+<a href="http://www.tableausoftware.com/public/about-tableau-products?ref=https://public.tableausoftware.com/views/movie/Sheet1" target="_blank">Learn About Tableau</a>
+</div>
+
+
+
+</div>
+
+
+
+
+
+<script>
+
+// add bootstrap table styles to pandoc tables
+$(document).ready(function () {
+  $('tr.header').parent('thead').parent('table').addClass('table table-condensed');
+});
+
+</script>
+
+<!-- dynamically load mathjax for compatibility with --self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://c328740.ssl.cf1.rackcdn.com/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>
+
