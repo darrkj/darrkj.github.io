@@ -44,3 +44,5 @@ daily <- recurBind(daily)[[1]]
 save(daily, file = 'daily.rda')
 
 
+weekly <- weekly[weekly$value != 0, ]
+save(bump, file = 'bump.rda')

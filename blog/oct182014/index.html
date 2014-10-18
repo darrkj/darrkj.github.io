@@ -116,7 +116,7 @@ daily %&gt;%
   
 <div class="separator" style="clear: both; text-align: center;"><img src="top_movies.png" height="400" width="750"></a></div>
 
-<p> One plot from d3 that could shine some light on this is the stream graph.</p>
+<p>We compare movies we could create a calendar heatmap for each movie but that would difficult. How can we compare multiple revenue streams over time in plot. One method from d3 that could shine some light on this is the stream graph.</p>
 
 <pre class="r"><code>daily %&gt;%
   filter(name %in% top_mv$name) %&gt;%
@@ -128,6 +128,8 @@ daily %&gt;%
 stream_plot('daily.csv', 'daily.html')</code></pre>
 
 <div style="text-align:center;"> <iframe src="http://darrkj.github.io/blog/oct182014/daily" width="850" height="450"></iframe></div>
+
+<p>This is pretty cool. We can again see the bouncing ball type of phenomenon. We can also see how they come on strong and then fade out as other movies are coming. It appears that there is a staggered release. Almost like races where people start at normal time intervals to stop them from stampeding each other. There is a lot of noise here though. We could clean this up by aggregating away the daily fluctuations and get a weekly revenue.</p>
 
 <pre class="r"><code># There is too much noise here
 # New movies start on Friday so first day in dataset will be dropped, and last three becuase
@@ -150,6 +152,8 @@ stream_plot('weekly.csv', 'weekly.html')</code></pre>
 
 <div style="text-align:center;"> <iframe src="http://darrkj.github.io/blog/oct182014/weekly" width="850" height="450"></iframe></div>
 
+<p>That cleans it up a lot. We can now see the pattern but it does not offer much on the quantitative side though. I was recently introduced to bump charts. They allow us to see how rankings change over time. This is also a great place to try deploying something in <a href="http://www.tableausoftware.com/">Tableau</a>.</p>
+
 
 <div id="now-try-a-bump-chart" class="section level1">
 <h1>Now try a bump chart</h1>
@@ -160,12 +164,7 @@ stream_plot('weekly.csv', 'weekly.html')</code></pre>
 
 
 
-<script type='text/javascript' src='https://public.tableausoftware.com/javascripts/api/viz_v1.js'></script>
-<div class='tableauPlaceholder' style='width: 699px; height: 458px;'>
-<noscript>
-<a href='#'><img alt='Sheet 1 ' src='https:&#47;&#47;public.tableausoftware.com&#47;static&#47;images&#47;mo&#47;movie2&#47;Sheet1&#47;1_rss.png' style='border: none' /></a></noscript>
-
-<object class='tableauViz' width='699' height='458' style='display:none;'><param name='host_url' value='https%3A%2F%2Fpublic.tableausoftware.com%2F' /> <param name='site_root' value='' /><param name='name' value='movie2&#47;Sheet1' /><param name='tabs' value='no' /><param name='toolbar' value='yes' /><param name='static_image' value='https:&#47;&#47;public.tableausoftware.com&#47;static&#47;images&#47;mo&#47;movie2&#47;Sheet1&#47;1.png' /> <param name='animate_transition' value='yes' /><param name='display_static_image' value='yes' /><param name='display_spinner' value='yes' /><param name='display_overlay' value='yes' /><param name='display_count' value='yes' /></object></div><div style='width:699px;height:22px;padding:0px 10px 0px 0px;color:black;font:normal 8pt verdana,helvetica,arial,sans-serif;'><div style='float:right; padding-right:8px;'><a href='http://www.tableausoftware.com/public/about-tableau-products?ref=https://public.tableausoftware.com/views/movie/Sheet1' target='_blank'>Learn About Tableau</a></div></div>
+<script type='text/javascript' src='https://public.tableausoftware.com/javascripts/api/viz_v1.js'></script><div class='tableauPlaceholder' style='width: 699px; height: 458px;'><noscript><a href='#'><img alt='Sheet 1 ' src='https:&#47;&#47;public.tableausoftware.com&#47;static&#47;images&#47;Bu&#47;Bump_0&#47;Sheet1&#47;1_rss.png' style='border: none' /></a></noscript><object class='tableauViz' width='699' height='458' style='display:none;'><param name='host_url' value='https%3A%2F%2Fpublic.tableausoftware.com%2F' /> <param name='site_root' value='' /><param name='name' value='Bump_0&#47;Sheet1' /><param name='tabs' value='no' /><param name='toolbar' value='yes' /><param name='static_image' value='https:&#47;&#47;public.tableausoftware.com&#47;static&#47;images&#47;Bu&#47;Bump_0&#47;Sheet1&#47;1.png' /> <param name='animate_transition' value='yes' /><param name='display_static_image' value='yes' /><param name='display_spinner' value='yes' /><param name='display_overlay' value='yes' /><param name='display_count' value='yes' /></object></div><div style='width:699px;height:22px;padding:0px 10px 0px 0px;color:black;font:normal 8pt verdana,helvetica,arial,sans-serif;'><div style='float:right; padding-right:8px;'><a href='http://www.tableausoftware.com/public/about-tableau-products?ref=https://public.tableausoftware.com/views/Bump_0/Sheet1' target='_blank'>Learn About Tableau</a></div></div>
 
 
 
