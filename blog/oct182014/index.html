@@ -47,8 +47,14 @@
 <p>Creating the app in my last <a href="http://darrkj.github.io/blog/sep252014/">post</a> related to character networks got me thinking about some much older <a href="http://darrkj.github.io/blog/may262013/">work</a> I did related to movie data. This post focused on making things reproducible, but the underlying data was very interesting, the daily revenue of movies over time. There were interesting trends that could be seen in the temporal aspects of the data, it almost looked like a bouncing ball. There was a large revenue over the weekend followed by a slump throughout the week, only to repeat with lower amplitude in the coming week. I thought it would be interesting to look at this summer's movies. It is also a great place to use some of the visualization methods I have created recently as well as piecing them together to tell a story. 
 </p>
 
-<p>To start we should look at the date from a high level. We should expect to see hotspots over weekends when more people frequent theaters.</p>
-<pre class="r"><code>devtools::source_url('https://raw.githubusercontent.com/darrkj/darrkj.github.io/master/rcode/calendarHeat.R')
+
+<h2>A First Glance</h2>
+<p>To start we should look at the date from a high level. We should expect to see hotspots over weekends when more people frequent theaters. The data used in this post cab </p>
+
+<p><a href="movie.rda">Movie Data</a></p>
+
+<pre class="r"><code>library(devtools)
+source_url(&quot;http://bit.ly/1CDycBV&quot;)
 
 load(&quot;movie.rda&quot;)
 
@@ -62,28 +68,22 @@ daily %&gt;%
   calheat</code></pre>
   
   
-<p><a href="movie.rda">Movie Data</a></p>
+
   
-<div class="separator" style="clear: both; text-align: center;"><img src="movie_heatmap.png" height="400" width="750"></a></div>
+<div class="separator" style="clear: both; text-align: center;"><img src="movie_heatmap.png" height="400" width="700"></a></div>
 
 <p>This is pretty close to what I expected. The one thing of interest is that there seems to be a gradual increase in weekdays leading up to July and then it starts to fall of again. There also seems to be some weekends that draw a larger crowd than others. What could be causing this, perhaps more or better movies in the middle of the summer? Maybe just lots of opening weekends at the same time.</p>
 
 
   
 <p>How would we determine which movies are better and compare when they come out? We can calculate the total revenue from each movie to get the top earners.</p>
-<pre class="r"><code># What movies were good.
-
-# Lets remove movies that we dont have there open
-
-
-daily %&gt;%
+<pre class="r"><code>daily %&gt;%
   group_by(name) %&gt;%
   summarise(sum = sum(daily)) %&gt;%
   arrange(desc(sum)) %&gt;%
   slice(c(1:10)) -&gt;
   top_mv
-  
-top_mv</code></pre>
+</code></pre>
 <pre><code>## Source: local data frame [10 x 2]
 ## 
 ##                                   name       sum
@@ -97,9 +97,8 @@ top_mv</code></pre>
 ## 8                       22 Jump Street 190849261
 ## 9  Teenage Mutant Ninja Turtles (2014) 187182309
 ## 10          How to Train Your Dragon 2 175859659</code></pre>
-<pre class="r"><code>mv &lt;- top_mv$name</code></pre>
 
-
+<p>Now that we have a list of the top ten movies, we can use this list to filter our data.</p>
 
 <pre class="r"><code>daily %&gt;% 
   filter(name %in% top_mv$name) %&gt;%
@@ -108,12 +107,17 @@ top_mv</code></pre>
   select(Date = date, value = sum) %&gt;%
   ts %&gt;%
   calheat</code></pre>
+    
   
-<p>It appears that the better movies come out earlier in the summer. By mid August they are all out.</p>  
-  
-<div class="separator" style="clear: both; text-align: center;"><img src="top_movies.png" height="400" width="750"></a></div>
+<div class="separator" style="clear: both; text-align: center;"><img src="top_movies.png" height="400" width="700"></a></div>
 
-<p>We compare movies we could create a calendar heatmap for each movie but that would difficult. How can we compare multiple revenue streams over time in plot. One method from d3 that could shine some light on this is the stream graph.</p>
+<p>It appears that the better movies come out earlier in the summer. By mid August they are all out. There could still be more going on here though. We may need to look at each movie on its own and how it accumulates revenue through time.</p>
+
+<br>
+<h2>Digging Deeper</h2>
+<br>
+
+<p>To compare each movie we could create a calendar heatmap for each one, but that would be difficult to see everything all at once. How can we compare multiple revenue streams over time in only plot. One method from d3 that could shine some light on this is the stream graph. This plot type uses stacked areas in a continuous stream.</p>
 
 <pre class="r"><code>daily %&gt;%
   filter(name %in% top_mv$name) %&gt;%
@@ -124,14 +128,11 @@ top_mv</code></pre>
 
 stream_plot('daily.csv', 'daily.html')</code></pre>
 
-<div style="text-align:center;"> <iframe src="http://darrkj.github.io/blog/oct182014/daily" width="850" height="450"></iframe></div>
+<div style="text-align:center;"> <iframe src="http://darrkj.github.io/blog/oct182014/daily" width="850" height="430"></iframe></div>
 
-<p>This is pretty cool. We can again see the bouncing ball type of phenomenon. We can also see how they come on strong and then fade out as other movies are coming. It appears that there is a staggered release. Almost like races where people start at normal time intervals to stop them from stampeding each other. There is a lot of noise here though. We could clean this up by aggregating away the daily fluctuations and get a weekly revenue.</p>
+<p>This is pretty cool. We can again see the bouncing ball type of phenomenon. We can also see how a movie comes on strong and then fades out as other movies are released. It also appears that there is a staggered release. Almost like races where people start at normal time intervals to stop them from stampeding over each other. There is a lot of noise here though. We could clean this up by aggregating away the daily fluctuations and get a weekly revenue.</p>
 
-<pre class="r"><code># There is too much noise here
-# New movies start on Friday so first day in dataset will be dropped, and last three becuase
-
-weeks &lt;- data.frame(date = as.Date(&quot;2014-05-02&quot;) + 0:146, 
+<pre class="r"><code>weeks &lt;- data.frame(date = as.Date(&quot;2014-05-02&quot;) + 0:146, 
                     w = rep(1:21, each = 7))
 
 daily %&gt;%
@@ -143,11 +144,10 @@ daily %&gt;%
   select(key = name, value = sum, date) %&gt;%
   write.csv(file = 'weekly.csv', row.names = FALSE)
 
-
 stream_plot('weekly.csv', 'weekly.html')</code></pre>
 
 
-<div style="text-align:center;"> <iframe src="http://darrkj.github.io/blog/oct182014/weekly" width="850" height="450"></iframe></div>
+<div style="text-align:center;"> <iframe src="http://darrkj.github.io/blog/oct182014/weekly" width="850" height="430"></iframe></div>
 
 <p>That cleans it up a lot. We can now see the pattern but it does not offer much on the quantitative side though. I was recently introduced to bump charts. They allow us to see how rankings change over time. This is also a great place to try deploying something in <a href="http://www.tableausoftware.com/">Tableau</a>.</p>
 
