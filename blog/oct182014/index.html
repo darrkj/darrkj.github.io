@@ -42,8 +42,9 @@
 
 
 
+<h2>Inspiration</h2>
 
-<p>After creating the app in my last <a href="http://darrkj.github.io/blog/sep252014/">post</a> related to character networks got me thinking about a much older <a href="http://darrkj.github.io/blog/may262013/">post</a> about movie data. This post focused on making things reporducable, but the underlying data was very interesting, the daily revenue of movies over time. There were interesting trends in this time series data, it almost looked like a bouncing ball, lots of revenue over the weekend and then a slump through the week, only to repeat with lower revenue. I thought it would be interesting to look at this summer's movies. It is also a great place to use some of the visualization methods I have created recently. 
+<p>After creating the app in my last <a href="http://darrkj.github.io/blog/sep252014/">post</a> related to character networks got me thinking about a much older <a href="http://darrkj.github.io/blog/may262013/">post</a> about movie data. This post focused on making things reproducible, but the underlying data was very interesting, the daily revenue of movies over time. There were interesting trends in this time series data, it almost looked like a bouncing ball, lots of revenue over the weekend and then a slump through the week, only to repeat with lower revenue. I thought it would be interesting to look at this summer's movies. It is also a great place to use some of the visualization methods I have created recently. 
 </p>
 
 <p>To start we should look at the date from a high level. We should expect to see hotspots over weekends when more people frequent theaters.</p>
@@ -67,11 +68,11 @@ daily %&gt;%
   
 <div class="separator" style="clear: both; text-align: center;"><img src="movie_heatmap.png" height="400" width="750"></a></div>
 
-<p>This is pretty close to what I expected. The one thing of interest is that there seems to be a gradual increas in weekdays leading up to July and then it starts to fall of again. There also seems to be some weekends that draw a larger cround than others. What could be causing this, perphaps more or better movies in the middle of the summer? Maybe just lots of opening weekends at the same time.</p>
+<p>This is pretty close to what I expected. The one thing of interest is that there seems to be a gradual increase in weekdays leading up to July and then it starts to fall of again. There also seems to be some weekends that draw a larger crowd than others. What could be causing this, perhaps more or better movies in the middle of the summer? Maybe just lots of opening weekends at the same time.</p>
 
 
   
-<p>How would we determine which movies are better and compare when they come out? We can calculate the total revenue fro each movie to get the top earners.</p>
+<p>How would we determine which movies are better and compare when they come out? We can calculate the total revenue from each movie to get the top earners.</p>
 <pre class="r"><code># What movies were good.
 
 # Lets remove movies that we dont have there open
@@ -102,9 +103,7 @@ top_mv</code></pre>
 
 
 
-<pre class="r"><code>library(dplyr)
-
-daily %&gt;% 
+<pre class="r"><code>daily %&gt;% 
   filter(name %in% top_mv$name) %&gt;%
   group_by(date) %&gt;% 
   summarise(sum = sum(daily)) %&gt;%
@@ -112,7 +111,7 @@ daily %&gt;%
   ts %&gt;%
   calheat</code></pre>
   
-<p>It apears that the better movies come out earlier in the summer. By mid August they are all out.</p>  
+<p>It appears that the better movies come out earlier in the summer. By mid August they are all out.</p>  
   
 <div class="separator" style="clear: both; text-align: center;"><img src="top_movies.png" height="400" width="750"></a></div>
 
@@ -164,7 +163,7 @@ stream_plot('weekly.csv', 'weekly.html')</code></pre>
 
 
 
-<script type='text/javascript' src='https://public.tableausoftware.com/javascripts/api/viz_v1.js'></script><div class='tableauPlaceholder' style='width: 699px; height: 458px;'><noscript><a href='#'><img alt='Sheet 1 ' src='https:&#47;&#47;public.tableausoftware.com&#47;static&#47;images&#47;Bu&#47;Bump_0&#47;Sheet1&#47;1_rss.png' style='border: none' /></a></noscript><object class='tableauViz' width='699' height='458' style='display:none;'><param name='host_url' value='https%3A%2F%2Fpublic.tableausoftware.com%2F' /> <param name='site_root' value='' /><param name='name' value='Bump_0&#47;Sheet1' /><param name='tabs' value='no' /><param name='toolbar' value='yes' /><param name='static_image' value='https:&#47;&#47;public.tableausoftware.com&#47;static&#47;images&#47;Bu&#47;Bump_0&#47;Sheet1&#47;1.png' /> <param name='animate_transition' value='yes' /><param name='display_static_image' value='yes' /><param name='display_spinner' value='yes' /><param name='display_overlay' value='yes' /><param name='display_count' value='yes' /></object></div><div style='width:699px;height:22px;padding:0px 10px 0px 0px;color:black;font:normal 8pt verdana,helvetica,arial,sans-serif;'><div style='float:right; padding-right:8px;'><a href='http://www.tableausoftware.com/public/about-tableau-products?ref=https://public.tableausoftware.com/views/Bump_0/Sheet1' target='_blank'>Learn About Tableau</a></div></div>
+<script type='text/javascript' src='https://public.tableausoftware.com/javascripts/api/viz_v1.js'></script><div class='tableauPlaceholder' style='width: 699px; height: 458px;'><noscript><a href='#'><img alt='Sheet 1 ' src='https:&#47;&#47;public.tableausoftware.com&#47;static&#47;images&#47;Bu&#47;Bump_0&#47;Sheet1&#47;1_rss.png' style='border: none' /></a></noscript><object class='tableauViz' width='699' height='458' style='display:none;'><param name='host_url' value='https%3A%2F%2Fpublic.tableausoftware.com%2F' /> <param name='site_root' value='' /><param name='name' value='Bump_0&#47;Sheet1' /><param name='tabs' value='no' /><param name='toolbar' value='yes' /><param name='static_image' value='https:&#47;&#47;public.tableausoftware.com&#47;static&#47;images&#47;Bu&#47;Bump_0&#47;Sheet1&#47;1.png' /> <param name='animate_transition' value='yes' /><param name='display_static_image' value='yes' /><param name='display_spinner' value='yes' /><param name='display_overlay' value='yes' /><param name='display_count' value='yes' /></object></div><div style='width:699px;height:22px;padding:0px 10px 0px 0px;color:black;font:normal 8pt verdana,helvetica,arial,sans-serif;'><div style='float:right; padding-right:8px;'><a href='http://www.tableausoftware.com/public/about-tableau-products?ref=https://public.tableausoftware.com/views/Bump_0/Sheet1' target='_blank'></a></div></div>
 
 <p>Here you can very clearly see how movies fade as newer releases come to theaters. There is very little trading places. For the most part a movie comes out and jumps to the top, as others come out they push older movies to lower and lower ranks until they eventually leave the theaters.</p>
 
