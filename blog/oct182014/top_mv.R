@@ -49,7 +49,15 @@ save(bump, file = 'bump.rda')
 write.csv(bump, file = 'bump.csv', row.names=F)
 
 
-
+movie %>%
+  #filter(name %in% top_mv$name) %>%
+  inner_join(weeks, by = 'date') %>%
+  arrange(name, date) %>%
+  group_by(name, w) %>%
+  summarise(sum = sum(daily), date = min(date)) %>%
+  select(key = name, value = sum, date) %>%
+  filter(value > 0) %>%
+  write.csv(file = 'all_bump.csv', row.names = FALSE)
 
 
 

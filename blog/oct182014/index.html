@@ -44,23 +44,24 @@
 
 <h2>Inspiration</h2>
 
+
 <p>Creating the app in my last <a href="http://darrkj.github.io/blog/sep252014/">post</a> related to character networks got me thinking about some much older <a href="http://darrkj.github.io/blog/may262013/">work</a> I did related to movie data. This post focused on making things reproducible, but the underlying data was very interesting, the daily revenue of movies over time. There were interesting trends that could be seen in the temporal aspects of the data, it almost looked like a bouncing ball. There was a large revenue over the weekend followed by a slump throughout the week, only to repeat with lower amplitude in the coming week. I thought it would be interesting to look at this summer's movies. It is also a great place to use some of the visualization methods I have created recently as well as piecing them together to tell a story. 
 </p>
 
-
+<br>
 <h2>A First Glance</h2>
-<p>To start we should look at the date from a high level. We should expect to see hotspots over weekends when more people frequent theaters. The data used in this post cab </p>
 
-<p><a href="movie.rda">Movie Data</a></p>
+
+<p>To start we should look at the date from a high level. We should expect to see hotspots over weekends when more people frequent theatres. The data used in this post can be obtained <a href="movie.rda">here</a>.</p>
 
 <pre class="r"><code>library(devtools)
+library(dplyr)
+
 source_url(&quot;http://bit.ly/1CDycBV&quot;)
 
 load(&quot;movie.rda&quot;)
 
-library(dplyr)
-
-daily %&gt;% 
+movie %&gt;% 
   group_by(date) %&gt;% 
   summarise(sum = sum(daily)) %&gt;%
   select(Date = date, value = sum) %&gt;%
@@ -70,14 +71,15 @@ daily %&gt;%
   
 
   
-<div class="separator" style="clear: both; text-align: center;"><img src="movie_heatmap.png" height="400" width="700"></a></div>
+<div class="separator" style="clear: both; text-align: center;"><img src="movie_heatmap.png" height="350" width="600"></a></div>
+<br>
 
 <p>This is pretty close to what I expected. The one thing of interest is that there seems to be a gradual increase in weekdays leading up to July and then it starts to fall of again. There also seems to be some weekends that draw a larger crowd than others. What could be causing this, perhaps more or better movies in the middle of the summer? Maybe just lots of opening weekends at the same time.</p>
 
 
   
 <p>How would we determine which movies are better and compare when they come out? We can calculate the total revenue from each movie to get the top earners.</p>
-<pre class="r"><code>daily %&gt;%
+<pre class="r"><code>movie %&gt;%
   group_by(name) %&gt;%
   summarise(sum = sum(daily)) %&gt;%
   arrange(desc(sum)) %&gt;%
@@ -100,7 +102,7 @@ daily %&gt;%
 
 <p>Now that we have a list of the top ten movies, we can use this list to filter our data.</p>
 
-<pre class="r"><code>daily %&gt;% 
+<pre class="r"><code>movie %&gt;% 
   filter(name %in% top_mv$name) %&gt;%
   group_by(date) %&gt;% 
   summarise(sum = sum(daily)) %&gt;%
@@ -109,17 +111,17 @@ daily %&gt;%
   calheat</code></pre>
     
   
-<div class="separator" style="clear: both; text-align: center;"><img src="top_movies.png" height="400" width="700"></a></div>
+<div class="separator" style="clear: both; text-align: center;"><img src="top_movies.png" height="350" width="600"></a></div>
+<br>
 
 <p>It appears that the better movies come out earlier in the summer. By mid August they are all out. There could still be more going on here though. We may need to look at each movie on its own and how it accumulates revenue through time.</p>
 
 <br>
 <h2>Digging Deeper</h2>
-<br>
 
 <p>To compare each movie we could create a calendar heatmap for each one, but that would be difficult to see everything all at once. How can we compare multiple revenue streams over time in only plot. One method from d3 that could shine some light on this is the stream graph. This plot type uses stacked areas in a continuous stream.</p>
 
-<pre class="r"><code>daily %&gt;%
+<pre class="r"><code>movie %&gt;%
   filter(name %in% top_mv$name) %&gt;%
   select(key = name, value = daily, date) %&gt;%
   mutate(value = value / 1000000) %&gt;%
@@ -135,7 +137,7 @@ stream_plot('daily.csv', 'daily.html')</code></pre>
 <pre class="r"><code>weeks &lt;- data.frame(date = as.Date(&quot;2014-05-02&quot;) + 0:146, 
                     w = rep(1:21, each = 7))
 
-daily %&gt;%
+movie %&gt;%
   filter(name %in% top_mv$name) %&gt;%
   inner_join(weeks, by = 'date') %&gt;%
   arrange(name, date) %&gt;%
@@ -149,21 +151,32 @@ stream_plot('weekly.csv', 'weekly.html')</code></pre>
 
 <div style="text-align:center;"> <iframe src="http://darrkj.github.io/blog/oct182014/weekly" width="850" height="430"></iframe></div>
 
-<p>That cleans it up a lot. We can now see the pattern but it does not offer much on the quantitative side though. I was recently introduced to bump charts. They allow us to see how rankings change over time. This is also a great place to try deploying something in <a href="http://www.tableausoftware.com/">Tableau</a>.</p>
+<p>That cleans it up a lot. We can now see the pattern clearly. I am starting to wonder if there is some form of scheduled release. A way to give every movie there weekend in the spotlight. How could we determine if this is so?</p>
 
 
-<div id="now-try-a-bump-chart" class="section level1">
-<h1>Now try a bump chart</h1>
+<br>
+<h2>Becoming Aesthetically Quantitative</h2>
 
-
-</div>
-
-
-
+The stream charts gave sreat insights into ebbs and flows. They also gave the insight of that there may be some systematic method to releasing movies but they do not offer much on the quantitative side. I was recently introduced to bump charts by a colleague, and gladly so becuase this is the exact area where they help. They allow us to see how rankings change over time. It makes it easy to see when things appear and when they rise and fall in the rankings. This is also a great place to try deploying something in <a href="http://www.tableausoftware.com/">Tableau</a>. I am very excited to use Tableau now that they are available on Mac. creating this type of plot is a perfect fit.</p>
 
 <script type='text/javascript' src='https://public.tableausoftware.com/javascripts/api/viz_v1.js'></script><div class='tableauPlaceholder' style='width: 699px; height: 458px;'><noscript><a href='#'><img alt='Sheet 1 ' src='https:&#47;&#47;public.tableausoftware.com&#47;static&#47;images&#47;Bu&#47;Bump_0&#47;Sheet1&#47;1_rss.png' style='border: none' /></a></noscript><object class='tableauViz' width='699' height='458' style='display:none;'><param name='host_url' value='https%3A%2F%2Fpublic.tableausoftware.com%2F' /> <param name='site_root' value='' /><param name='name' value='Bump_0&#47;Sheet1' /><param name='tabs' value='no' /><param name='toolbar' value='yes' /><param name='static_image' value='https:&#47;&#47;public.tableausoftware.com&#47;static&#47;images&#47;Bu&#47;Bump_0&#47;Sheet1&#47;1.png' /> <param name='animate_transition' value='yes' /><param name='display_static_image' value='yes' /><param name='display_spinner' value='yes' /><param name='display_overlay' value='yes' /><param name='display_count' value='yes' /></object></div><div style='width:699px;height:22px;padding:0px 10px 0px 0px;color:black;font:normal 8pt verdana,helvetica,arial,sans-serif;'><div style='float:right; padding-right:8px;'><a href='http://www.tableausoftware.com/public/about-tableau-products?ref=https://public.tableausoftware.com/views/Bump_0/Sheet1' target='_blank'></a></div></div>
 
-<p>Here you can very clearly see how movies fade as newer releases come to theaters. There is very little trading places. For the most part a movie comes out and jumps to the top, as others come out they push older movies to lower and lower ranks until they eventually leave the theaters.</p>
+<p>Here you can very clearly see how movies fade as newer releases come to theatres. It is quite uncommon for a moving to rise in the rankings. The norm is to fade out over time. There is very little trading places. For the most part a movie comes out and starts on top, as others come out they push older movies to lower and lower ranks until they eventually leave the theatres. This is probably not the case in general as this is only the top movies. I would imagine we would see soemthing that resembles a braid from all of the lower ranking movies.</p>
+<br>
+
+
+<script type='text/javascript' src='https://public.tableausoftware.com/javascripts/api/viz_v1.js'></script><div class='tableauPlaceholder' style='width: 699px; height: 458px;'><noscript><a href='#'><img alt='Sheet 1 ' src='https:&#47;&#47;public.tableausoftware.com&#47;static&#47;images&#47;al&#47;all_movie_bump&#47;Sheet1&#47;1_rss.png' style='border: none' /></a></noscript><object class='tableauViz' width='699' height='458' style='display:none;'><param name='host_url' value='https%3A%2F%2Fpublic.tableausoftware.com%2F' /> <param name='site_root' value='' /><param name='name' value='all_movie_bump&#47;Sheet1' /><param name='tabs' value='no' /><param name='toolbar' value='yes' /><param name='static_image' value='https:&#47;&#47;public.tableausoftware.com&#47;static&#47;images&#47;al&#47;all_movie_bump&#47;Sheet1&#47;1.png' /> <param name='animate_transition' value='yes' /><param name='display_static_image' value='yes' /><param name='display_spinner' value='yes' /><param name='display_overlay' value='yes' /><param name='display_count' value='yes' /></object></div><div style='width:699px;height:22px;padding:0px 10px 0px 0px;color:black;font:normal 8pt verdana,helvetica,arial,sans-serif;'><div style='float:right; padding-right:8px;'><a href='http://www.tableausoftware.com/public/about-tableau-products?ref=https://public.tableausoftware.com/views/all_movie_bump/Sheet1' target='_blank'></a></div></div>
+
+
+<p>My thoughts were more or less true, it is very hard to understand what is happening here. There are too many crossing lines, and really just too many lines for this type of chart.</p>
+
+
+<br>
+<h2>Conclusion</h2>
+
+<p>The main point I want to make here that this process of looking at a plot and seeing something or even not seeing something then restructuring the data and looking at differently is the heart of data science. There are lots of iterations on this: aquire, process, plot, interpret, clean, replot, etc. The end result can then be turned into a story. The story here was just that there seems to be some thought, even between Studios, about when they release movies.</p>
+
+<p>Sometimes the results are astounding and sometimes just knowledge of minor details. More intersting things happen when the result is astounding. This is where the other part of data science can come in, building models. A studio could take knowledge like this and try to predict the optimal time to release a movie or how to space multiple films throughout the year. A theatre could use this to determine when to retire a film and allocate more screens to a newer release. Anyone can take data and make plots. It takes more effort to interpret what the plot means and what question to ask next. Even more to condense this into a story that conveys some piece of information. It requires an actual problem and plenty of ingenuity to build a model from this knowledge nd yet more work to take action and capitalize on it.</p>
 
 <script>
 

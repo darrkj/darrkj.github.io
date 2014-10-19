@@ -23,7 +23,7 @@ devtools::source_url('https://raw.githubusercontent.com/darrkj/darrkj.github.io/
 import('calendarHeat')
 import('recurBind')
 
-load("~/Desktop/darrkj.github.io/blog/oct182014/daily.rda")
+load("~/Desktop/darrkj.github.io/blog/oct182014/movie.rda")
 
 ```
 
@@ -93,7 +93,7 @@ http://darrkj.github.io/blog/oct182014/daily
 weeks <- data.frame(date = as.Date("2014-05-02") + 0:146, 
                     w = rep(1:21, each = 7))
 
-daily %>%
+movie %>%
   filter(name %in% top_mv$name) %>%
   inner_join(weeks, by = 'date') %>%
   arrange(name, date) %>%
