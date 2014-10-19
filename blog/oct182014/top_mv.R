@@ -46,3 +46,10 @@ save(daily, file = 'daily.rda')
 
 weekly <- weekly[weekly$value != 0, ]
 save(bump, file = 'bump.rda')
+write.csv(bump, file = 'bump.csv', row.names=F)
+
+
+
+
+
+
