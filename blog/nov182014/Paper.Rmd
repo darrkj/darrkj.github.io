@@ -75,7 +75,7 @@ You can set up a process to pull the data in its entirety by putting a few loops
 
 
 Link to flat files or RData files here.
-```{r, eval = T}
+```{r load_data, eval = T}
 load('final_espn.RData')
 
 head(fights)
@@ -91,7 +91,7 @@ The first step is to resolve the issue of each fight really having two different
 
 
 
-```{r eval = F}
+```{r awkward_join, eval = F}
 # Make names with winner and loser
 fights$winner <- ifelse(fights$result == 'Win', fights$name, fights$opp)
 fights$loser <- ifelse(fights$result == 'Loss', fights$name, fights$opp)
@@ -156,7 +156,7 @@ I created some code that sits on top of the RNeo4j package so that you can add w
 
 May want to add the actual functions here.
 
-```{r eval = F}
+```{r graph_load, eval = F}
 graph = startGraph("http://localhost:7474/db/data/")
 
 person <- add_nodes(data, c('fighter', 'espn'), 'id', props = names(data))
@@ -178,7 +178,7 @@ UNION ALL MATCH (a)-[r:fought]->(b)
          a.name as lname, a.weight as lw;
 ```
 
-```{r echo = F}
+```{r query, echo = F}
 query <- 'MATCH (a)-[r:fought]->(b) 
   WHERE r.result = "Win"
   RETURN a.name as wname, a.id as wid, r.dec as dec, r.date as date, 
@@ -191,7 +191,7 @@ UNION ALL MATCH (a)-[r:fought]->(b)
 
 I now just use the cypher function with this query passed in as a string and the data I want is returned.
 
-```{r}
+```{r pull_data}
 fight <- unique(cypher(graph, query))
 ```
 
@@ -202,10 +202,8 @@ ADD THE FIGHTS PER year CHARTS
 
 
 ```{r clean}
-
 # How many fights per year
-fight %>% mutate(date = ymd(date), year = year(date)) %>% 
-  summarise(count = n())
+fight %>% mutate(date = ymd(date), year = year(date)) -> fight
 
 plot(table(fight$year), xlab = 'Year', ylab = '# of Fights', 
      main = 'Number of Fights a Year')
@@ -364,25 +362,18 @@ Build a model
 ```{r model} 
 graph = startGraph("http://localhost:7474/db/data/")
 
-q <- 'MATCH (a)-[r:fought]->(b)-[s:fought]->(a)
-      WHERE r.result = "Win" and r.date = s.date
-      RETURN a.name as name, a.id as id, 
-             a.weight as weight, a.height as height,
-             a.birth as birth,
-             a.style as style, r.result as result,
-             r.dec as dec, r.date as date, r.exp as exp, s.exp as oexp,
-             b.id as oid, b.weight as oweight, b.height as oheight,
-             b.birth as obirth, b.style as ostyle
-      UNION ALL
-      MATCH (a)-[r:fought]->(b)-[s:fought]->(a)
-      WHERE r.result = "Loss" and r.date = s.date
-      RETURN a.name as name, a.id as id, 
-             a.weight as weight, a.height as height,
-             a.birth as birth,
-             a.style as style, r.result as result,
-             r.dec as dec, r.date as date, r.exp as exp, s.exp as oexp,
-             b.id as oid, b.weight as oweight, b.height as oheight,
-             b.birth as obirth, b.style as ostyle;'
+q <- '
+MATCH (a)-[r:fought]->(b)-[s:fought]->(a)
+WHERE r.result = "Win" and r.date = s.date
+RETURN a.name as name, a.id as id, a.weight as weight, a.height as height, 
+       r.result as result, r.date as date, r.exp as exp, s.exp as oexp,
+       b.id as oid, b.weight as oweight, b.height as oheight
+UNION ALL
+MATCH (a)-[r:fought]->(b)-[s:fought]->(a)
+WHERE r.result = "Loss" and r.date = s.date
+RETURN a.name as name, a.id as id, a.weight as weight, a.height as height, 
+       r.result as result, r.date as date, r.exp as exp, s.exp as oexp,
+       b.id as oid, b.weight as oweight, b.height as oheight;'
 
 f <- unique(cypher(graph, q))
 
@@ -392,7 +383,7 @@ table(f[f$exp == 1, ]$result)
 table(f[f$exp == 2, ]$result)
 table(f[f$exp == 3, ]$result)
 
-#
+
 w <- as.data.frame(table(f[f$result == 'Win', ]$exp))
 l <- as.data.frame(table(f[f$result == 'Loss', ]$exp))
 
@@ -425,16 +416,11 @@ f$height <- NULL
 f$oheight <- NULL
 
 
-f$dec <- NULL
 f$birth <- NULL
 f$obirth <- NULL
-f$oreach <- NULL
-f$style <- NULL
-f$ostyle <- NULL
-
 ```
 
-So it seems the variiables I thought at first would be useful had very little value. I still that there may be some value in other varaibles such as age and style but they are missing more often than not so. They are also other varaibles that I think may be useful like how you wone the fight and how long it took but first I want to check out the graph measures and see how they play out.
+So it seems the variables I thought at first would be useful had very little value. I still that there may be some value in other varaibles such as age and style but they are missing more often than not so. They are also other varaibles that I think may be useful like how you wone the fight and how long it took but first I want to check out the graph measures and see how they play out.
 
 ```{r}
 grTab <- function(gr) {
@@ -455,13 +441,13 @@ grTab <- function(gr) {
 
 q2 <- 'MATCH (a)-[r:fought]->(b)
        WHERE r.result = "Win"
-       RETURN a.id as id, a.name as name, r.date as date, b.id as oid, b.name as oname;'
+       RETURN a.id as id, a.name as name, r.date as date, 
+              b.id as oid, b.name as oname;'
 
 
-f2 <- unique(cypher(graph, q2))
 
-f2$date <- ymd(f2$date)
-f2 <- f2[order(f2$date), ]
+q2 %>% cypher(graph, .) %>% unique() %>% mutate(date = ymd(date)) -> f2 
+
 
 time <- sort(unique(f2$date))
 g <- graph.data.frame(f2[f2$date < time[10], c('oname', 'name')])
@@ -476,31 +462,25 @@ plot(g)
 ###############################
 
 if(F) {
-f2 <- unique(cypher(graph, q2))
 
-f2$date <- ymd(f2$date)
-f2 <- f2[order(f2$date), ]
-
-hh <- list()
+pageRank <- list()
 for (i in 2:length(time)) {
   
-  g <- graph.data.frame(f[f$date < time[i], c('oid', 'id')])
+  g <- graph.data.frame(f2[f2$date < time[i], c('oid', 'id')])
   y <- x <- cbind(grTab(g), date = time[i])
   names(x) <- c("id", "cl", "bet", "eig", "hub", "auth", "page", "date") 
   names(y) <- c("oid", "ocl", "obet", "oeig", "ohub", "oauth", "opage", "date") 
   
-  h <- f[f$date == time[i], ]
-  h <- merge(h, x, by = c('id', 'date'), all.x = T)
-  h <- merge(h, y, by = c('oid', 'date'), all.x = T)
+  tmp <- f2[f2$date == time[i], ]
+  tmp <- merge(tmp, x, by = c('id', 'date'), all.x = T)
+  tmp <- merge(tmp, y, by = c('oid', 'date'), all.x = T)
   
-  hh[[as.character(i)]] <- h
+  pageRank[[as.character(i)]] <- tmp
   print(i)
 }
 
-h <- recurBind(hh)[[1]]
-h <- h[order(h$date), ]
-head(h)
-pageRank <- h
+pageRank <- recurBind(pageRank)[[1]]
+
 }
 rm(f2, q2)
 load('pageRank.RData')
@@ -516,8 +496,6 @@ sum(page[, 1] > page[, 2])
 ############################
 #
 # Create model dataset
-
-f <- f[order(f$date), ]
 
 
 p1 <- pageRank[, c('id', 'oid', 'date', 'cl', 'bet', 'eig', 'hub', 'auth', 'page')]
@@ -602,7 +580,7 @@ max(f2$date)
 
 
 
-```{r out_of_sample, eval = F}
+```{r out_of_sample}
 clean <- function(x) {
   x %>% html_attrs() %>% sapply(function(x) x[[1]]) %>% as.character() %>%
     gsub('http://espn.go.com/mma/fighter/_/id/', '', .) %>% strsplit('/') %>%
@@ -654,15 +632,13 @@ new_pred <- function(event) {
     merge(select(ndata, winner = id, wp = p)) %>% 
     merge(select(ndata, loser = id, lp = p))
 }
+```
 
-
+```{r eval = F}
 
 past <- c('http://espn.go.com/mma/fightcenter?eventId=400603491',
           'http://espn.go.com/mma/fightcenter?eventId=400601611',
-          'http://espn.go.com/mma/fightcenter?eventId=400592231',
-)
-
-
+          'http://espn.go.com/mma/fightcenter?eventId=400592231')
 
 new_pred(past[1])
 new_pred(past[2])

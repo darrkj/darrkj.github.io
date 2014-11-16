@@ -30,17 +30,716 @@
 
     <header>
       <div class="container">
-        <h1>Simplifying Things with Neo4j</h1>
-        <h2></h2>
+        <h1>MMA Network</h2>
 
 <h4 class="author"><em>Kenny Darrell</em></h4>
-<h4 class="date"><em>July 4, 2014</em></h4>
+<h4 class="date"><em>November 15, 2014</em></h4>
         </section>
       </div>
     </header>
 
 
+<div id="history" class="section level3">
+<h3>History</h3>
+<p>Mixed Martial Arts (MMA) is a new sport, but it has grown pretty fast. I remember being young and seeing advertisments for the first UFC event. Being a kid from the eighties who enjoyed profesional wrestling I was pretty fascinated. It was a different beast back then in the early ninties. It has evolved into a very large and organized sport.</p>
+<p>There are also different organizations in this realm, <a href="http://www.bellator.com/">Bellator</a>, <a href="http://en.wikipedia.org/wiki/Pride_Fighting_Championships">PRIDE</a> and <a href="http://www.ufc.com/">UFC</a>.</p>
+<p>For many reasons this interests me. If you have read any of my past blogs you can see lots if topics related to sports. My other intersts of temoral data and network data are both very appearent here. (Needs more)</p>
+</div>
+<div id="espn" class="section level3">
+<h3>ESPN</h3>
+<p>Talk about pulling data from ESPN</p>
+<p>There are quite a few sources for information in this area. Some are pretty explicit about not scrpping data and others seem to be more open. There is alot of data on <a href="http://espn.go.com/mma/">ESPN</a>. To pull this data I used the new <a href="https://github.com/hadley/rvest">rvest</a> package which made things very easy than other methods I have used in the past. I tried to use some of the newer webscriping tools but ran into some issues. I hope that these tools continue to evolve, and perhaps I should retry or try others to see which ones are more capable, perhaps a blog for another day.</p>
+<p>Using rvest and dplyr together makes the code look like a pipeline, very clean and readable.</p>
+<pre class="r"><code>'http://espn.go.com/mma/fighters' %&gt;% 
+  html() %&gt;%
+  html_nodes('.evenrow, a') %&gt;% 
+  html_attrs() %&gt;%
+  grep('/fighter/', ., value = T) %&gt;%
+  sapply(function(x) x[[1]]) %&gt;%
+  as.character() %&gt;%
+  head()</code></pre>
+<pre><code>## [1] &quot;/mma/fighter/_/id/3043549/niina-aaltonen&quot;   
+## [2] &quot;/mma/fighter/_/id/2504991/tom-aaron&quot;        
+## [3] &quot;/mma/fighter/_/id/3088828/joshua-aarons&quot;    
+## [4] &quot;/mma/fighter/_/id/3089919/mike-aarts&quot;       
+## [5] &quot;/mma/fighter/_/id/2511451/zyad-abada&quot;       
+## [6] &quot;/mma/fighter/_/id/2966179/kadzhik-abadzhyan&quot;</code></pre>
+<pre class="r"><code>'http://espn.go.com/mma/fighter/history/_/id/3031574/matthew-lozano' %&gt;%
+  html() %&gt;% 
+  html_nodes('div div div .evenrow td') %&gt;%
+  html_text() %&gt;%
+  matrix(ncol = 7, byrow = T) %&gt;%
+  data.frame() %&gt;%
+  select(date = X1, opponent = X3, result = X4, method = X5, time = X7)</code></pre>
+<pre><code>##           date      opponent result                      method time
+## 1 Oct 11, 2013   Klayton Mai    Win Submission (Triangle Choke) 1:14
+## 2 Oct 19, 2012   Dave Morgan    Win Submission (Triangle Choke) 2:28
+## 3 Jun 29, 2012 Joshua Aarons    Win Submission (Triangle Choke) 4:23</code></pre>
+<pre class="r"><code>'http://espn.go.com/mma/fighter/stats/_/id/3031574/matthew-lozano' %&gt;% 
+  html() %&gt;%
+  html_nodes('.general-info li') %&gt;% 
+  html_text()</code></pre>
+<pre><code>## [1] &quot;Bantamweight&quot;    &quot;5'7\&quot;, 135 lbs.&quot;</code></pre>
+<p>You can set up a process to pull the data in its entirety by putting a few loops or lapply functions around the above code. You then need to clean it up a bit and get it into a tidy data format. You can find my attempt here.</p>
+<p>Link to flat files or RData files here.</p>
+<pre class="r"><code>load('final_espn.RData')
 
+head(fights)</code></pre>
+<pre><code>##        id       date                                     event
+## 1 3032062 2011-09-03             One FC: Champion vs. Champion
+## 2 3032062 2010-09-24 Legend FC: Legend Fighting Championship 3
+## 3 3050604 2010-02-21     GC: Gladiator Challenge: Vision Quest
+## 4 2557041 2009-08-15          Called Out MMA: Called Out MMA 1
+## 5 2499256 2004-12-18                       CWFC 9: Xtreme Xmas
+## 6 2504979 2010-05-07                       MFC 25: Vindication
+##                opp result                  dec round time   oppid exp
+## 1  eduard folayang   Loss Decision - Unanimous     3 5:00 2975101   2
+## 2    guangyou ning    Win   Unanimous Decision     3 5:00 2996677   1
+## 3      john robles   Loss                   KO     1 0:48 3044362   1
+## 4 francisco rivera   Loss    Majority Decision     3 5:00 2531855   1
+## 5        dan hardy   Loss                   KO     1 0:13 2354205   1
+## 6       keto allen   Loss                  TKO     1 2:58 2504978   1</code></pre>
+<p>The first thing that I thought would be useful is to build a model that can predict the outcome of a given fight. There are a few reasons why this problem is different than building a typical model. The most important reason is that each observation is not independent. This lack of independence happens on many levels. First if I have a fight to predict I actually have it setup as two fights now, one from each fighter. I cannot predict the outcome of the fight like this, What if I have a model that says both fighters win. There is also a larger network effect, any given fight could have fighters that have fought in many other fights, maybe even a clone of the fight under consideration.</p>
+</div>
+<div id="restructure" class="section level3">
+<h3>Restructure</h3>
+<p>The first step is to resolve the issue of each fight really having two different observations, one from each side. I started writing code to this and it turned out to be very, very gross. It was hard to grapple in my head. Weird things had to happen, I had to join the data on itself but change the names of fieds to get over the collision of the fighter attributes. One thing I want to address here, which I have spoke about some in the past is using the right tool for the job. After started down the path of trying this I realized this appraoch was all wrong. Here is a glimse of waht that code looked like, pretty ugly.</p>
+<pre class="r"><code># Make names with winner and loser
+fights$winner &lt;- ifelse(fights$result == 'Win', fights$name, fights$opp)
+fights$loser &lt;- ifelse(fights$result == 'Loss', fights$name, fights$opp)
+
+# Now remove opponent field
+fights$opp &lt;- NULL
+
+# need to create two tables, one will have the data for winner and one the loser
+left &lt;- fights[fights$result == 'Win', c(1, 3:7, 2, 8:9)]
+right &lt;- fights[fights$result == 'Loss', c(1, 3:7, 2, 8:9)]
+
+# Change the names of each to denote fields realtion.
+names(left)[1:6] &lt;- paste('wn_', names(left)[1:6], sep = '')
+names(right)[1:6] &lt;- paste('ls_', names(right)[1:6], sep = '')
+
+left &lt;- left[order(left$date), ]
+right &lt;- right[order(right$date), ]
+
+# Create a table of atomic fight data.
+key &lt;- fights[, c('date', 'winner', 'loser')]
+key &lt;- unique(key)
+
+# This joins the left and right side (winner/loser) data on
+join &lt;- merge(key, left, by = c('date', 'winner', 'loser'))
+join &lt;- merge(join, right, by = c('date', 'winner', 'loser'))
+
+# We should have two rows for each
+join &lt;- unique(join)
+
+# No longer have becuase we have winner and loser fields.
+join$wn_name &lt;- NULL
+join$ls_name &lt;- NULL
+join$wn_result &lt;- NULL
+join$ls_result &lt;- NULL
+
+# Create an id for each fight
+join$matchid &lt;- as.character(1:nrow(join) + 100000) 
+
+# Cleanup tables.
+rm(key, left, right)
+
+# Now we have to merge the bio data on for both the winner and loser.
+pl_lk &lt;- data
+pl_lk$name &lt;- NULL
+
+# Need to rename everything
+names(pl_lk) &lt;- paste('wn_', names(pl_lk), sep = '')
+join2 &lt;- merge(join, pl_lk, by = 'wn_id')
+
+# Redo for loser and switch names
+names(pl_lk) &lt;- gsub('wn_', 'ls_', names(pl_lk))
+join3 &lt;- merge(join2, pl_lk, by = 'ls_id')
+
+# Finally have the right structure
+fight &lt;- join3</code></pre>
+<p>This seems like a perfect place to use Neo4j. I can give it each fighteres data and then create a relation for each fight. Then I can just query for teh data I want and in the right format. Shove all of my data into Neo4j and have cypher do all of the messy parts behind the scenes, perfect.</p>
+<p>I created some code that sits on top of the RNeo4j package so that you can add whole tables with given realtionships, whcih there may now be some new commits that allwo you to do this. I just llop through the fighter attribute data adn the fight data adding everything.</p>
+<p>May want to add the actual functions here.</p>
+<pre class="r"><code>graph = startGraph(&quot;http://localhost:7474/db/data/&quot;)
+
+person &lt;- add_nodes(data, c('fighter', 'espn'), 'id', props = names(data))
+
+add_rels(fights, from = person, f_name = 'id', to = person, t_name = 'oppid', 
+         how = 'fought', props = c('date', 'result', 'dec', 'time'))</code></pre>
+<p>I can get the data I want by using a query like this.</p>
+<pre><code>MATCH (a)-[r:fought]-&gt;(b) 
+  WHERE r.result = &quot;Win&quot;
+  RETURN a.name as wname, a.weight as ww, r.dec as dec, r.date as date,
+         b.name as lname, b.weight as lw
+UNION ALL MATCH (a)-[r:fought]-&gt;(b) 
+  WHERE r.result = &quot;Loss&quot;
+  RETURN b.name as wname, b.weight as ww, r.dec as dec, r.date as date,
+         a.name as lname, a.weight as lw;</code></pre>
+<p>I now just use the cypher function with this query passed in as a string and the data I want is returned.</p>
+<pre class="r"><code>fight &lt;- unique(cypher(graph, query))</code></pre>
+</div>
+<div id="investigate" class="section level3">
+<h3>Investigate</h3>
+<p>ADD THE FIGHTS PER year CHARTS</p>
+<pre class="r"><code># How many fights per year
+fight %&gt;% mutate(date = ymd(date), year = year(date)) -&gt; fight
+
+plot(table(fight$year), xlab = 'Year', ylab = '# of Fights', 
+     main = 'Number of Fights a Year')</code></pre>
+<p><img src="BAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAIFlKPAeoI23xpR8+vwAAAAASUVORK5CYII=" title alt width="672" /></p>
+<pre class="r"><code>ufc &lt;- fight[grep('UFC', fight$event), ]
+plot(table(ufc$year), xlab = 'Year', ylab = '# of UFC Fights', 
+     main = 'Number of UFC Fights a Year')</code></pre>
+<p><img src="R384ODbek/EfGbPVN8n0/+6WrbNC6x+USluBWZ6TWhxH07R+1vdsK9V5bCb2zz86QFcSajttluOo5XPJpK2Y9jh6WXesCBAgQIAAAQIECBAgQIAAAQIECBAgQIAAAQIECBAgQIAAAQIECBAgQIAAAQIECBAgQIAAAQIECBAgQIAAAQIECBAgQIAAAQIECBAgQIAAAQIECBAgQIAAAQIECBAgQIAAAQIECBAgQIAAAQIECBAgQIAAAQIECBAgQIAAAQIECBAgsAEF/gdoc2VdIC916AAAAABJRU5ErkJggg==" title alt width="672" /></p>
+<pre class="r"><code># How has the network changed
+y &lt;- sort(unique(fight$year))
+
+
+num_fg &lt;- c()
+for(i in y) {
+  tmp &lt;- fight[fight$year &lt; i, ]
+  num_fg &lt;- c(num_fg, length(unique(c(tmp$wid, tmp$lid))))
+}
+plot(y, num_fg, xlab = 'Year', ylab = 'Total Fighters', main = 'Cumulative Fighters')</code></pre>
+<p><img src="daCBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIENgCBf4f72QoxHTxwoMAAAAASUVORK5CYII=" title alt width="672" /></p>
+<pre class="r"><code>num_fg &lt;- c()
+for(i in y) {
+  tmp &lt;- fight[fight$year == i, ]
+  num_fg &lt;- c(num_fg, length(unique(c(tmp$wid, tmp$lid))))
+}
+plot(y, num_fg, xlab = 'Year', ylab = 'Active Fighters', main = 'Active Fighters by Year')</code></pre>
+<p><img src="dIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBNahwP8H6uRN2ysWZvsAAAAASUVORK5CYII=" title alt width="672" /></p>
+<pre class="r"><code>rm(tmp, i, num_fg, y)</code></pre>
+</div>
+<div id="missing-data" class="section level3">
+<h3>Missing data</h3>
+<p>Show missing stats, how to correct for this</p>
+<pre class="r"><code>head(data)</code></pre>
+<pre><code>##        id           name weight height         class country birth stance
+## 1 3032062     a sol kwon   &lt;NA&gt;   &lt;NA&gt;          &lt;NA&gt;    &lt;NA&gt;  &lt;NA&gt;   &lt;NA&gt;
+## 2 3050604 aaron anderson   &lt;NA&gt;   &lt;NA&gt;          &lt;NA&gt;    &lt;NA&gt;  &lt;NA&gt;   &lt;NA&gt;
+## 3 2557041    aaron arana    135   &lt;NA&gt; Featherweight    &lt;NA&gt;  &lt;NA&gt;   &lt;NA&gt;
+## 4 2499256   aaron barrow   &lt;NA&gt;   &lt;NA&gt;  Welterweight    &lt;NA&gt;  &lt;NA&gt;   &lt;NA&gt;
+## 5 2504979    aaron berke   &lt;NA&gt;   &lt;NA&gt;  Welterweight    &lt;NA&gt;  &lt;NA&gt;   &lt;NA&gt;
+## 6 3010409     aaron birn   &lt;NA&gt;   &lt;NA&gt;          &lt;NA&gt;    &lt;NA&gt;  &lt;NA&gt;   &lt;NA&gt;
+##   nickname reach style
+## 1     &lt;NA&gt;  &lt;NA&gt;  &lt;NA&gt;
+## 2     &lt;NA&gt;  &lt;NA&gt;  &lt;NA&gt;
+## 3     &lt;NA&gt;  &lt;NA&gt;  &lt;NA&gt;
+## 4     &lt;NA&gt;  &lt;NA&gt;  &lt;NA&gt;
+## 5     &lt;NA&gt;  &lt;NA&gt;  &lt;NA&gt;
+## 6     &lt;NA&gt;  &lt;NA&gt;  &lt;NA&gt;</code></pre>
+<p>Once the data is setup you quickly realize that there are lots of holes. Most of the predictor variables you need are missing. What would be the best way to resolve this? I have a few thoughts. Pull data from another place that is more complete. This was my first thought. Two things to note. I had first hoped I could just pull data to repalce everything I had done, find a source with perfect data. This did not work out. Then I thought could I pull data for another source and merge the two togther. This would take mean I have two partial sources, say 25% and 35% complete. Could they be resolved into data that is closer to 60%. The answer is no and yes. I know they will not be complete opposites, they will have some overlap, so the combination should be more than either of the parts but less than the sum. How many sources are out there? Could you merge three or more together. Would this be a diminishing returns problem? This would lead to an entity resolution problem, and a tough one at that. There are some tools to help solve this problem, but that may be a challange for another day. It is getting close to the issue of waiting for perfect data. I think that getting more data and have a cleaner set would be valauble, but after fusing another set I may be on the same boat.</p>
+<p>My second thought was, can I use network attributes for predictor varaibles. The cleanest part of the data is the collection of fights, its participants and the result. I started thinking of my posts on Social Balance. If A beats B, and B beats C should I be able to predict that A will beat C. Maybe, what if that was a long time ago. Can MMA exibit paper rock scissors type of effects. Maybe certain styles of fighting have weakeness to others. You could also be haivng an off day. This means we need to look at the network of fights. It also means that we need to look at how it evolved, not just how it exists today.</p>
+<p>Add movie from gephi and really simple model a few network stats, first fight and difference in exp and age</p>
+</div>
+<div id="first-may-be-bet-to-look-at-network-of-one-league" class="section level3">
+<h3>First may be bet to look at network of one league</h3>
+</div>
+<div id="second-post-can-work-on-entity-resolution" class="section level3">
+<h3>second post can work on entity resolution</h3>
+<p>Code to create gephi file</p>
+<pre class="r"><code>graph = startGraph(&quot;http://localhost:7474/db/data/&quot;)
+
+
+q &lt;- 'MATCH (a)-[r:fought]-&gt;(b)-[s:fought]-&gt;(a)
+      WHERE r.result = &quot;Win&quot; and r.date = s.date
+      RETURN a.name as wname, a.id as wid,
+             r.date as date,
+             b.name as lname, b.id as lid
+      UNION ALL
+      MATCH (a)-[r:fought]-&gt;(b)-[s:fought]-&gt;(a)
+      WHERE r.result = &quot;Loss&quot; and r.date = s.date
+      RETURN b.name as wname, b.id as wid, 
+             r.date as date,
+             a.name as lname, a.id as lid;'
+
+f &lt;- unique(cypher(graph, q))
+
+# Need the start of everynode
+w &lt;- f[, c('wid', 'wname', 'date')]
+l &lt;- f[, c('lid', 'lname', 'date')]
+
+names(w) &lt;- c('id', 'name', 'date')
+names(l) &lt;- c('id', 'name', 'date')
+wl &lt;- rbind(w, l)
+
+
+wl %&gt;%
+  group_by(id, name) %&gt;%
+  summarise(start = min(date), end = max(data)) -&gt;
+  start
+
+#############
+
+write(&quot;&quot;, file = &quot;tester2.gexf&quot;, append = FALSE)
+
+log &lt;- function(text) {
+  write(text, file = &quot;tester2.gexf&quot;, append = TRUE)
+}
+
+log('
+&lt;gexf xmlns=&quot;http://www.gexf.net/1.1draft&quot;
+xmlns:xsi=&quot;http://www.w3.org/2001/XMLSchema-instance&quot;
+xsi:schemaLocation=&quot;http://www.gexf.net/1.1draft
+                             http://www.gexf.net/1.1draft/gexf.xsd&quot;
+version=&quot;1.1&quot;&gt;
+  &lt;graph mode=&quot;dynamic&quot; defaultedgetype=&quot;directed&quot;&gt;
+  &lt;attributes class=&quot;node&quot; mode=&quot;dynamic&quot;&gt;
+  &lt;attribute id=&quot;price&quot; title=&quot;Price&quot; type=&quot;float&quot;/&gt;
+  &lt;/attributes&gt;
+  &lt;nodes&gt;
+')
+
+
+log_node &lt;- function(id, label, s, e) {
+  first &lt;- min(start$start)
+  last &lt;- max(start$end)
+  s &lt;- as.integer(difftime(s, first, units = 'days'))
+  e &lt;- as.integer(difftime(e, first, units = 'days'))
+  end &lt;- min(e+200, as.integer(difftime(last, first, units = 'days')))
+  n &lt;- paste('&lt;node id=&quot;', id, '&quot; label=&quot;', label, 
+             '&quot; start=&quot;', s, '&quot; end=&quot;', end, '&quot; &gt;', sep = '')
+  log(n)
+  log('&lt;/node&gt;')
+  NULL
+}
+
+for(i in 1:nrow(start)) {
+  log_node(start$id[i], start$name[i], start$start[i], start$end[i])
+  print(i)
+}
+
+log('  &lt;/nodes&gt;')
+log('  &lt;edges&gt;')
+
+log_edge &lt;- function(s, t, d) {
+  d &lt;- as.integer(difftime(d, min(start$start), units = 'days'))
+  end &lt;- min(d+200, as.integer(difftime(today(), min(start$start), units = 'days')))
+  n &lt;- paste('  &lt;edge source=&quot;', s, '&quot; target=&quot;', t, '&quot; start=&quot;', d, '&quot; end=&quot;', end, '&quot;/&gt;', sep = '')
+  log(n)
+  NULL
+}
+
+
+for(i in 1:nrow(f)) {
+  log_edge(f$wid[i], f$lid[i], f$date[i])
+  print(i)
+}
+
+log('  &lt;/edges&gt;')
+log(' &lt;/graph&gt;')
+log('&lt;/gexf&gt;')</code></pre>
+<p>This network is really cool how it evolves over time. We can actaully see the sport getting big. THe problem is the visualization starts to fall apart. Viewing these things is a really hard problem.</p>
+<p>Build a model 713</p>
+<pre class="r"><code>graph = startGraph(&quot;http://localhost:7474/db/data/&quot;)
+
+q &lt;- '
+MATCH (a)-[r:fought]-&gt;(b)-[s:fought]-&gt;(a)
+WHERE r.result = &quot;Win&quot; and r.date = s.date
+RETURN a.name as name, a.id as id, a.weight as weight, a.height as height, 
+       r.result as result, r.date as date, r.exp as exp, s.exp as oexp,
+       b.id as oid, b.weight as oweight, b.height as oheight
+UNION ALL
+MATCH (a)-[r:fought]-&gt;(b)-[s:fought]-&gt;(a)
+WHERE r.result = &quot;Loss&quot; and r.date = s.date
+RETURN a.name as name, a.id as id, a.weight as weight, a.height as height, 
+       r.result as result, r.date as date, r.exp as exp, s.exp as oexp,
+       b.id as oid, b.weight as oweight, b.height as oheight;'
+
+f &lt;- unique(cypher(graph, q))
+
+
+# People usually do not win on there first fight
+table(f[f$exp == 1, ]$result)</code></pre>
+<pre><code>## 
+## Loss  Win 
+## 9932 2811</code></pre>
+<pre class="r"><code>table(f[f$exp == 2, ]$result)</code></pre>
+<pre><code>## 
+## Loss  Win 
+## 3296 2040</code></pre>
+<pre class="r"><code>table(f[f$exp == 3, ]$result)</code></pre>
+<pre><code>## 
+## Loss  Win 
+## 1752 1761</code></pre>
+<pre class="r"><code>w &lt;- as.data.frame(table(f[f$result == 'Win', ]$exp))
+l &lt;- as.data.frame(table(f[f$result == 'Loss', ]$exp))
+
+names(l)[2] &lt;- 'Freq2'
+winloss &lt;- merge(w, l, all.x = T, all.y = T)
+names(winloss) &lt;- c('Experience', 'Win', 'Loss')
+head(winloss, 10)</code></pre>
+<pre><code>##    Experience  Win Loss
+## 1           1 2811 9932
+## 2           2 2040 3296
+## 3           3 1761 1752
+## 4           4 1510 1197
+## 5           5 1395  893
+## 6           6 1307  681
+## 7           7 1218  575
+## 8           8 1092  547
+## 9           9 1044  486
+## 10         10  945  447</code></pre>
+<pre class="r"><code>rm(w, l)
+
+#
+f$weight &lt;- as.numeric(f$weight) - as.numeric(f$oweight)</code></pre>
+<pre><code>## Warning: NAs introduced by coercion</code></pre>
+<pre><code>## Warning: NAs introduced by coercion</code></pre>
+<pre class="r"><code># Weight does not seem to help much.
+mean(f[f$result == 'Win', ]$weight, na.rm = T)</code></pre>
+<pre><code>## [1] -1.482577</code></pre>
+<pre class="r"><code>sd(f[f$result == 'Win', ]$weight, na.rm = T)</code></pre>
+<pre><code>## [1] 17.90397</code></pre>
+<pre class="r"><code>f$weight &lt;- NULL
+f$oweight &lt;- NULL
+
+
+f$height &lt;- as.numeric(f$height) - as.numeric(f$oheight)</code></pre>
+<pre><code>## Warning: NAs introduced by coercion</code></pre>
+<pre><code>## Warning: NAs introduced by coercion</code></pre>
+<pre class="r"><code># Height does not help either.
+mean(f[f$result == 'Win', ]$height, na.rm = T)</code></pre>
+<pre><code>## [1] 0.1363392</code></pre>
+<pre class="r"><code>sd(f[f$result == 'Win', ]$height, na.rm = T)</code></pre>
+<pre><code>## [1] 2.749247</code></pre>
+<pre class="r"><code>f$height &lt;- NULL
+f$oheight &lt;- NULL
+
+
+f$birth &lt;- NULL
+f$obirth &lt;- NULL</code></pre>
+<p>So it seems the variables I thought at first would be useful had very little value. I still that there may be some value in other varaibles such as age and style but they are missing more often than not so. They are also other varaibles that I think may be useful like how you wone the fight and how long it took but first I want to check out the graph measures and see how they play out.</p>
+<pre class="r"><code>grTab &lt;- function(gr) {
+  data.frame(        id = vertex.attributes(gr)$name,
+              closeness = centralization.closeness(gr)$res,
+             betweeness = betweenness(gr),
+            eigenvector = centralization.evcent(gr)$vector,
+                    hub = hub.score(gr)$vector,
+                   auth = authority.score(gr)$vector,
+                   page = page.rank(gr)$vector)
+}
+
+
+#source_url('https://raw.githubusercontent.com/darrkj/darrkj.github.io/master/rcode/import.R')
+#import('igraph_2_d3')
+#import('d3plot')
+
+
+q2 &lt;- 'MATCH (a)-[r:fought]-&gt;(b)
+       WHERE r.result = &quot;Win&quot;
+       RETURN a.id as id, a.name as name, r.date as date, 
+              b.id as oid, b.name as oname;'
+
+
+
+q2 %&gt;% cypher(graph, .) %&gt;% unique() %&gt;% mutate(date = ymd(date)) -&gt; f2 
+
+
+time &lt;- sort(unique(f2$date))
+g &lt;- graph.data.frame(f2[f2$date &lt; time[10], c('oname', 'name')])
+
+
+plot(g)</code></pre>
+<p><img src="da03dGz/numAQIECBAgQIAAAQIECBAgQIAAAQIECBAgQIAAAQIECBAgQIAAAQIECBAgQIAAAQIECBAgQIAAAQIECBAgQIAAAQIECBAgQIAAAQIECBAgQIAAAQIECBAgQIBASv8AuVluH680PWwAAAAASUVORK5CYII=" title alt width="672" /></p>
+<pre class="r"><code>#d3plot(g)
+
+
+
+###############################
+
+if(F) {
+
+pageRank &lt;- list()
+for (i in 2:length(time)) {
+  
+  g &lt;- graph.data.frame(f2[f2$date &lt; time[i], c('oid', 'id')])
+  y &lt;- x &lt;- cbind(grTab(g), date = time[i])
+  names(x) &lt;- c(&quot;id&quot;, &quot;cl&quot;, &quot;bet&quot;, &quot;eig&quot;, &quot;hub&quot;, &quot;auth&quot;, &quot;page&quot;, &quot;date&quot;) 
+  names(y) &lt;- c(&quot;oid&quot;, &quot;ocl&quot;, &quot;obet&quot;, &quot;oeig&quot;, &quot;ohub&quot;, &quot;oauth&quot;, &quot;opage&quot;, &quot;date&quot;) 
+  
+  tmp &lt;- f2[f2$date == time[i], ]
+  tmp &lt;- merge(tmp, x, by = c('id', 'date'), all.x = T)
+  tmp &lt;- merge(tmp, y, by = c('oid', 'date'), all.x = T)
+  
+  pageRank[[as.character(i)]] &lt;- tmp
+  print(i)
+}
+
+pageRank &lt;- recurBind(pageRank)[[1]]
+
+}
+rm(f2, q2)
+load('pageRank.RData')
+#
+
+page &lt;- pageRank[, c('page', 'opage')]
+page &lt;- page[complete.cases(page), ]
+sum(page[, 1] &lt; page[, 2])</code></pre>
+<pre><code>## [1] 4052</code></pre>
+<pre class="r"><code>sum(page[, 1] &gt; page[, 2])</code></pre>
+<pre><code>## [1] 9119</code></pre>
+<pre class="r"><code>############################
+#
+# Create model dataset
+
+
+p1 &lt;- pageRank[, c('id', 'oid', 'date', 'cl', 'bet', 'eig', 'hub', 'auth', 'page')]
+p2 &lt;- pageRank[, c('oid', 'id', 'date', 'ocl', 'obet', 'oeig', 'ohub', 'oauth', 'opage')]
+names(p2) &lt;- c('id', 'oid', 'date', 'cl', 'bet', 'eig', 'hub', 'auth', 'page')
+
+p &lt;- rbind(p1, p2)
+p$date &lt;- as.character(p$date)
+
+
+f2 &lt;- merge(f, p, all.x = T)
+
+names(p) &lt;- c('oid', 'id', 'date', 'ocl', 'obet', 'oeig', 'ohub', 'oauth', 'opage')
+
+f2 &lt;- merge(f2, p, all.x = T)
+
+f3 &lt;- f2[, c(&quot;result&quot;, &quot;exp&quot;, &quot;oexp&quot;, &quot;cl&quot;, &quot;bet&quot;, &quot;eig&quot;, &quot;hub&quot;, &quot;auth&quot;, 
+             &quot;page&quot;, &quot;ocl&quot;, &quot;obet&quot;, &quot;oeig&quot;, &quot;ohub&quot;, &quot;oauth&quot;, &quot;opage&quot;)]
+
+
+f3$y &lt;- ifelse(f3$result == 'Win', 1, 0)
+f3$result &lt;- NULL
+
+
+
+f3[is.na(f3)] &lt;- 0
+
+f3 %&gt;%
+  mutate(expDiff = exp - oexp, clDiff = cl - ocl, betDiff = bet - obet,
+         eigDiff = eig - oeig, hubDiff = hub - ohub, authDiff = auth - oauth,
+         pageDiff = page - opage) -&gt; f3
+
+#x &lt;- f3[, c('date', 'id', 'oid', 'y')]
+#x$date &lt;- as.numeric(as.Date(x$date))
+
+#xelo &lt;- elo(x, history = TRUE)</code></pre>
+<p>Build a model Simple model start</p>
+<pre class="r"><code>#######################################
+#
+# Sample
+#
+#######################################
+
+n &lt;- nrow(f3)
+
+# 70 / 30 split
+id &lt;- sample(1:n, .7 * n)
+
+
+
+train &lt;- f3[id, ]
+test &lt;- f3[setdiff(1:n, id), ]
+
+
+
+mod &lt;- randomForest(y ~ ., data = train, ntree = 100, do.trace = 1)</code></pre>
+<pre><code>## Warning in randomForest.default(m, y, ...): The response has five or fewer
+## unique values.  Are you sure you want to do regression?</code></pre>
+<pre><code>##      |      Out-of-bag   |
+## Tree |      MSE  %Var(y) |
+##    1 |   0.2931   117.22 |
+##    2 |   0.2806   112.25 |
+##    3 |    0.265   105.99 |
+##    4 |   0.2539   101.57 |
+##    5 |   0.2438    97.51 |
+##    6 |   0.2338    93.52 |
+##    7 |   0.2261    90.46 |
+##    8 |   0.2183    87.31 |
+##    9 |   0.2126    85.03 |
+##   10 |   0.2077    83.08 |
+##   11 |   0.2041    81.63 |
+##   12 |   0.2007    80.26 |
+##   13 |   0.1976    79.03 |
+##   14 |   0.1951    78.06 |
+##   15 |    0.193    77.21 |
+##   16 |   0.1908    76.32 |
+##   17 |   0.1891    75.65 |
+##   18 |   0.1873    74.90 |
+##   19 |   0.1857    74.29 |
+##   20 |   0.1843    73.71 |
+##   21 |   0.1832    73.27 |
+##   22 |   0.1822    72.89 |
+##   23 |   0.1811    72.46 |
+##   24 |   0.1803    72.12 |
+##   25 |   0.1796    71.82 |
+##   26 |    0.179    71.61 |
+##   27 |   0.1786    71.45 |
+##   28 |    0.178    71.19 |
+##   29 |   0.1774    70.98 |
+##   30 |    0.177    70.80 |
+##   31 |   0.1764    70.57 |
+##   32 |   0.1759    70.37 |
+##   33 |   0.1756    70.25 |
+##   34 |   0.1754    70.14 |
+##   35 |   0.1749    69.98 |
+##   36 |   0.1745    69.81 |
+##   37 |   0.1743    69.73 |
+##   38 |   0.1741    69.65 |
+##   39 |   0.1739    69.57 |
+##   40 |   0.1737    69.50 |
+##   41 |   0.1734    69.37 |
+##   42 |   0.1731    69.24 |
+##   43 |   0.1729    69.18 |
+##   44 |   0.1727    69.09 |
+##   45 |   0.1725    69.00 |
+##   46 |   0.1724    68.94 |
+##   47 |   0.1722    68.86 |
+##   48 |    0.172    68.79 |
+##   49 |   0.1719    68.75 |
+##   50 |   0.1717    68.67 |
+##   51 |   0.1715    68.61 |
+##   52 |   0.1713    68.53 |
+##   53 |   0.1711    68.43 |
+##   54 |   0.1709    68.37 |
+##   55 |   0.1707    68.29 |
+##   56 |   0.1706    68.24 |
+##   57 |   0.1706    68.24 |
+##   58 |   0.1705    68.19 |
+##   59 |   0.1703    68.12 |
+##   60 |   0.1702    68.09 |
+##   61 |   0.1701    68.06 |
+##   62 |     0.17    68.02 |
+##   63 |   0.1699    67.96 |
+##   64 |   0.1698    67.92 |
+##   65 |   0.1697    67.87 |
+##   66 |   0.1696    67.82 |
+##   67 |   0.1694    67.78 |
+##   68 |   0.1693    67.73 |
+##   69 |   0.1694    67.75 |
+##   70 |   0.1693    67.71 |
+##   71 |   0.1692    67.69 |
+##   72 |   0.1692    67.70 |
+##   73 |   0.1691    67.65 |
+##   74 |   0.1692    67.67 |
+##   75 |   0.1691    67.63 |
+##   76 |    0.169    67.62 |
+##   77 |    0.169    67.59 |
+##   78 |   0.1689    67.57 |
+##   79 |   0.1689    67.56 |
+##   80 |   0.1688    67.53 |
+##   81 |   0.1688    67.51 |
+##   82 |   0.1688    67.51 |
+##   83 |   0.1687    67.48 |
+##   84 |   0.1687    67.46 |
+##   85 |   0.1686    67.46 |
+##   86 |   0.1686    67.45 |
+##   87 |   0.1686    67.43 |
+##   88 |   0.1686    67.43 |
+##   89 |   0.1685    67.40 |
+##   90 |   0.1684    67.36 |
+##   91 |   0.1683    67.33 |
+##   92 |   0.1683    67.31 |
+##   93 |   0.1683    67.31 |
+##   94 |   0.1682    67.29 |
+##   95 |   0.1682    67.27 |
+##   96 |   0.1681    67.25 |
+##   97 |   0.1681    67.24 |
+##   98 |    0.168    67.20 |
+##   99 |    0.168    67.20 |
+##  100 |    0.168    67.19 |</code></pre>
+<pre class="r"><code>eval &lt;- as.numeric(predict(mod, newdata = test, type = 'response'))
+
+
+xp &lt;- prediction(eval, test$y)
+performance(xp, 'auc')</code></pre>
+<pre><code>## An object of class &quot;performance&quot;
+## Slot &quot;x.name&quot;:
+## [1] &quot;None&quot;
+## 
+## Slot &quot;y.name&quot;:
+## [1] &quot;Area under the ROC curve&quot;
+## 
+## Slot &quot;alpha.name&quot;:
+## [1] &quot;none&quot;
+## 
+## Slot &quot;x.values&quot;:
+## list()
+## 
+## Slot &quot;y.values&quot;:
+## [[1]]
+## [1] 0.832575
+## 
+## 
+## Slot &quot;alpha.values&quot;:
+## list()</code></pre>
+<pre class="r"><code>pp &lt;- performance(xp, &quot;tpr&quot;,&quot;fpr&quot;)
+plot(pp)
+points(seq(0, 1, .01), seq(0, 1, .01), type = 'l')</code></pre>
+<p><img src="datECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAIGlFPj/StvvN9O75ykAAAAASUVORK5CYII=" title alt width="672" /></p>
+<pre class="r"><code>max(f2$date)</code></pre>
+<pre><code>## [1] &quot;2014-11-02&quot;</code></pre>
+<pre class="r"><code>#&quot;2014-11-02&quot;</code></pre>
+<pre class="r"><code>clean &lt;- function(x) {
+  x %&gt;% html_attrs() %&gt;% sapply(function(x) x[[1]]) %&gt;% as.character() %&gt;%
+    gsub('http://espn.go.com/mma/fighter/_/id/', '', .) %&gt;% strsplit('/') %&gt;%
+    sapply(function(x) x[[1]][1])
+}
+
+get_event &lt;- function(url) {  
+  url %&gt;% html() -&gt; html
+    
+  html %&gt;% html_nodes('.winner') %&gt;% html_attrs() %&gt;% 
+    sapply(function(x) x[[1]]) %&gt;% strsplit(' ') %&gt;% 
+    sapply(function(x) x[[2]]) -&gt; w
+    
+  html %&gt;% html_nodes('.player1 a') %&gt;% clean() -&gt; a
+  html %&gt;% html_nodes('.player2 a') %&gt;% clean() -&gt; b
+  
+  data.frame(winner = ifelse(w == 'fighter1', a, b),
+             loser = ifelse(w == 'fighter1', b, a))
+}
+
+
+new_pred &lt;- function(event) {
+  event %&gt;% get_event() -&gt; ev
+  
+  merge(data.frame(id = c(ev$winner, ev$loser)), f2, all.x = T) %&gt;% 
+    mutate(data = ymd(date)) %&gt;%
+    select(id, date, exp, cl, bet, eig, hub, auth, page) %&gt;%
+    group_by(id) %&gt;%
+    mutate(max = max(date)) %&gt;%
+    filter(max == max(date)) %&gt;%
+    select(-max, -date) %&gt;%
+    as.data.frame -&gt; cc
+  
+  cc[is.na(cc)] &lt;- 0
+  
+  bb &lt;- cc
+  names(bb) &lt;- paste0('o', names(bb))
+
+  rbind(select(ev, id = winner, oid = loser), 
+        select(ev, oid = winner, id = loser)) %&gt;%
+    merge(cc) %&gt;% merge(bb) %&gt;%
+    mutate(expDiff = exp - oexp, clDiff = cl - ocl, betDiff = bet - obet,
+           eigDiff = eig - oeig, hubDiff = hub - ohub, authDiff = auth - oauth,
+           pageDiff = page - opage) -&gt; ndata
+  
+  ndata$p &lt;- predict(mod, newdata = ndata[, -c(1:2)], type = 'response')
+  
+  ev %&gt;% 
+    merge(select(ndata, winner = id, wp = p)) %&gt;% 
+    merge(select(ndata, loser = id, lp = p))
+}</code></pre>
+<pre class="r"><code>past &lt;- c('http://espn.go.com/mma/fightcenter?eventId=400603491',
+          'http://espn.go.com/mma/fightcenter?eventId=400601611',
+          'http://espn.go.com/mma/fightcenter?eventId=400592231')
+
+new_pred(past[1])
+new_pred(past[2])
+new_pred(past[3])</code></pre>
+<p>Have to do entity resolution Do we still need more data Sherdog How would we build a model to predict wins in a network like this with two rows for each resut What is intersting about the nework Compare to marvel net, viking net, alexander the great, rapper net, prog lang net Can we use this model to bet <a href="http://sports.bovada.lv/sports-betting/mixed-martial-arts.jsp">http://sports.bovada.lv/sports-betting/mixed-martial-arts.jsp</a> <a href="http://www.mmabetting.com/">http://www.mmabetting.com/</a> <a href="http://topbet.eu/sportsbook/mma/ufc-180-parlayable">http://topbet.eu/sportsbook/mma/ufc-180-parlayable</a> <a href="http://www.mmabetting.com/2014/11/06/ufc-fight-night-55-odds-luke-rockhold-vs-michael-bisping/">http://www.mmabetting.com/2014/11/06/ufc-fight-night-55-odds-luke-rockhold-vs-michael-bisping/</a>? How would be deploy it</p>
+</div>
+
+
+</div>
 
 
 
