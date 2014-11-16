@@ -433,9 +433,9 @@ f$obirth &lt;- NULL</code></pre>
 }
 
 
-#source_url('https://raw.githubusercontent.com/darrkj/darrkj.github.io/master/rcode/import.R')
-#import('igraph_2_d3')
-#import('d3plot')
+source_url('https://raw.githubusercontent.com/darrkj/darrkj.github.io/master/rcode/import.R')
+import('igraph_2_d3')
+import('d3plot')
 
 
 q2 &lt;- 'MATCH (a)-[r:fought]-&gt;(b)
@@ -456,10 +456,11 @@ plot(g)</code></pre>
 
      <div class="separator" style="clear: both; text-align: center;"><img src="graph.png" height="350" width="600"></a></div>
 
-<pre class="r"><code>#d3plot(g)
+<pre class="r"><code>#d3plot(g)</code></pre>
 
+<div style="text-align:center;"> <iframe src="http://darrkj.github.io/blog/nov182014/gg" width="730" height="550"></iframe></div>
 
-
+<pre class="r"><code>
 ###############################
 
 if(F) {
@@ -745,9 +746,19 @@ new_pred &lt;- function(event) {
           'http://espn.go.com/mma/fightcenter?eventId=400601611',
           'http://espn.go.com/mma/fightcenter?eventId=400592231')
 
-new_pred(past[1])
-new_pred(past[2])
-new_pred(past[3])</code></pre>
+new_pred(past[1])</code></pre>
+<pre><code>##     loser  winner        wp        lp
+## 1 2614776 3040385 0.6652222 0.4166667
+## 2 2972878 2989176 0.4138333 0.5000556</code></pre>
+<pre class="r"><code>new_pred(past[2])</code></pre>
+<pre><code>##     loser  winner        wp        lp
+## 1 3077213 3088238 0.6005556 0.2953333
+## 2 3077809 3026147 0.6116111 0.4243889
+## 3 3114205 2546733 0.4125556 0.5771111
+## 4 3155286 3122040 0.8022941 0.1869114</code></pre>
+<pre class="r"><code>new_pred(past[3])</code></pre>
+<pre><code>##     loser  winner        wp        lp
+## 1 3097617 3153263 0.5778889 0.4441111</code></pre>
 <p>Have to do entity resolution Do we still need more data Sherdog How would we build a model to predict wins in a network like this with two rows for each resut What is intersting about the nework Compare to marvel net, viking net, alexander the great, rapper net, prog lang net Can we use this model to bet <a href="http://sports.bovada.lv/sports-betting/mixed-martial-arts.jsp">http://sports.bovada.lv/sports-betting/mixed-martial-arts.jsp</a> <a href="http://www.mmabetting.com/">http://www.mmabetting.com/</a> <a href="http://topbet.eu/sportsbook/mma/ufc-180-parlayable">http://topbet.eu/sportsbook/mma/ufc-180-parlayable</a> <a href="http://www.mmabetting.com/2014/11/06/ufc-fight-night-55-odds-luke-rockhold-vs-michael-bisping/">http://www.mmabetting.com/2014/11/06/ufc-fight-night-55-odds-luke-rockhold-vs-michael-bisping/</a>? How would be deploy it</p>
 </div>
 
