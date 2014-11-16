@@ -188,11 +188,16 @@ fight %&gt;% mutate(date = ymd(date), year = year(date)) -&gt; fight
 
 plot(table(fight$year), xlab = 'Year', ylab = '# of Fights', 
      main = 'Number of Fights a Year')</code></pre>
-<p><img src="BAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAIFlKPAeoI23xpR8+vwAAAAASUVORK5CYII=" title alt width="672" /></p>
+     
+     <div class="separator" style="clear: both; text-align: center;"><img src="fight_per_year.png" height="350" width="600"></a></div>
+     
+
 <pre class="r"><code>ufc &lt;- fight[grep('UFC', fight$event), ]
 plot(table(ufc$year), xlab = 'Year', ylab = '# of UFC Fights', 
      main = 'Number of UFC Fights a Year')</code></pre>
-<p><img src="R384ODbek/EfGbPVN8n0/+6WrbNC6x+USluBWZ6TWhxH07R+1vdsK9V5bCb2zz86QFcSajttluOo5XPJpK2Y9jh6WXesCBAgQIAAAQIECBAgQIAAAQIECBAgQIAAAQIECBAgQIAAAQIECBAgQIAAAQIECBAgQIAAAQIECBAgQIAAAQIECBAgQIAAAQIECBAgQIAAAQIECBAgQIAAAQIECBAgQIAAAQIECBAgQIAAAQIECBAgQIAAAQIECBAgQIAAAQIECBAgsAEF/gdoc2VdIC916AAAAABJRU5ErkJggg==" title alt width="672" /></p>
+
+     <div class="separator" style="clear: both; text-align: center;"><img src="ufc_per_year.png" height="350" width="600"></a></div>
+
 <pre class="r"><code># How has the network changed
 y &lt;- sort(unique(fight$year))
 
@@ -203,14 +208,18 @@ for(i in y) {
   num_fg &lt;- c(num_fg, length(unique(c(tmp$wid, tmp$lid))))
 }
 plot(y, num_fg, xlab = 'Year', ylab = 'Total Fighters', main = 'Cumulative Fighters')</code></pre>
-<p><img src="daCBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIENgCBf4f72QoxHTxwoMAAAAASUVORK5CYII=" title alt width="672" /></p>
+
+     <div class="separator" style="clear: both; text-align: center;"><img src="cum_fighters.png" height="350" width="600"></a></div>
+
 <pre class="r"><code>num_fg &lt;- c()
 for(i in y) {
   tmp &lt;- fight[fight$year == i, ]
   num_fg &lt;- c(num_fg, length(unique(c(tmp$wid, tmp$lid))))
 }
 plot(y, num_fg, xlab = 'Year', ylab = 'Active Fighters', main = 'Active Fighters by Year')</code></pre>
-<p><img src="dIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBNahwP8H6uRN2ysWZvsAAAAASUVORK5CYII=" title alt width="672" /></p>
+
+     <div class="separator" style="clear: both; text-align: center;"><img src="cum_fighters.png" height="350" width="600"></a></div>
+
 <pre class="r"><code>rm(tmp, i, num_fg, y)</code></pre>
 </div>
 <div id="missing-data" class="section level3">
@@ -444,7 +453,9 @@ g &lt;- graph.data.frame(f2[f2$date &lt; time[10], c('oname', 'name')])
 
 
 plot(g)</code></pre>
-<p><img src="da03dGz/numAQIECBAgQIAAAQIECBAgQIAAAQIECBAgQIAAAQIECBAgQIAAAQIECBAgQIAAAQIECBAgQIAAAQIECBAgQIAAAQIECBAgQIAAAQIECBAgQIAAAQIECBAgQIBASv8AuVluH680PWwAAAAASUVORK5CYII=" title alt width="672" /></p>
+
+     <div class="separator" style="clear: both; text-align: center;"><img src="graph.png" height="350" width="600"></a></div>
+
 <pre class="r"><code>#d3plot(g)
 
 
@@ -673,7 +684,9 @@ performance(xp, 'auc')</code></pre>
 <pre class="r"><code>pp &lt;- performance(xp, &quot;tpr&quot;,&quot;fpr&quot;)
 plot(pp)
 points(seq(0, 1, .01), seq(0, 1, .01), type = 'l')</code></pre>
-<p><img src="datECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAIGlFPj/StvvN9O75ykAAAAASUVORK5CYII=" title alt width="672" /></p>
+
+     <div class="separator" style="clear: both; text-align: center;"><img src="fight_per_year.png" height="350" width="600"></a></div>
+
 <pre class="r"><code>max(f2$date)</code></pre>
 <pre><code>## [1] &quot;2014-11-02&quot;</code></pre>
 <pre class="r"><code>#&quot;2014-11-02&quot;</code></pre>
