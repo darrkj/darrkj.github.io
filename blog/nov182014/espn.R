@@ -1,0 +1,548 @@
+
+# Don't do dumb things with strings
+options(stringsAsFactors = FALSE)
+
+# Load libraries
+library(httr)
+library(XML)
+library(devtools)
+library(stringr)
+library(lubridate)
+library(dplyr)
+library(rvest)
+library(igraph)
+
+
+# This has all of the needed functions for pulling from ESPN.
+source('espn_api.R')
+
+
+if(FALSE) {
+  lookup <- create_espn_lookup()
+  lookup <- lookup[order(lookup$name), ]
+  lookup <- lookup[-c(1:3), ]
+  
+  fighter <- list()
+  j <- 1
+  for (i in lookup$url[(j+12):nrow(lookup)]) {
+    fighter[[i]] <- get_espn_metadata(i)
+    print(j)
+    j <- j + 1
+  }
+  save(fighter, file = 'fighter.RData')
+}
+
+load('fighter.RData')
+
+# Cleanup
+rm(create_espn_lookup, espn_history, espn_stats, get_espn_metadata, get)
+
+###############################################################################
+
+statURL <- 'http://espn.go.com/mma/fighter/stats/_/id/'
+
+
+# Create a unique ID
+id <- names(fighter)
+id <- gsub(statURL, '', id)
+
+id <- sapply(strsplit(id, '/'), `[`, 1)
+
+
+#################
+
+data <- data.frame(id, name = NA, weight = NA, height = NA, class = NA, 
+                   country = NA, birth = NA, stance = NA, nickname = NA, 
+                   reach = NA, style = NA)
+
+
+
+for ( i in 1:length(fighter) ) {
+  data$name[i] <- fighter[[i]]$name
+  
+  # Class
+  tmp <- grep('eight', fighter[[i]]$bio, value = T)
+  data$class[i] <- if (length(tmp) == 0) NA else tmp
+  
+  # Weight
+  tmp <- grep('lbs', fighter[[i]]$bio, value = T)
+  data$weight[i] <- if (length(tmp) == 0) NA else str_extract(tmp, '[0-9]{2,3}\\slbs')
+
+  # Height
+  tmp <- grep('\"', fighter[[i]]$bio, value = T)
+  data$height[i] <- if (length(tmp) == 0) NA else str_extract(tmp, "[0-9]'[0-9]{1,2}")
+
+  tmp <- grep('^Country', fighter[[i]]$meta, value = T)
+  data$country[i] <- if (length(tmp) == 0) NA else tmp
+  
+  tmp <- grep('Birth', fighter[[i]]$meta, value = T)
+  data$birth[i] <- if (length(tmp) == 0) NA else tmp
+  
+  tmp <- grep('Stance', fighter[[i]]$meta, value = T)
+  data$stance[i] <- if (length(tmp) == 0) NA else tmp
+  
+  tmp <- grep('Nickname', fighter[[i]]$meta, value = T)
+  data$nickname[i] <- if (length(tmp) == 0) NA else tmp
+  
+  tmp <- grep('Reach', fighter[[i]]$meta, value = T)
+  data$reach[i] <- if (length(tmp) == 0) NA else tmp
+  
+  tmp <- grep('Style', fighter[[i]]$meta, value = T)
+  data$style[i] <- if (length(tmp) == 0) NA else tmp
+}
+
+########
+
+
+
+data$country <- gsub('Country', '', data$country)
+data$birth <- gsub('Birth Date', '', data$birth)
+data$stance <- gsub('Stance', '', data$stance)
+data$nickname <- gsub('Nickname', '', data$nickname)
+data$reach <- gsub('Reach', '', data$reach)
+data$style <- gsub('Style', '', data$style)
+
+
+rm(i, tmp, lookup, statURL)
+
+######
+
+fg <- list()
+
+for ( i in 1:length(fighter)) {
+  fg[[id[i]]] <- cbind(id = id[i], fighter[[i]]$hist)
+  print(i)
+}
+
+fg <- recurBind(fg)[[1]]
+
+if(ufc) {
+  # Just keep the fights from the ufc
+  fg <- fg[fg$EVENT %in% grep('^UFC[ :]', fg$EVENT, value = T), ]
+}
+
+fg$EVENT <- NULL
+
+names(fg) <- c('id', 'date', 'opp', 'result', 'dec', 'round', 'time')
+
+
+
+# Clean up the fight table
+
+fg$date <- mdy(fg$date)
+fg <- fg[!is.na(fg$date), ]
+
+# Keep only the win or loss for now
+fg <- fg[fg$result %in% c('Win', 'Loss'), ]
+
+#
+fg$opp <- tolower(fg$opp)
+
+
+len <- nchar(fg$opp)
+
+fg$opp <- ifelse(substr(fg$opp, len, len) == ' ', 
+                      substr(fg$opp, 1, nchar(fg$opp)-1),  fg$opp)
+fg$opp <- gsub('-', ' ', fg$opp)
+fg$opp <- gsub('.', '', fg$opp, fixed = T)
+fg$opp <- gsub("'", '', fg$opp, fixed = T)
+fg$opp <- gsub(",", '', fg$opp, fixed = T)
+
+if(!ufc) {
+  fg[fg$opp == "ben mortimer",       ]$opp <- "ben morr"
+  fg[fg$opp == "michael mortimer",   ]$opp <- "michael morr"
+  fg[fg$opp == "kerry lattimer",     ]$opp <- "kerry latr"
+  fg[fg$opp == "bao she ri gu leng", ]$opp <- "bao ri gu leng"
+  fg[fg$opp == "bryan to hang lam",  ]$opp <- "bryan hang lam"
+  fg[fg$opp == "brian lo a njoe",    ]$opp <- "brian lo njoe"
+}
+
+# Take out tbd
+fg <- fg[fg$opp != 'tbd', ]
+
+rm(i, len)
+
+# Pull on the name of the fighter
+fights <- merge(fg, data[, c('id', 'name')], by = 'id')
+
+
+# Make names with winner and loser
+fights$winner <- ifelse(fights$result == 'Win', fights$name, fights$opp)
+fights$loser <- ifelse(fights$result == 'Loss', fights$name, fights$opp)
+
+
+fights$opp <- NULL
+
+left <- fights[fights$result == 'Win', c(1, 3:7, 2, 8:9)]
+right <- fights[fights$result == 'Loss', c(1, 3:7, 2, 8:9)]
+
+names(left)[1:6] <- paste('wn_', names(left)[1:6], sep = '')
+names(right)[1:6] <- paste('ls_', names(right)[1:6], sep = '')
+
+left <- left[order(left$date), ]
+right <- right[order(right$date), ]
+
+
+key <- fights[, c('date', 'winner', 'loser')]
+key <- unique(key)
+
+join <- merge(key, left, by = c('date', 'winner', 'loser'))
+join <- merge(join, right, by = c('date', 'winner', 'loser'))
+
+
+###############################################################################
+# Clean up the join table
+###############################################################################
+
+join <- unique(join)
+
+join$wn_name <- NULL
+join$ls_name <- NULL
+join$wn_result <- NULL
+join$ls_result <- NULL
+
+
+join$round <- ifelse(join$wn_round == '-', join$ls_round, join$wn_round)
+join$wn_round <- NULL
+join$ls_round <- NULL
+
+join$time <- ifelse(join$wn_time == '-', join$ls_time, join$wn_time)
+join$wn_time <- NULL
+join$ls_time <- NULL
+
+join$dec <- ifelse(join$wn_dec == '-', join$ls_dec, join$wn_dec)
+join$wn_dec <- NULL
+join$ls_dec <- NULL
+
+# Create an id for each fight
+join$matchid <- as.character(1:nrow(join) + 100000) 
+
+rm(key, left, right)
+
+###############################################################################
+
+# Winner data
+
+pl_lk <- data
+pl_lk$name <- NULL
+
+names(pl_lk) <- paste('wn_', names(pl_lk), sep = '')
+
+join2 <- merge(join, pl_lk, by = 'wn_id')
+
+names(pl_lk) <- gsub('wn_', 'ls_', names(pl_lk))
+
+join3 <- merge(join2, pl_lk, by = 'ls_id')
+
+
+#
+
+fight <- join3
+
+fight$wn_weight <- as.numeric(gsub(' lbs', '', fight$wn_weight))
+fight$ls_weight <- as.numeric(gsub(' lbs', '', fight$ls_weight))
+
+height <- function(h) {
+  feet <- as.numeric(sapply(strsplit(h, "'"), `[`, 1))
+  inch <- as.numeric(sapply(strsplit(h, "'"), `[`, 2))
+  feet * 12 + inch
+}
+
+
+fight$wn_height <- height(fight$wn_height)
+fight$ls_height <- height(fight$ls_height)
+
+ind <- unlist(gregexpr('(Age:', fight$wn_birth, fixed = T))
+fight$wn_birth <- substr(fight$wn_birth, 1, ind-2)
+
+ind <- unlist(gregexpr('(Age:', fight$ls_birth, fixed = T))
+fight$ls_birth <- substr(fight$ls_birth, 1, ind-2)
+
+
+fight$wn_birth <- mdy(fight$wn_birth)
+fight$ls_birth <- mdy(fight$ls_birth)
+
+fight$dec <- tolower(fight$dec)
+fight$method <- NA
+
+extract <- function(string) {
+  ifelse(is.na(fight$method), str_extract(fight$dec, string), fight$method)
+}
+
+
+fight$method <- extract("submission")
+fight$method <- extract("tko"       )
+fight$method <- extract("decision"  )
+fight$method <- extract("ko"        )
+fight$method <- extract("dq"        )
+fight$method <- extract("draw"      )
+fight$method <- extract("sumission" )
+fight$method <- extract("other"     )
+fight$method <- extract("no contest")
+fight$method <- extract("win"       )
+
+fight$dec <- NULL
+fight$ls_nickname <- NULL
+fight$wn_nickname <- NULL
+
+# Get rid of womens ufc
+women <- c("Women's Bantamweight", "Women's Strawweight", 
+           "Women's Flyweight",  "Women's Strawweight", "Woment's Strawweight")
+
+fight <- fight[!fight$wn_class %in% women, ]
+fight <- fight[!fight$ls_class %in% women, ]
+
+
+rm(fights, join, join2, join3, pl_lk, fighter, id, ind)
+rm(data, fg, women, extract, height)
+
+###############################################################################
+
+grTab <- function(gr) {
+  data.frame(         id = vertex.attributes(gr)$name,
+                  degree = centralization.degree(gr)$res,
+               closeness = centralization.closeness(gr)$res,
+              betweeness = betweenness(gr),
+             eigenvector = centralization.evcent(gr)$vector,
+                     hub = hub.score(gr)$vector,
+                    auth = authority.score(gr)$vector,
+                    page = page.rank(gr)$vector)
+}
+
+
+###############################################################################
+# Create network measures befor current fight occurs
+###############################################################################
+time <- sort(unique(fight$date))
+
+gr <- list()
+
+for(j in 1:(length(time) - 1)) {
+  i <- time[j]
+  f1 <- fight[fight$date <= i & fight$date > i - years(2), 1:3]
+  g1 <- graph.data.frame(f1[, c('ls_id', 'wn_id')])
+  
+  gr[[as.character(j)]] <- cbind(date = time[j+1], grTab(g1))
+  j <- j + 1
+  print(j)
+}
+
+rm(f1, g1, i, j, time)
+
+gr <- recurBind(gr)[[1]]
+
+gr$date <- as.POSIXct(gr$date, origin = origin) 
+
+loser <- gr
+winner <- gr
+
+names(loser) <- paste0('ls_', names(loser))
+names(loser)[1] <- c('date')
+
+names(winner) <- paste0('wn_', names(winner))
+names(winner)[1] <- c('date')
+
+
+fight2 <- merge(fight, loser, by = c('date', 'ls_id'))
+fight2 <- merge(fight2, winner, by = c('date', 'wn_id'))
+
+
+
+
+rm(loser, winner, gr)
+
+
+
+########################
+
+w <- l <- fight2
+
+
+w$loser <- NULL
+w$ls_id <- NULL
+l$winner <- NULL
+l$wn_id <- NULL
+
+l$y <- 0
+w$y <- 1
+
+#names(fin)[2] <- 'name'
+
+names(w)[1:3] <- c('date', 'id', 'name')
+names(l)[1:3] <- c('date', 'id', 'name')
+
+names(w) <- gsub('wn_', '', names(w))
+names(l) <- gsub('ls_', '', names(l))
+                 
+names(w) <- gsub('ls_', 'opp_', names(w))
+names(l) <- gsub('wn_', 'opp_', names(l))
+
+
+all(names(w) %in% names(l))
+
+
+
+final <- rbind(w, l)
+
+
+final <- final[order(final$matchid), ]
+
+rm(fight, fight2, l, w)
+###############################################################################
+#
+# Create fields for model
+#
+###############################################################################
+
+
+final$height <- final$height - final$opp_height
+final$opp_height <- NULL  
+
+#final$reach <- final$reach - final$opp_reach
+#final$opp_reach <- NULL  
+
+final$weight <- final$weight - final$opp_weight
+final$opp_weight <- NULL  
+
+
+final$round <- NULL
+final$time <- NULL
+final$class <- NULL
+final$opp_class <- NULL
+final$country <- NULL
+final$opp_country <- NULL
+
+final$degreeDiff <- final$degree - final$opp_degree
+final$opp_degree <- NULL 
+
+final$closenessDiff <- final$closeness - final$opp_closeness
+final$opp_closeness <- NULL 
+
+final$betweenessDiff <- final$betweeness - final$opp_betweeness
+final$opp_betweeness <- NULL 
+
+final$eigenvectorDiff <- final$eigenvector - final$opp_eigenvector
+final$opp_eigenvector <- NULL 
+
+final$hubDiff <- final$hub - final$opp_hub
+final$opp_hub <- NULL 
+
+final$authDiff <- final$auth - final$opp_auth
+final$opp_auth <- NULL 
+
+final$pageDiff <- final$page - final$opp_page
+final$opp_page <- NULL 
+
+
+final$method <- NULL
+final$birth <- NULL
+final$stance <- NULL
+final$opp_birth <- NULL
+final$opp_stance <- NULL
+
+#final$weight <- NULL
+#final$height <- NULL
+final$reach <- NULL
+final$style <- NULL
+
+final$opp_weight <- NULL
+final$opp_height <- NULL
+final$opp_reach <- NULL
+final$opp_style <- NULL
+
+
+final$date <- NULL
+
+#######################################
+
+
+params <- function(act, pred, cutoff = 0.5) {
+  pred <- ifelse(pred > cutoff, 1, 0)
+  tp <- sum(act & pred)
+  tn <- sum(!act & !pred)
+  fp <- sum(!act & pred)
+  fn <- sum(act & !pred)
+  return(list(tp = tp, fp = fp, fn = fn, tn = tn))
+}
+
+roc <- function(act, pred, gran = 0.1) {
+  s1 <- rep(NA, (1/gran) + 1)
+  s2 <- rep(NA, (1/gran) + 1)
+  j <- 1
+  for (i in seq(0, 1, gran)) {
+    x <- params(act, pred, cutoff = i)
+    s1[j] <- (x$tp/(x$tp + x$fn))
+    s2[j] <- (x$fp/(x$fp + x$tn))
+    j <- j + 1
+  }
+  return(cbind(s2, s1))
+}
+
+#######################################
+#
+# Sample
+#
+#######################################
+
+fin <- final[complete.cases(final), ]
+# 70 / 30 split
+n <- nrow(fin)
+
+test <- sample(1:n, .3 * n)
+train <- setdiff(1:n, test)
+
+
+train <- fin[train, ]
+test <- fin[test, ]
+
+
+
+
+mod <- glm(y ~ ., family = binomial(logit), data = train[, -c(1:3)])
+eval <- as.numeric(predict(mod, newdata = test[, -c(1:3)], type = 'response'))
+
+library(randomForest)
+mod2 <- randomForest(y ~ ., data = train[, -c(1:3)])
+eval2 <- as.numeric(predict(mod2, newdata = test[, -c(1:3)], type = 'response'))
+
+xx <- roc(test$y, eval2, .1)
+plot(xx[, 1], xx[, 2])
+points(seq(0, 1, .01), seq(0, 1, .01))
+
+
+################################
+
+
+
+#
+
+join <- ufc
+
+names(ufc) <- c("name", "res", "opponent", "method", "time", "height",
+                "weight", "reach", "Date", "age", "w", "l", "d")
+
+
+
+############
+oppon <- ufc[, c('name', 'opponent')]
+
+
+#
+
+oppon[oppon$name == 'Dan Henderson', ] -> x1
+oppon[oppon$opponent == 'Dan Henderson', ] -> x2
+
+x1 <- x1[complete.cases(x1), ]
+x2 <- x2[complete.cases(x2), ]
+
+x1 <- x1[order(x1$opponent), ]
+x2 <- x2[order(x2$name), ]
+#
+
+oppon <- ufc
+
+names(oppon)
+
+
+#
+

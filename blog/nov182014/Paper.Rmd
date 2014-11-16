@@ -1,0 +1,691 @@
+---
+title: "ufc"
+author: "Kenny Darrell"
+date: "November 8, 2014"
+output: html_document
+---
+
+```{r init, echo = FALSE, message=FALSE, warning=FALSE}
+# Don't do dumb things with strings
+options(stringsAsFactors = FALSE)
+
+# Load libraries
+library(httr)
+library(XML)
+library(devtools)
+library(stringr)
+library(lubridate)
+library(dplyr)
+library(rvest)
+library(igraph)
+library(RNeo4j)
+library(devtools)
+library(PlayerRatings)
+library(randomForest)
+library(ROCR)
+
+graph = startGraph("http://localhost:7474/db/data/")
+```
+
+
+### History
+
+Mixed Martial Arts (MMA) is a new sport, but it has grown pretty fast. I remember being young and seeing advertisments for the first UFC event. Being a kid from the eighties who enjoyed profesional wrestling I was pretty fascinated. It was a different beast back then in the early ninties. It has evolved into a very large and organized sport.
+
+There are also different organizations in this realm, [Bellator](http://www.bellator.com/), [PRIDE](http://en.wikipedia.org/wiki/Pride_Fighting_Championships) and [UFC](http://www.ufc.com/).
+
+
+For many reasons this interests me. If you have read any of my past blogs you can see lots if topics related to sports. My other intersts of temoral data and network data are both very appearent here. (Needs more)
+
+
+### ESPN
+
+Talk about pulling data from ESPN
+
+There are quite a few sources for information in this area. Some are pretty explicit about not scrpping data and others seem to be more open. There is alot of data on [ESPN](http://espn.go.com/mma/). To pull this data I used the new [rvest](https://github.com/hadley/rvest) package which made things very easy than other methods I have used in the past. I tried to use some of the newer webscriping tools but ran into some issues. I hope that these tools continue to evolve, and perhaps I should retry or try others to see which ones are more capable, perhaps a blog for another day.
+
+Using rvest and dplyr together makes the code look like a pipeline, very clean and readable.
+
+```{r scraper}
+'http://espn.go.com/mma/fighters' %>% 
+  html() %>%
+  html_nodes('.evenrow, a') %>% 
+  html_attrs() %>%
+  grep('/fighter/', ., value = T) %>%
+  sapply(function(x) x[[1]]) %>%
+  as.character() %>%
+  head()
+
+'http://espn.go.com/mma/fighter/history/_/id/3031574/matthew-lozano' %>%
+  html() %>% 
+  html_nodes('div div div .evenrow td') %>%
+  html_text() %>%
+  matrix(ncol = 7, byrow = T) %>%
+  data.frame() %>%
+  select(date = X1, opponent = X3, result = X4, method = X5, time = X7)
+
+'http://espn.go.com/mma/fighter/stats/_/id/3031574/matthew-lozano' %>% 
+  html() %>%
+  html_nodes('.general-info li') %>% 
+  html_text()
+
+```
+
+You can set up a process to pull the data in its entirety by putting a few loops or lapply functions around the above code. You then need to clean it up a bit and get it into a tidy data format. You can find my attempt here.
+
+
+Link to flat files or RData files here.
+```{r, eval = T}
+load('final_espn.RData')
+
+head(fights)
+```
+
+
+The first thing that I thought would be useful is to build a model that can predict the outcome of a given fight. There are a few reasons why this problem is different than building a typical model. The most important reason is that each observation is not independent. This lack of independence happens on many levels. First if I have a fight to predict I actually have it setup as two fights now, one from each fighter. I cannot predict the outcome of the fight like this, What if I have a model that says both fighters win. There is also a larger network effect, any given fight could have fighters that have fought in many other fights, maybe even a clone of the fight under consideration. 
+
+
+### Restructure
+
+The first step is to resolve the issue of each fight really having two different observations, one from each side. I started writing code to this and it turned out to be very, very gross. It was hard to grapple in my head. Weird things had to happen, I had to join the data on itself but change the names of fieds to get over the collision of the fighter attributes. One thing I want to address here, which I have spoke about some in the past is using the right tool for the job. After started down the path of trying this I realized this appraoch was all wrong. Here is a glimse of waht that code looked like, pretty ugly.
+
+
+
+```{r eval = F}
+# Make names with winner and loser
+fights$winner <- ifelse(fights$result == 'Win', fights$name, fights$opp)
+fights$loser <- ifelse(fights$result == 'Loss', fights$name, fights$opp)
+
+# Now remove opponent field
+fights$opp <- NULL
+
+# need to create two tables, one will have the data for winner and one the loser
+left <- fights[fights$result == 'Win', c(1, 3:7, 2, 8:9)]
+right <- fights[fights$result == 'Loss', c(1, 3:7, 2, 8:9)]
+
+# Change the names of each to denote fields realtion.
+names(left)[1:6] <- paste('wn_', names(left)[1:6], sep = '')
+names(right)[1:6] <- paste('ls_', names(right)[1:6], sep = '')
+
+left <- left[order(left$date), ]
+right <- right[order(right$date), ]
+
+# Create a table of atomic fight data.
+key <- fights[, c('date', 'winner', 'loser')]
+key <- unique(key)
+
+# This joins the left and right side (winner/loser) data on
+join <- merge(key, left, by = c('date', 'winner', 'loser'))
+join <- merge(join, right, by = c('date', 'winner', 'loser'))
+
+# We should have two rows for each
+join <- unique(join)
+
+# No longer have becuase we have winner and loser fields.
+join$wn_name <- NULL
+join$ls_name <- NULL
+join$wn_result <- NULL
+join$ls_result <- NULL
+
+# Create an id for each fight
+join$matchid <- as.character(1:nrow(join) + 100000) 
+
+# Cleanup tables.
+rm(key, left, right)
+
+# Now we have to merge the bio data on for both the winner and loser.
+pl_lk <- data
+pl_lk$name <- NULL
+
+# Need to rename everything
+names(pl_lk) <- paste('wn_', names(pl_lk), sep = '')
+join2 <- merge(join, pl_lk, by = 'wn_id')
+
+# Redo for loser and switch names
+names(pl_lk) <- gsub('wn_', 'ls_', names(pl_lk))
+join3 <- merge(join2, pl_lk, by = 'ls_id')
+
+# Finally have the right structure
+fight <- join3
+```
+
+
+This seems like a perfect place to use Neo4j. I can give it each fighteres data and then create a relation for each fight. Then I can just query for teh data I want and in the right format. Shove all of my data into Neo4j and have cypher do all of the messy parts behind the scenes, perfect. 
+
+I created some code that sits on top of the RNeo4j package so that you can add whole tables with given realtionships, whcih there may now be some new commits that allwo you to do this. I just llop through the fighter attribute data adn the fight data adding everything.
+
+May want to add the actual functions here.
+
+```{r eval = F}
+graph = startGraph("http://localhost:7474/db/data/")
+
+person <- add_nodes(data, c('fighter', 'espn'), 'id', props = names(data))
+
+add_rels(fights, from = person, f_name = 'id', to = person, t_name = 'oppid', 
+         how = 'fought', props = c('date', 'result', 'dec', 'time'))
+```
+
+I can get the data I want by using a query like this.
+
+```
+MATCH (a)-[r:fought]->(b) 
+  WHERE r.result = "Win"
+  RETURN a.name as wname, a.weight as ww, r.dec as dec, r.date as date,
+         b.name as lname, b.weight as lw
+UNION ALL MATCH (a)-[r:fought]->(b) 
+  WHERE r.result = "Loss"
+  RETURN b.name as wname, b.weight as ww, r.dec as dec, r.date as date,
+         a.name as lname, a.weight as lw;
+```
+
+```{r echo = F}
+query <- 'MATCH (a)-[r:fought]->(b) 
+  WHERE r.result = "Win"
+  RETURN a.name as wname, a.id as wid, r.dec as dec, r.date as date, 
+         r.event as event, b.name as lname, b.id as lid
+UNION ALL MATCH (a)-[r:fought]->(b) 
+  WHERE r.result = "Loss"
+  RETURN b.name as wname, b.id as wid, r.dec as dec, r.date as date, 
+         r.event as event, a.name as lname, a.id as lid;'
+```
+
+I now just use the cypher function with this query passed in as a string and the data I want is returned.
+
+```{r}
+fight <- unique(cypher(graph, query))
+```
+
+
+
+### Investigate
+ADD THE FIGHTS PER year CHARTS
+
+
+```{r clean}
+
+# How many fights per year
+fight %>% mutate(date = ymd(date), year = year(date)) %>% 
+  summarise(count = n())
+
+plot(table(fight$year), xlab = 'Year', ylab = '# of Fights', 
+     main = 'Number of Fights a Year')
+
+ufc <- fight[grep('UFC', fight$event), ]
+plot(table(ufc$year), xlab = 'Year', ylab = '# of UFC Fights', 
+     main = 'Number of UFC Fights a Year')
+
+# How has the network changed
+y <- sort(unique(fight$year))
+
+
+num_fg <- c()
+for(i in y) {
+  tmp <- fight[fight$year < i, ]
+  num_fg <- c(num_fg, length(unique(c(tmp$wid, tmp$lid))))
+}
+plot(y, num_fg, xlab = 'Year', ylab = 'Total Fighters', main = 'Cumulative Fighters')
+
+num_fg <- c()
+for(i in y) {
+  tmp <- fight[fight$year == i, ]
+  num_fg <- c(num_fg, length(unique(c(tmp$wid, tmp$lid))))
+}
+plot(y, num_fg, xlab = 'Year', ylab = 'Active Fighters', main = 'Active Fighters by Year')
+
+rm(tmp, i, num_fg, y)
+```
+
+
+
+### Missing data
+
+
+Show missing stats, how to correct for this
+
+
+```{r}
+head(data)
+```
+
+Once the data is setup you quickly realize that there are lots of holes. Most of the predictor variables you need are missing. What would be the best way to resolve this? I have a few thoughts. Pull data from another place that is more complete. This was my first thought. Two things to note. I had first hoped I could just pull data to repalce everything I had done, find a source with perfect data. This did not work out. Then I thought could I pull data for another source and merge the two togther. This would take mean I have two partial sources, say 25% and 35% complete. Could they be resolved into data that is closer to 60%. The answer is no and yes. I know they will not be complete opposites, they will have some overlap, so the combination should be more than either of the parts but less than the sum. How many sources are out there? Could you merge three or more together. Would this be a diminishing returns problem? This would lead to an entity resolution problem, and a tough one at that. There are some tools to help solve this problem, but that may be a challange for another day. It is getting close to the issue of waiting for perfect data. I think that getting more data and have a cleaner set would be valauble, but after fusing another set I may be on the same boat. 
+
+My second thought was, can I use network attributes for predictor varaibles. The cleanest part of the data is the collection of fights, its participants and the result. I started thinking of my posts on Social Balance. If A beats B, and B beats C should I be able to predict that A will beat C. Maybe, what if that was a long time ago. Can MMA exibit paper rock scissors type of effects. Maybe certain styles of fighting have weakeness to others. You could also be haivng an off day. This means we need to look at the network of fights. It also means that we need to look at how it evolved, not just how it exists today.
+
+
+
+Add movie from gephi and really simple model
+a few network stats, first fight and difference in exp and age
+
+### First may be bet to look at network of one league
+
+### second post can work on entity resolution
+Code to create gephi file
+```{r gexf, eval = F}
+
+graph = startGraph("http://localhost:7474/db/data/")
+
+
+q <- 'MATCH (a)-[r:fought]->(b)-[s:fought]->(a)
+      WHERE r.result = "Win" and r.date = s.date
+      RETURN a.name as wname, a.id as wid,
+             r.date as date,
+             b.name as lname, b.id as lid
+      UNION ALL
+      MATCH (a)-[r:fought]->(b)-[s:fought]->(a)
+      WHERE r.result = "Loss" and r.date = s.date
+      RETURN b.name as wname, b.id as wid, 
+             r.date as date,
+             a.name as lname, a.id as lid;'
+
+f <- unique(cypher(graph, q))
+
+# Need the start of everynode
+w <- f[, c('wid', 'wname', 'date')]
+l <- f[, c('lid', 'lname', 'date')]
+
+names(w) <- c('id', 'name', 'date')
+names(l) <- c('id', 'name', 'date')
+wl <- rbind(w, l)
+
+
+wl %>%
+  group_by(id, name) %>%
+  summarise(start = min(date), end = max(data)) ->
+  start
+
+#############
+
+write("", file = "tester2.gexf", append = FALSE)
+
+log <- function(text) {
+  write(text, file = "tester2.gexf", append = TRUE)
+}
+
+log('
+<gexf xmlns="http://www.gexf.net/1.1draft"
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+xsi:schemaLocation="http://www.gexf.net/1.1draft
+                             http://www.gexf.net/1.1draft/gexf.xsd"
+version="1.1">
+  <graph mode="dynamic" defaultedgetype="directed">
+  <attributes class="node" mode="dynamic">
+  <attribute id="price" title="Price" type="float"/>
+  </attributes>
+  <nodes>
+')
+
+
+log_node <- function(id, label, s, e) {
+  first <- min(start$start)
+  last <- max(start$end)
+  s <- as.integer(difftime(s, first, units = 'days'))
+  e <- as.integer(difftime(e, first, units = 'days'))
+  end <- min(e+200, as.integer(difftime(last, first, units = 'days')))
+  n <- paste('<node id="', id, '" label="', label, 
+             '" start="', s, '" end="', end, '" >', sep = '')
+  log(n)
+  log('</node>')
+  NULL
+}
+
+for(i in 1:nrow(start)) {
+  log_node(start$id[i], start$name[i], start$start[i], start$end[i])
+  print(i)
+}
+
+log('  </nodes>')
+log('  <edges>')
+
+log_edge <- function(s, t, d) {
+  d <- as.integer(difftime(d, min(start$start), units = 'days'))
+  end <- min(d+200, as.integer(difftime(today(), min(start$start), units = 'days')))
+  n <- paste('  <edge source="', s, '" target="', t, '" start="', d, '" end="', end, '"/>', sep = '')
+  log(n)
+  NULL
+}
+
+
+for(i in 1:nrow(f)) {
+  log_edge(f$wid[i], f$lid[i], f$date[i])
+  print(i)
+}
+
+log('  </edges>')
+log(' </graph>')
+log('</gexf>')
+
+```
+
+This network is really cool how it evolves over time. We can actaully see the sport getting big. THe problem is the visualization starts to fall apart. Viewing these things is a really hard problem.
+
+Build a model
+713
+
+```{r model} 
+graph = startGraph("http://localhost:7474/db/data/")
+
+q <- 'MATCH (a)-[r:fought]->(b)-[s:fought]->(a)
+      WHERE r.result = "Win" and r.date = s.date
+      RETURN a.name as name, a.id as id, 
+             a.weight as weight, a.height as height,
+             a.birth as birth,
+             a.style as style, r.result as result,
+             r.dec as dec, r.date as date, r.exp as exp, s.exp as oexp,
+             b.id as oid, b.weight as oweight, b.height as oheight,
+             b.birth as obirth, b.style as ostyle
+      UNION ALL
+      MATCH (a)-[r:fought]->(b)-[s:fought]->(a)
+      WHERE r.result = "Loss" and r.date = s.date
+      RETURN a.name as name, a.id as id, 
+             a.weight as weight, a.height as height,
+             a.birth as birth,
+             a.style as style, r.result as result,
+             r.dec as dec, r.date as date, r.exp as exp, s.exp as oexp,
+             b.id as oid, b.weight as oweight, b.height as oheight,
+             b.birth as obirth, b.style as ostyle;'
+
+f <- unique(cypher(graph, q))
+
+
+# People usually do not win on there first fight
+table(f[f$exp == 1, ]$result)
+table(f[f$exp == 2, ]$result)
+table(f[f$exp == 3, ]$result)
+
+#
+w <- as.data.frame(table(f[f$result == 'Win', ]$exp))
+l <- as.data.frame(table(f[f$result == 'Loss', ]$exp))
+
+names(l)[2] <- 'Freq2'
+winloss <- merge(w, l, all.x = T, all.y = T)
+names(winloss) <- c('Experience', 'Win', 'Loss')
+head(winloss, 10)
+
+rm(w, l)
+
+#
+f$weight <- as.numeric(f$weight) - as.numeric(f$oweight)
+
+
+# Weight does not seem to help much.
+mean(f[f$result == 'Win', ]$weight, na.rm = T)
+sd(f[f$result == 'Win', ]$weight, na.rm = T)
+
+f$weight <- NULL
+f$oweight <- NULL
+
+
+f$height <- as.numeric(f$height) - as.numeric(f$oheight)
+
+# Height does not help either.
+mean(f[f$result == 'Win', ]$height, na.rm = T)
+sd(f[f$result == 'Win', ]$height, na.rm = T)
+
+f$height <- NULL
+f$oheight <- NULL
+
+
+f$dec <- NULL
+f$birth <- NULL
+f$obirth <- NULL
+f$oreach <- NULL
+f$style <- NULL
+f$ostyle <- NULL
+
+```
+
+So it seems the variiables I thought at first would be useful had very little value. I still that there may be some value in other varaibles such as age and style but they are missing more often than not so. They are also other varaibles that I think may be useful like how you wone the fight and how long it took but first I want to check out the graph measures and see how they play out.
+
+```{r}
+grTab <- function(gr) {
+  data.frame(        id = vertex.attributes(gr)$name,
+              closeness = centralization.closeness(gr)$res,
+             betweeness = betweenness(gr),
+            eigenvector = centralization.evcent(gr)$vector,
+                    hub = hub.score(gr)$vector,
+                   auth = authority.score(gr)$vector,
+                   page = page.rank(gr)$vector)
+}
+
+
+#source_url('https://raw.githubusercontent.com/darrkj/darrkj.github.io/master/rcode/import.R')
+#import('igraph_2_d3')
+#import('d3plot')
+
+
+q2 <- 'MATCH (a)-[r:fought]->(b)
+       WHERE r.result = "Win"
+       RETURN a.id as id, a.name as name, r.date as date, b.id as oid, b.name as oname;'
+
+
+f2 <- unique(cypher(graph, q2))
+
+f2$date <- ymd(f2$date)
+f2 <- f2[order(f2$date), ]
+
+time <- sort(unique(f2$date))
+g <- graph.data.frame(f2[f2$date < time[10], c('oname', 'name')])
+
+
+plot(g)
+
+#d3plot(g)
+
+
+
+###############################
+
+if(F) {
+f2 <- unique(cypher(graph, q2))
+
+f2$date <- ymd(f2$date)
+f2 <- f2[order(f2$date), ]
+
+hh <- list()
+for (i in 2:length(time)) {
+  
+  g <- graph.data.frame(f[f$date < time[i], c('oid', 'id')])
+  y <- x <- cbind(grTab(g), date = time[i])
+  names(x) <- c("id", "cl", "bet", "eig", "hub", "auth", "page", "date") 
+  names(y) <- c("oid", "ocl", "obet", "oeig", "ohub", "oauth", "opage", "date") 
+  
+  h <- f[f$date == time[i], ]
+  h <- merge(h, x, by = c('id', 'date'), all.x = T)
+  h <- merge(h, y, by = c('oid', 'date'), all.x = T)
+  
+  hh[[as.character(i)]] <- h
+  print(i)
+}
+
+h <- recurBind(hh)[[1]]
+h <- h[order(h$date), ]
+head(h)
+pageRank <- h
+}
+rm(f2, q2)
+load('pageRank.RData')
+#
+
+page <- pageRank[, c('page', 'opage')]
+page <- page[complete.cases(page), ]
+sum(page[, 1] < page[, 2])
+sum(page[, 1] > page[, 2])
+
+
+
+############################
+#
+# Create model dataset
+
+f <- f[order(f$date), ]
+
+
+p1 <- pageRank[, c('id', 'oid', 'date', 'cl', 'bet', 'eig', 'hub', 'auth', 'page')]
+p2 <- pageRank[, c('oid', 'id', 'date', 'ocl', 'obet', 'oeig', 'ohub', 'oauth', 'opage')]
+names(p2) <- c('id', 'oid', 'date', 'cl', 'bet', 'eig', 'hub', 'auth', 'page')
+
+p <- rbind(p1, p2)
+p$date <- as.character(p$date)
+
+
+f2 <- merge(f, p, all.x = T)
+
+names(p) <- c('oid', 'id', 'date', 'ocl', 'obet', 'oeig', 'ohub', 'oauth', 'opage')
+
+f2 <- merge(f2, p, all.x = T)
+
+f3 <- f2[, c("result", "exp", "oexp", "cl", "bet", "eig", "hub", "auth", 
+             "page", "ocl", "obet", "oeig", "ohub", "oauth", "opage")]
+
+
+f3$y <- ifelse(f3$result == 'Win', 1, 0)
+f3$result <- NULL
+
+
+
+f3[is.na(f3)] <- 0
+
+f3 %>%
+  mutate(expDiff = exp - oexp, clDiff = cl - ocl, betDiff = bet - obet,
+         eigDiff = eig - oeig, hubDiff = hub - ohub, authDiff = auth - oauth,
+         pageDiff = page - opage) -> f3
+
+#x <- f3[, c('date', 'id', 'oid', 'y')]
+#x$date <- as.numeric(as.Date(x$date))
+
+#xelo <- elo(x, history = TRUE)
+
+
+```
+
+Build a model
+Simple model start
+```{r evaluation}
+
+
+#######################################
+#
+# Sample
+#
+#######################################
+
+n <- nrow(f3)
+
+# 70 / 30 split
+id <- sample(1:n, .7 * n)
+
+
+
+train <- f3[id, ]
+test <- f3[setdiff(1:n, id), ]
+
+
+
+mod <- randomForest(y ~ ., data = train, ntree = 100, do.trace = 1)
+eval <- as.numeric(predict(mod, newdata = test, type = 'response'))
+
+
+xp <- prediction(eval, test$y)
+performance(xp, 'auc')
+
+pp <- performance(xp, "tpr","fpr")
+plot(pp)
+points(seq(0, 1, .01), seq(0, 1, .01), type = 'l')
+```
+
+
+```{r}
+max(f2$date)
+#"2014-11-02"
+```
+
+
+
+
+```{r out_of_sample, eval = F}
+clean <- function(x) {
+  x %>% html_attrs() %>% sapply(function(x) x[[1]]) %>% as.character() %>%
+    gsub('http://espn.go.com/mma/fighter/_/id/', '', .) %>% strsplit('/') %>%
+    sapply(function(x) x[[1]][1])
+}
+
+get_event <- function(url) {  
+  url %>% html() -> html
+    
+  html %>% html_nodes('.winner') %>% html_attrs() %>% 
+    sapply(function(x) x[[1]]) %>% strsplit(' ') %>% 
+    sapply(function(x) x[[2]]) -> w
+    
+  html %>% html_nodes('.player1 a') %>% clean() -> a
+  html %>% html_nodes('.player2 a') %>% clean() -> b
+  
+  data.frame(winner = ifelse(w == 'fighter1', a, b),
+             loser = ifelse(w == 'fighter1', b, a))
+}
+
+
+new_pred <- function(event) {
+  event %>% get_event() -> ev
+  
+  merge(data.frame(id = c(ev$winner, ev$loser)), f2, all.x = T) %>% 
+    mutate(data = ymd(date)) %>%
+    select(id, date, exp, cl, bet, eig, hub, auth, page) %>%
+    group_by(id) %>%
+    mutate(max = max(date)) %>%
+    filter(max == max(date)) %>%
+    select(-max, -date) %>%
+    as.data.frame -> cc
+  
+  cc[is.na(cc)] <- 0
+  
+  bb <- cc
+  names(bb) <- paste0('o', names(bb))
+
+  rbind(select(ev, id = winner, oid = loser), 
+        select(ev, oid = winner, id = loser)) %>%
+    merge(cc) %>% merge(bb) %>%
+    mutate(expDiff = exp - oexp, clDiff = cl - ocl, betDiff = bet - obet,
+           eigDiff = eig - oeig, hubDiff = hub - ohub, authDiff = auth - oauth,
+           pageDiff = page - opage) -> ndata
+  
+  ndata$p <- predict(mod, newdata = ndata[, -c(1:2)], type = 'response')
+  
+  ev %>% 
+    merge(select(ndata, winner = id, wp = p)) %>% 
+    merge(select(ndata, loser = id, lp = p))
+}
+
+
+
+past <- c('http://espn.go.com/mma/fightcenter?eventId=400603491',
+          'http://espn.go.com/mma/fightcenter?eventId=400601611',
+          'http://espn.go.com/mma/fightcenter?eventId=400592231',
+)
+
+
+
+new_pred(past[1])
+new_pred(past[2])
+new_pred(past[3])
+
+
+
+
+```
+
+
+
+
+Have to do entity resolution
+Do we still need more data
+Sherdog
+How would we build a model to predict wins in a network like this with two rows for each resut
+What is intersting about the nework
+Compare to marvel net, viking net, alexander the great, rapper net, prog lang net
+Can we use this model to bet
+http://sports.bovada.lv/sports-betting/mixed-martial-arts.jsp
+http://www.mmabetting.com/
+http://topbet.eu/sportsbook/mma/ufc-180-parlayable
+http://www.mmabetting.com/2014/11/06/ufc-fight-night-55-odds-luke-rockhold-vs-michael-bisping/?
+How would be deploy it
+
