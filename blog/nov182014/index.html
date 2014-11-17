@@ -216,8 +216,12 @@ plot(y, num_fg, xlab = 'Year', ylab = 'Active Fighters', main = 'Active Fighters
 
 </div>
 <div id="missing-data" class="section level3">
+<br>
+
 <h3>Missing data</h3>
-<p>Show missing stats, how to correct for this</p>
+
+<p>Once the data is setup you quickly realize that there are lots of holes. Most of the predictor variables you need are missing. What would be the best way to resolve this? I have a few thoughts. Pull data from another place that is more complete. This was my first thought.</p>
+
 <pre class="r"><code>head(data)</code></pre>
 <pre><code>##        id           name weight height         class country birth stance
 ## 1 3032062     a sol kwon   &lt;NA&gt;   &lt;NA&gt;          &lt;NA&gt;    &lt;NA&gt;  &lt;NA&gt;   &lt;NA&gt;
@@ -226,113 +230,27 @@ plot(y, num_fg, xlab = 'Year', ylab = 'Active Fighters', main = 'Active Fighters
 ## 4 2499256   aaron barrow   &lt;NA&gt;   &lt;NA&gt;  Welterweight    &lt;NA&gt;  &lt;NA&gt;   &lt;NA&gt;
 ## 5 2504979    aaron berke   &lt;NA&gt;   &lt;NA&gt;  Welterweight    &lt;NA&gt;  &lt;NA&gt;   &lt;NA&gt;
 ## 6 3010409     aaron birn   &lt;NA&gt;   &lt;NA&gt;          &lt;NA&gt;    &lt;NA&gt;  &lt;NA&gt;   &lt;NA&gt;</code></pre>
-<p>Once the data is setup you quickly realize that there are lots of holes. Most of the predictor variables you need are missing. What would be the best way to resolve this? I have a few thoughts. Pull data from another place that is more complete. This was my first thought. Two things to note. I had first hoped I could just pull data to repalce everything I had done, find a source with perfect data. This did not work out. Then I thought could I pull data for another source and merge the two togther. This would take mean I have two partial sources, say 25% and 35% complete. Could they be resolved into data that is closer to 60%. The answer is no and yes. I know they will not be complete opposites, they will have some overlap, so the combination should be more than either of the parts but less than the sum. How many sources are out there? Could you merge three or more together. Would this be a diminishing returns problem? This would lead to an entity resolution problem, and a tough one at that. There are some tools to help solve this problem, but that may be a challange for another day. It is getting close to the issue of waiting for perfect data. I think that getting more data and have a cleaner set would be valauble, but after fusing another set I may be on the same boat.</p>
+
+<p>Two things to note. I had first hoped I could just pull data to repalce everything I had done, find a source with perfect data. This did not work out. Then I thought could I pull data for another source and merge the two togther. This would take mean I have two partial sources, say 25% and 35% complete. Could they be resolved into data that is closer to 60%. The answer is no and yes. I know they will not be complete opposites, they will have some overlap, so the combination should be more than either of the parts but less than the sum. How many sources are out there? Could you merge three or more together. Would this be a diminishing returns problem? This would lead to an entity resolution problem, and a tough one at that. There are some tools to help solve this problem, but that may be a challange for another day. It is getting close to the issue of waiting for perfect data. I think that getting more data and have a cleaner set would be valauble, but after fusing another set I may be on the same boat.</p>
 <p>My second thought was, can I use network attributes for predictor varaibles. The cleanest part of the data is the collection of fights, its participants and the result. I started thinking of my posts on Social Balance. If A beats B, and B beats C should I be able to predict that A will beat C. Maybe, what if that was a long time ago. Can MMA exibit paper rock scissors type of effects. Maybe certain styles of fighting have weakeness to others. You could also be haivng an off day. This means we need to look at the network of fights. It also means that we need to look at how it evolved, not just how it exists today.</p>
 <p>Add movie from gephi and really simple model a few network stats, first fight and difference in exp and age</p>
 </div>
-<div id="first-may-be-bet-to-look-at-network-of-one-league" class="section level3">
-<h3>First may be bet to look at network of one league</h3>
-</div>
-<div id="second-post-can-work-on-entity-resolution" class="section level3">
-<h3>second post can work on entity resolution</h3>
-<p>Code to create gephi file</p>
-<pre class="r"><code>graph = startGraph(&quot;http://localhost:7474/db/data/&quot;)
 
+<div id="visual" class="section level3">
+<h3>Visualizing the Network</h3>
 
-q &lt;- 'MATCH (a)-[r:fought]-&gt;(b)-[s:fought]-&gt;(a)
-      WHERE r.result = &quot;Win&quot; and r.date = s.date
-      RETURN a.name as wname, a.id as wid,
-             r.date as date,
-             b.name as lname, b.id as lid
-      UNION ALL
-      MATCH (a)-[r:fought]-&gt;(b)-[s:fought]-&gt;(a)
-      WHERE r.result = &quot;Loss&quot; and r.date = s.date
-      RETURN b.name as wname, b.id as wid, 
-             r.date as date,
-             a.name as lname, a.id as lid;'
-
-f &lt;- unique(cypher(graph, q))
-
-# Need the start of everynode
-w &lt;- f[, c('wid', 'wname', 'date')]
-l &lt;- f[, c('lid', 'lname', 'date')]
-
-names(w) &lt;- c('id', 'name', 'date')
-names(l) &lt;- c('id', 'name', 'date')
-wl &lt;- rbind(w, l)
-
-
-wl %&gt;%
-  group_by(id, name) %&gt;%
-  summarise(start = min(date), end = max(data)) -&gt;
-  start
-
-#############
-
-write(&quot;&quot;, file = &quot;tester2.gexf&quot;, append = FALSE)
-
-log &lt;- function(text) {
-  write(text, file = &quot;tester2.gexf&quot;, append = TRUE)
-}
-
-log('
-&lt;gexf xmlns=&quot;http://www.gexf.net/1.1draft&quot;
-xmlns:xsi=&quot;http://www.w3.org/2001/XMLSchema-instance&quot;
-xsi:schemaLocation=&quot;http://www.gexf.net/1.1draft
-                             http://www.gexf.net/1.1draft/gexf.xsd&quot;
-version=&quot;1.1&quot;&gt;
-  &lt;graph mode=&quot;dynamic&quot; defaultedgetype=&quot;directed&quot;&gt;
-  &lt;attributes class=&quot;node&quot; mode=&quot;dynamic&quot;&gt;
-  &lt;attribute id=&quot;price&quot; title=&quot;Price&quot; type=&quot;float&quot;/&gt;
-  &lt;/attributes&gt;
-  &lt;nodes&gt;
-')
-
-
-log_node &lt;- function(id, label, s, e) {
-  first &lt;- min(start$start)
-  last &lt;- max(start$end)
-  s &lt;- as.integer(difftime(s, first, units = 'days'))
-  e &lt;- as.integer(difftime(e, first, units = 'days'))
-  end &lt;- min(e+200, as.integer(difftime(last, first, units = 'days')))
-  n &lt;- paste('&lt;node id=&quot;', id, '&quot; label=&quot;', label, 
-             '&quot; start=&quot;', s, '&quot; end=&quot;', end, '&quot; &gt;', sep = '')
-  log(n)
-  log('&lt;/node&gt;')
-  NULL
-}
-
-for(i in 1:nrow(start)) {
-  log_node(start$id[i], start$name[i], start$start[i], start$end[i])
-  print(i)
-}
-
-log('  &lt;/nodes&gt;')
-log('  &lt;edges&gt;')
-
-log_edge &lt;- function(s, t, d) {
-  d &lt;- as.integer(difftime(d, min(start$start), units = 'days'))
-  end &lt;- min(d+200, as.integer(difftime(today(), min(start$start), units = 'days')))
-  n &lt;- paste('  &lt;edge source=&quot;', s, '&quot; target=&quot;', t, '&quot; start=&quot;', d, '&quot; end=&quot;', end, '&quot;/&gt;', sep = '')
-  log(n)
-  NULL
-}
-
-
-for(i in 1:nrow(f)) {
-  log_edge(f$wid[i], f$lid[i], f$date[i])
-  print(i)
-}
-
-log('  &lt;/edges&gt;')
-log(' &lt;/graph&gt;')
-log('&lt;/gexf&gt;')</code></pre>
-<p>This network is really cool how it evolves over time. We can actaully see the sport getting big. THe problem is the visualization starts to fall apart. Viewing these things is a really hard problem.</p>
+<p>I created a gexf file of the network that gave a temporal element to when fights ocured and when fighters were considrered to be active. This network is really cool how it evolves over time. We can actaully see the sport getting big. The problem is the visualization starts to fall apart. Viewing these things is a really hard problem. In this first video you can see a <a href="https://wiki.gephi.org/index.php/ForceAtlas">force directed layout</a> algorithm moving the things around. Every few seconds another sixty days of data is pulled into the network. A fighter exists into the network from his first appearance in a fight until about 200 days after his last fight. The fight itself, depicted as the edges are only visible for a little over half a year. This way the older fights phase out. The size of the node is dependent on the pagerank of the node under consideration. There is also a thickness of the edges which denotes the value of the fight, how much it can change the nodes pagerank. This time lapse covers roughly the years of 2001 to 2007</p>
 
 <video controls="controls" width="800" height="600" name="Video Name" src="s700e6790_force_mod2.mov"></video>
 
+
+
+<p>In this plot we have a different layout algorithm, <a href="https://wiki.gephi.org/index.php/Fruchterman-Reingold">Fruchterman-Reingold</a>, which gives amuch different feel. Everything else is hte same except thath the time period is around 1999 to 2003.</p>
+
 <video controls="controls" width="800" height="600" name="Video Name" src="s700e6790_fruct_start.mov"></video>
 
+
+<p>Here we have 2007 to 2011 with everything else being the same as above.</p>
 <video controls="controls" width="800" height="600" name="Video Name" src="s700e6790_fruct_end.mov"></video>
 
 
