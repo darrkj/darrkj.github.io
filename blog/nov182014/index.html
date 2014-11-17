@@ -41,19 +41,19 @@
 
 <div id="history" class="section level3">
 <h3>History</h3>
-<p>Mixed Martial Arts (MMA) is a newer sport, but it has grown pretty fast. I remember being young and seeing advertisments for the first UFC event. Being a kid from the eighties who enjoyed profesional wrestling I was pretty fascinated. It was a different beast back then in the early ninties. It has evolved into a very large and organized sport. There are also different organizations in this realm, <a href="http://www.bellator.com/">Bellator</a>, <a href="http://en.wikipedia.org/wiki/Pride_Fighting_Championships">PRIDE</a> and <a href="http://www.ufc.com/">UFC</a>.</p>
+<p>Mixed Martial Arts (MMA) is a newer sport, but it has grown pretty fast. I remember being young and seeing advertisements for the first UFC event. Being a kid from the eighties who enjoyed professional wrestling I was pretty fascinated. It was a different beast back then in the early nineties. It has evolved into a very large and organized sport. There are also different organizations in this realm, <a href="http://www.bellator.com/">Bellator</a>, <a href="http://en.wikipedia.org/wiki/Pride_Fighting_Championships">PRIDE</a> and <a href="http://www.ufc.com/">UFC</a>.</p>
 
 
-<p>For many reasons this interests me. If you have read any of my past blogs you can see lots if topics related to sports. My other intersts of temporal data and network data are both very relavent here. It is also an area that allows for a model to be built in order to predict outcomes, and unlike many other sports the clock does not reset after every season, they can exists outside of that notion. THey alos allow for some great visualizations as well as just an interesting problem to work on.</p>
+<p>For many reasons this interests me. If you have read any of my past blogs you can see lots if topics related to sports. My other interests of temporal data and network data are both very relevant here. It is also an area that allows for a model to be built in order to predict outcomes, and unlike many other sports the clock does not reset after every season, they can exists outside of that notion. They also allow for some great visualizations as well as just an interesting problem to work on.</p>
 
 </div>
 
 <div id="espn" class="section level3">
 <h3>Collecting Data</h3>
 
-<p>There are quite a few sources for information in this area. Some are pretty explicit about not scrpping data and others seem to be more open. There is alot of data on <a href="http://espn.go.com/mma/">ESPN</a>. To pull this data I used the new <a href="https://github.com/hadley/rvest">rvest</a> package which made things very easy compared to other methods I have used in the past. I tried to use some of the newer webscriping tools but ran into some issues. I hope that these tools continue to evolve, and perhaps I should retry or try others to see which ones are more capable, perhaps a blog for another day.</p>
+<p>There are quite a few sources for information in this area. Some are pretty explicit about not scrpping data and others seem to be more open. There is a lot of data on <a href="http://espn.go.com/mma/">ESPN</a>. To pull this data I used the new <a href="https://github.com/hadley/rvest">rvest</a> package which made things very easy compared to other methods I have used in the past. I tried to use some of the newer web-scraping tools but ran into some issues. I hope that these tools continue to evolve, and perhaps I should retry or try others to see which ones are more capable, perhaps a blog for another day.</p>
 
-<p>Using rvest and dplyr together makes the code look like a pipeline, very clean and readable. Here you can see how you would go about gettin gwhich fighters exist, who they have fought ans ome of there metadata.</p>
+<p>Using rvest and dplyr together makes the code look like a pipeline, very clean and readable. Here you can see how you would go about getting which fighters exist, who they have fought and some of there metadata.</p>
 
 <pre class="r"><code>'http://espn.go.com/mma/fighters' %&gt;% 
   html() %&gt;%
@@ -102,11 +102,11 @@ head(fights)</code></pre>
 ## 4 2557041 2009-08-15      francisco rivera       Loss     3 5:00
 ## 5 2499256 2004-12-18             dan hardy       Loss     1 0:13
 ## 6 2504979 2010-05-07            keto allen       Loss     1 2:58</code></pre>
-<p>The first thing that I thought would be useful is to build a model that can predict the outcome of a given fight. There are a few reasons why this problem is different than building a typical model. The most important reason is that each observation is not independent. This lack of independence happens on many levels. First if I have a fight to predict I actually have it setup as two fights now, one for each fighter. I cannot predict the outcome of the fight like this, What if I have a model that says both fighters win. There is also a larger network effect, any given fight could have fighters that have fought in many other fights, maybe even a clone of the fight under consideration. It also leaves us with no data about the oppenent which is real challange.</p>
+<p>The first thing that I thought would be useful is to build a model that can predict the outcome of a given fight. There are a few reasons why this problem is different than building a typical model. The most important reason is that each observation is not independent. This lack of independence happens on many levels. First if I have a fight to predict I actually have it setup as two fights now, one for each fighter. I cannot predict the outcome of the fight like this, What if I have a model that says both fighters win. There is also a larger network effect, any given fight could have fighters that have fought in many other fights, maybe even a clone of the fight under consideration. It also leaves us with no data about the opponent which is real challenge.</p>
 </div>
 <div id="restructure" class="section level3">
 <h3>Restructure</h3>
-<p>The first step is to resolve the issue of each fight really having two different observations, one from each side. I started writing code to this and it turned out to be very, very gross. It was hard to grapple in my head. Weird things had to happen, I had to join the data on itself but change the names of fieds to get over the collision of the fighter attributes. One thing I want to address here, which I have spoke about some in the past is using the right tool for the job. After started down the path of trying this I realized this appraoch was all wrong. Here is a glimse of waht that code looked like, pretty ugly.</p>
+<p>The first step is to resolve the issue of each fight really having two different observations, one from each side. I started writing code to this and it turned out to be very, very gross. It was hard to grapple in my head. Weird things had to happen, I had to join the data on itself but change the names of fields to get over the collision of the fighter attributes. One thing I want to address here, which I have spoke about some in the past is using the right tool for the job. After started down the path of trying this I realized this approach was all wrong. Here is a glimpse of what that code looked like, pretty ugly.</p>
 <pre class="r"><code># Make names with winner and loser
 fights$winner &lt;- ifelse(fights$result == 'Win', fights$name, fights$opp)
 fights$loser &lt;- ifelse(fights$result == 'Loss', fights$name, fights$opp)
@@ -164,7 +164,7 @@ join3 &lt;- merge(join2, pl_lk, by = 'ls_id')
 fight &lt;- join3</code></pre>
 
 <p>This seems like a perfect place to use Neo4j. I can give it each fighters data and then create a relation for each fight. Then I can just query for the data I want and have it return it in the right format. Shove all of my data into Neo4j and have cypher do all of the messy parts behind the scenes, perfect.</p>
-<p>I created some code that sits on top of the RNeo4j package so that you can add whole tables with given realtionships, which there may now be some new commits that allow you to do this. I just loop through the fighter attribute data and the fight data adding everything.</p>
+<p>I created some code that sits on top of the RNeo4j package so that you can add whole tables with given relationships, which there may now be some new commits that allow you to do this. I just loop through the fighter attribute data and the fight data adding everything.</p>
 
 <pre class="r"><code>graph = startGraph(&quot;http://localhost:7474/db/data/&quot;)
 
@@ -203,9 +203,9 @@ plot(table(ufc$year), xlab = 'Year', ylab = '# of UFC Fights',
 
      <div class="separator" style="clear: both; text-align: center;"><img src="ufc_per_year.png" height="350" width="600"></a></div>
      
-<p>Very intersting. They seem to still be growing. Even more so considering that this plot does not have the last two months of 2014 included in the data.</p>
+<p>Very interesting. They seem to still be growing. Even more so considering that this plot does not have the last two months of 2014 included in the data.</p>
 
-<p>What about fro the perspective of the fighters. How many MMA fighters are there?</p>
+<p>What about from the perspective of the fighters. How many MMA fighters are there?</p>
 
 <pre class="r"><code>y &lt;- sort(unique(fight$year))
 
@@ -219,7 +219,7 @@ plot(y, num_fg, xlab = 'Year', ylab = 'Total Fighters', main = 'Cumulative Fight
 
      <div class="separator" style="clear: both; text-align: center;"><img src="cum_fighters.png" height="350" width="600"></a></div>
 
-<p>How many of these fighters are actualy active in a given a year?</p>
+<p>How many of these fighters are actually active in a given a year?</p>
 
 <pre class="r"><code>num_fg &lt;- c()
 for(i in y) {
@@ -237,7 +237,7 @@ plot(y, num_fg, xlab = 'Year', ylab = 'Active Fighters', main = 'Active Fighters
 
 <h3>Missing data</h3>
 
-<p>Once you start digging into the data you quickly realize that there are lots of holes. Most of the predictor variables you would start with are missing. What would be the best way to resolve this? I have a few thoughts, but some require a lot more effort. Pulling data from another source that is more complete was my first thought. THe problem is though that would mean starting over.</p>
+<p>Once you start digging into the data you quickly realize that there are lots of holes. Most of the predictor variables you would start with are missing. What would be the best way to resolve this? I have a few thoughts, but some require a lot more effort. Pulling data from another source that is more complete was my first thought. The problem is though that would mean starting over.</p>
 
 <pre class="r"><code>head(data)</code></pre>
 <pre><code>##        id           name weight height         class country birth stance
@@ -248,22 +248,22 @@ plot(y, num_fg, xlab = 'Year', ylab = 'Active Fighters', main = 'Active Fighters
 ## 5 2504979    aaron berke   &lt;NA&gt;   &lt;NA&gt;  Welterweight    &lt;NA&gt;  &lt;NA&gt;   &lt;NA&gt;
 ## 6 3010409     aaron birn   &lt;NA&gt;   &lt;NA&gt;          &lt;NA&gt;    &lt;NA&gt;  &lt;NA&gt;   &lt;NA&gt;</code></pre>
 
-<p>Two things to note. I had first hoped I could just pull data to replace everything I had done, find a source with perfect data. This did not work out. Then I thought I could pull data for another source and merge the two togther. This would mean I have two partial sources, say 25% and 35% complete. Could they be resolved into data that is closer to 60%. The answer is no and yes. I know they will not be complete opposites, they will have some overlap, so the combination should be more than either of the parts but less than the sum. How many sources are out there? Could you merge three or more together. Would this be a diminishing returns problem? This would lead to an entity resolution problem, and a tough one at that. There are some tools to help solve this problem, but that may be a challange for another day. It is getting close to the issue of waiting for perfect data. I think that getting more data and have a cleaner set would be valauble, but after fusing another set I may be in the same boat.</p>
+<p>Two things to note. I had first hoped I could just pull data to replace everything I had done, find a source with perfect data. This did not work out. Then I thought I could pull data for another source and merge the two together. This would mean I have two partial sources, say 25% and 35% complete. Could they be resolved into data that is closer to 60%. The answer is no and yes. I know they will not be complete opposites, they will have some overlap, so the combination should be more than either of the parts but less than the sum. How many sources are out there? Could you merge three or more together. Would this be a diminishing returns problem? This would lead to an entity resolution problem, and a tough one at that. There are some tools to help solve this problem, but that may be a challenge for another day. It is getting close to the issue of waiting for perfect data. I think that getting more data and have a cleaner set would be valuable, but after fusing another set I may be in the same boat.</p>
 
-<p>My second thought was, can I use network attributes for predictor varaibles. The cleanest part of the data is the collection of fights, its participants and the result. I started thinking of my posts on Social Balance. If A beats B, and B beats C should I be able to predict that A will beat C. Maybe, what if that was a long time ago. Can MMA exibit paper rock scissors type of effects. Maybe certain styles of fighting have weakeness to others. You could also be haivng an off day. This means we need to look at the network of fights. It also means that we need to look at how it evolved, not just how it exists today.</p>
+<p>My second thought was, can I use network attributes for predictor variables. The cleanest part of the data is the collection of fights, its participants and the result. I started thinking of my posts on Social Balance. If A beats B, and B beats C should I be able to predict that A will beat C. Maybe, what if that was a long time ago. Can MMA exhibit paper rock scissors type of effects. Maybe certain styles of fighting have weaknesses to others. You could also be having an off day. This means we need to look at the network of fights. It also means that we need to look at how it evolved, not just how it exists today.</p>
 
 </div>
 
 <div id="visual" class="section level3">
 <h3>Visualizing the Network</h3>
 
-<p>I created a gexf file of the network that gave a temporal element to when fights ocured and when fighters were considrered to be active. This network is really cool how it evolves over time. We can actaully see the sport getting big. The problem is the visualization starts to fall apart. Viewing these things is a really hard problem. In this first video you can see a <a href="https://wiki.gephi.org/index.php/ForceAtlas">force directed layout</a> algorithm moving the things around. Every few seconds another sixty days of data is pulled into the network. A fighter exists into the network from his first appearance in a fight until about 200 days after his last fight. The fight itself, depicted as the edges are only visible for a little over half a year. This way the older fights phase out. The size of the node is dependent on the pagerank of the node under consideration. There is also a thickness of the edges which denotes the value of the fight, how much it can change the nodes pagerank. This time lapse covers roughly the years of 2001 to 2007</p>
+<p>I created a gexf file of the network that gave a temporal element to when fights occurred and when fighters were considered to be active. This network is really cool how it evolves over time. We can actually see the sport getting big. The problem is the visualization starts to fall apart. Viewing these things is a really hard problem. In this first video you can see a <a href="https://wiki.gephi.org/index.php/ForceAtlas">force directed layout</a> algorithm moving the things around. Every few seconds another sixty days of data is pulled into the network. A fighter exists into the network from his first appearance in a fight until about 200 days after his last fight. The fight itself, depicted as the edges are only visible for a little over half a year. This way the older fights phase out. The size of the node is dependent on the pagerank of the node under consideration. There is also a thickness of the edges which denotes the value of the fight, how much it can change the nodes pagerank. This time lapse covers roughly the years of 2001 to 2007.</p>
 
 <video controls="controls" width="800" height="600" name="Video Name" src="s700e6790_force_mod2.mov"></video>
 
 
 
-<p>In this plot we have a different layout algorithm, <a href="https://wiki.gephi.org/index.php/Fruchterman-Reingold">Fruchterman-Reingold</a>, which gives amuch different feel. Everything else is hte same except thath the time period is around 1999 to 2003.</p>
+<p>In this plot we have a different layout algorithm, <a href="https://wiki.gephi.org/index.php/Fruchterman-Reingold">Fruchterman-Reingold</a>, which gives a much different feel. Everything else is the same except that the time period is around 1999 to 2003.</p>
 
 <video controls="controls" width="800" height="600" name="Video Name" src="s700e6790_fruct_start.mov"></video>
 
@@ -273,7 +273,7 @@ plot(y, num_fg, xlab = 'Year', ylab = 'Active Fighters', main = 'Active Fighters
 
 
 
-<h3>Creat the Analytic Data Set</h3>
+<h3>Create the Analytic Data Set</h3>
 
 <pre class="r"><code>q &lt;- '
 MATCH (a)-[r:fought]-&gt;(b)-[s:fought]-&gt;(a)
@@ -291,7 +291,7 @@ RETURN a.name as name, a.id as id, a.weight as weight, a.height as height,
 f &lt;- unique(cypher(graph, q))
 </code></pre>
 
-<p>Now we can start to create the varaibles we will use to build a model. My first since we will be going down the graph centric route, how do nodes fair that have zero degree. Translation, do fighters usually lose on there first fight. If so how does this change as they gain more experience.</p>
+<p>Now we can start to create the variables we will use to build a model. My first since we will be going down the graph centric route, how do nodes fair that have zero degree. Translation, do fighters usually lose on there first fight. If so how does this change as they gain more experience.</p>
 
 <pre><code>table(f[f$exp == 1, ]$result)</code></pre>
 <pre><code>## Loss  Win 
@@ -323,13 +323,12 @@ head(winloss, 10)</code></pre>
 ## 9           9 1044  486
 ## 10         10  945  447</code></pre>
 
-<p>This shows promise as well, and we have not yet even considered the opponents experience. It is very interesting that only about one out of every five fighters will win there first fight. It is about two out of five will win there second and by the time you get to your third you are at about even odds. As you get further it seems to converge around two to one. There may still be more happening here though since therea re many more cases in the first fight than the second. Maybe some survivor bias. If you lose you first you may not have an oppertunity to have a second.</p>
+<p>This shows promise as well, and we have not yet even considered the opponents experience. It is very interesting that only about one out of every five fighters will win there first fight. It is about two out of five will win there second and by the time you get to your third you are at about even odds. As you get further it seems to converge around two to one. There may still be more happening here though since there are many more cases in the first fight than the second. Maybe some survivor bias. If you lose you first you may not have an opportunity to have a second.</p>
 
-<p>How do the other variable fair that are not network centric? We should atleast evaluate them to see if it would even help to get complete data from other sources.</p>
-<pre class="r"><code>f$weight &lt;- as.numeric(f$weight) - as.numeric(f$oweight)</code></pre>
-<pre><code>## Warning: NAs introduced by coercion</code></pre>
-<pre><code>## Warning: NAs introduced by coercion</code></pre>
-<pre class="r"><code># Weight does not seem to help much.
+<p>How do the other variables fare that are not network centric? We should at least evaluate them to see if it would even help to get complete data from other sources.</p>
+<pre class="r"><code>f$weight &lt;- as.numeric(f$weight) - as.numeric(f$oweight)
+  
+# Weight does not seem to help much.
 mean(f[f$result == 'Win', ]$weight, na.rm = T)</code></pre>
 <pre><code>## [1] -1.482577</code></pre>
 <pre class="r"><code>sd(f[f$result == 'Win', ]$weight, na.rm = T)</code></pre>
@@ -337,11 +336,9 @@ mean(f[f$result == 'Win', ]$weight, na.rm = T)</code></pre>
 <pre class="r"><code>f$weight &lt;- NULL
 f$oweight &lt;- NULL
 
+f$height &lt;- as.numeric(f$height) - as.numeric(f$oheight)
 
-f$height &lt;- as.numeric(f$height) - as.numeric(f$oheight)</code></pre>
-<pre><code>## Warning: NAs introduced by coercion</code></pre>
-<pre><code>## Warning: NAs introduced by coercion</code></pre>
-<pre class="r"><code># Height does not help either.
+# Height does not help either.
 mean(f[f$result == 'Win', ]$height, na.rm = T)</code></pre>
 <pre><code>## [1] 0.1363392</code></pre>
 <pre class="r"><code>sd(f[f$result == 'Win', ]$height, na.rm = T)</code></pre>
@@ -352,7 +349,8 @@ f$oheight &lt;- NULL
 
 f$birth &lt;- NULL
 f$obirth &lt;- NULL</code></pre>
-<p>So it seems the variables I thought at first would be useful had very little value. I still that there may be some value in other varaibles such as age and style but they are missing more often than not so. They are also other varaibles that I think may be useful like how you wone the fight and how long it took but first I want to check out the graph measures and see how they play out.</p>
+<p>So it seems the variables I thought at first would be useful had very little value. I still that there may be some value in other variables such as age and style but they are missing more often than not so. They are also other variables that I think may be useful like how you won the fight and how long it took but first I want to check out the graph measures and see how they play out.</p>
+
 <pre class="r"><code>grTab &lt;- function(gr) {
   data.frame(        id = vertex.attributes(gr)$name,
               closeness = centralization.closeness(gr)$res,
@@ -363,31 +361,22 @@ f$obirth &lt;- NULL</code></pre>
                    page = page.rank(gr)$vector)
 }
 
-
-source_url('https://raw.githubusercontent.com/darrkj/darrkj.github.io/master/rcode/import.R')
-import('igraph_2_d3')
-import('d3plot')
-
-
 q2 &lt;- 'MATCH (a)-[r:fought]-&gt;(b)
        WHERE r.result = &quot;Win&quot;
        RETURN a.id as id, a.name as name, r.date as date, 
               b.id as oid, b.name as oname;'
 
-
-
-q2 %&gt;% cypher(graph, .) %&gt;% unique() %&gt;% mutate(date = ymd(date)) -&gt; f2 
-
+q2 %&gt;% cypher(graph, .) %&gt;% unique() %&gt;% 
+  mutate(date = ymd(date)) -&gt; f2 
 
 time &lt;- sort(unique(f2$date))
 g &lt;- graph.data.frame(f2[f2$date &lt; time[10], c('oname', 'name')])
-
 
 plot(g)</code></pre>
 
      <div class="separator" style="clear: both; text-align: center;"><img src="graph.png" height="350" width="600"></a></div>
 
-<pre class="r"><code>#d3plot(g)</code></pre>
+<pre class="r"><code>d3plot(g)</code></pre>
 
 <div style="text-align:center;"> <iframe src="http://darrkj.github.io/blog/nov182014/gg" width="500" height="450"></iframe></div>
 
@@ -456,27 +445,14 @@ f3 %&gt;%
 
 #xelo &lt;- elo(x, history = TRUE)</code></pre>
 <p>Build a model Simple model start</p>
-<pre class="r"><code>#######################################
-#
-# Sample
-#
-#######################################
-
-n &lt;- nrow(f3)
-
-# 70 / 30 split
-id &lt;- sample(1:n, .7 * n)
-
-
+<pre class="r"><code># 70 / 30 split
+id &lt;- sample(1:nrow(f3), .7 * nrow(f3))
 
 train &lt;- f3[id, ]
 test &lt;- f3[setdiff(1:n, id), ]
 
-
-
 mod &lt;- randomForest(y ~ ., data = train, ntree = 100, do.trace = 1)</code></pre>
-<pre><code>## Warning in randomForest.default(m, y, ...): The response has five or fewer
-## unique values.  Are you sure you want to do regression?</code></pre>
+
 <pre><code>##      |      Out-of-bag   |
 ## Tree |      MSE  %Var(y) |
 ##    1 |   0.2931   117.22 |
@@ -492,38 +468,17 @@ mod &lt;- randomForest(y ~ ., data = train, ntree = 100, do.trace = 1)</code></p
 ##  100 |    0.168    67.19 |</code></pre>
 <pre class="r"><code>eval &lt;- as.numeric(predict(mod, newdata = test, type = 'response'))
 
-
 xp &lt;- prediction(eval, test$y)
 performance(xp, 'auc')</code></pre>
-<pre><code>## An object of class &quot;performance&quot;
-## Slot &quot;x.name&quot;:
-## [1] &quot;None&quot;
-## 
-## Slot &quot;y.name&quot;:
-## [1] &quot;Area under the ROC curve&quot;
-## 
-## Slot &quot;alpha.name&quot;:
-## [1] &quot;none&quot;
-## 
-## Slot &quot;x.values&quot;:
-## list()
-## 
-## Slot &quot;y.values&quot;:
-## [[1]]
-## [1] 0.832575
-## 
-## 
-## Slot &quot;alpha.values&quot;:
-## list()</code></pre>
-<pre class="r"><code>pp &lt;- performance(xp, &quot;tpr&quot;,&quot;fpr&quot;)
-plot(pp)
+<pre><code>## [1] 0.832575</code></pre>
+<pre class="r"><code>plot(performance(xp, &quot;tpr&quot;,&quot;fpr&quot;))
 points(seq(0, 1, .01), seq(0, 1, .01), type = 'l')</code></pre>
 
      <div class="separator" style="clear: both; text-align: center;"><img src="roc.png" height="350" width="600"></a></div>
 
 <pre class="r"><code>max(f2$date)</code></pre>
 <pre><code>## [1] &quot;2014-11-02&quot;</code></pre>
-<pre class="r"><code>#&quot;2014-11-02&quot;</code></pre>
+
 <pre class="r"><code>clean &lt;- function(x) {
   x %&gt;% html_attrs() %&gt;% sapply(function(x) x[[1]]) %&gt;% as.character() %&gt;%
     gsub('http://espn.go.com/mma/fighter/_/id/', '', .) %&gt;% strsplit('/') %&gt;%
