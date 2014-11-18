@@ -396,44 +396,7 @@ sum(page[, 1] &lt; page[, 2])</code></pre>
 <pre><code>## [1] 4052</code></pre>
 <pre class="r"><code>sum(page[, 1] &gt; page[, 2])</code></pre>
 <pre><code>## [1] 9119</code></pre>
-<p>I am still thinking through if this is the best way to setup this model. I will move forward now and revert if any validation or out of sample results seem to say that it is wrong.</p>
-
-<pre class="r"><code>
-p1 &lt;- pageRank[, c('id', 'oid', 'date', 'cl', 'bet', 'eig', 'hub', 'auth', 'page')]
-p2 &lt;- pageRank[, c('oid', 'id', 'date', 'ocl', 'obet', 'oeig', 'ohub', 'oauth', 'opage')]
-names(p2) &lt;- c('id', 'oid', 'date', 'cl', 'bet', 'eig', 'hub', 'auth', 'page')
-
-p &lt;- rbind(p1, p2)
-p$date &lt;- as.character(p$date)
-
-
-f2 &lt;- merge(f, p, all.x = T)
-
-names(p) &lt;- c('oid', 'id', 'date', 'ocl', 'obet', 'oeig', 'ohub', 'oauth', 'opage')
-
-f2 &lt;- merge(f2, p, all.x = T)
-
-f3 &lt;- f2[, c(&quot;result&quot;, &quot;exp&quot;, &quot;oexp&quot;, &quot;cl&quot;, &quot;bet&quot;, &quot;eig&quot;, &quot;hub&quot;, &quot;auth&quot;, 
-             &quot;page&quot;, &quot;ocl&quot;, &quot;obet&quot;, &quot;oeig&quot;, &quot;ohub&quot;, &quot;oauth&quot;, &quot;opage&quot;)]
-
-
-f3$y &lt;- ifelse(f3$result == 'Win', 1, 0)
-f3$result &lt;- NULL
-
-
-
-f3[is.na(f3)] &lt;- 0
-
-f3 %&gt;%
-  mutate(expDiff = exp - oexp, clDiff = cl - ocl, betDiff = bet - obet,
-         eigDiff = eig - oeig, hubDiff = hub - ohub, authDiff = auth - oauth,
-         pageDiff = page - opage) -&gt; f3
-
-#x &lt;- f3[, c('date', 'id', 'oid', 'y')]
-#x$date &lt;- as.numeric(as.Date(x$date))
-
-#xelo &lt;- elo(x, history = TRUE)</code></pre>
-<p>Now that things are ready to run a model create a training and testing set. This will be done using a 70/30 split.</p>
+<p>I am still thinking through if this is the best way to setup this model. I will move forward now and revert if any validation or out of sample results seem to say that it is wrong. Now that things are ready to build a model I need to create a training and testing set. This will be done using a 70/30 split. From there we can pass the cleaned up data to the algorithm.</p>
 <pre class="r"><code># 70 / 30 split
 id &lt;- sample(1:nrow(f3), .7 * nrow(f3))
 
@@ -455,6 +418,8 @@ mod &lt;- randomForest(y ~ ., data = train, ntree = 100, do.trace = 1)</code></p
 ##   98 |    0.168    67.20 |
 ##   99 |    0.168    67.20 |
 ##  100 |    0.168    67.19 |</code></pre>
+
+<p>Now let's check how the model performs on the test data set.</p>
 <pre class="r"><code>eval &lt;- as.numeric(predict(mod, newdata = test, type = 'response'))
 
 xp &lt;- prediction(eval, test$y)
@@ -538,7 +503,11 @@ new_pred(past[1])</code></pre>
 <pre class="r"><code>new_pred(past[3])</code></pre>
 <pre><code>##     loser  winner        wp        lp
 ## 1 3097617 3153263 0.5778889 0.4441111</code></pre>
-<p>These look pretty good as well. It gets 5 out of 7.</p>
+<p>These look pretty good as well. It gets 5 out of 7. I think I am going to let it run for a few more events before I make any real conclusions.</p>
+<br>
+<br>
+<br>
+
 </div>
 
 
