@@ -293,17 +293,7 @@ f &lt;- unique(cypher(graph, q))
 
 <p>Now we can start to create the variables we will use to build a model. My first since we will be going down the graph centric route, how do nodes fair that have zero degree. Translation, do fighters usually lose on there first fight. If so how does this change as they gain more experience.</p>
 
-<pre><code>table(f[f$exp == 1, ]$result)</code></pre>
-<pre><code>## Loss  Win 
-## 9932 2811</code></pre>
-<pre class="r"><code>table(f[f$exp == 2, ]$result)</code></pre>
-<pre><code>## Loss  Win 
-## 3296 2040</code></pre>
-<pre class="r"><code>table(f[f$exp == 3, ]$result)</code></pre>
-<pre><code>## Loss  Win 
-## 1752 1761</code></pre>
 
-<p>This seems to have some promise. What about as it gets larger. Do fighters win more after they have some fights under there belt?</p>
 <pre class="r"><code>w &lt;- as.data.frame(table(f[f$result == 'Win', ]$exp))
 l &lt;- as.data.frame(table(f[f$result == 'Loss', ]$exp))
 
@@ -323,7 +313,7 @@ head(winloss, 10)</code></pre>
 ## 9           9 1044  486
 ## 10         10  945  447</code></pre>
 
-<p>This shows promise as well, and we have not yet even considered the opponents experience. It is very interesting that only about one out of every five fighters will win there first fight. It is about two out of five will win there second and by the time you get to your third you are at about even odds. As you get further it seems to converge around two to one. There may still be more happening here though since there are many more cases in the first fight than the second. Maybe some survivor bias. If you lose you first you may not have an opportunity to have a second.</p>
+<p>This seems to have some promise. Do fighters win more after they have some fights under there belt? We have not yet even considered the opponents experience. It is very interesting that only about one out of every five fighters will win there first fight. It is about two out of five will win there second and by the time you get to your third you are at about even odds. As you get further it seems to converge around two to one. There may still be more happening here though since there are many more cases in the first fight than the second. Maybe some survivor bias. If you lose you first you may not have an opportunity to have a second.</p>
 
 <p>How do the other variables fare that are not network centric? We should at least evaluate them to see if it would even help to get complete data from other sources.</p>
 <pre class="r"><code>f$weight &lt;- as.numeric(f$weight) - as.numeric(f$oweight)
@@ -349,7 +339,7 @@ f$oheight &lt;- NULL
 
 f$birth &lt;- NULL
 f$obirth &lt;- NULL</code></pre>
-<p>So it seems the variables I thought at first would be useful had very little value. I still that there may be some value in other variables such as age and style but they are missing more often than not so. They are also other variables that I think may be useful like how you won the fight and how long it took but first I want to check out the graph measures and see how they play out.</p>
+<p>So it seems the variables I thought at first would be useful had very little value. I still that there may be some value in other variables such as age and style but they are missing more often than not so. They are also other variables that I think may be useful like how you won the fight and how long it took but first I want to check out the graph measures and see how they play out. To construct the network variables we need to use some forthought.</p>
 
 <pre class="r"><code>grTab &lt;- function(gr) {
   data.frame(        id = vertex.attributes(gr)$name,
@@ -380,6 +370,7 @@ plot(g)</code></pre>
 
 <div style="text-align:center;"> <iframe src="http://darrkj.github.io/blog/nov182014/gg" width="500" height="450"></iframe></div>
 
+<p>We cannot just evaluate the centrality measures as they stand today. That would be a leak from the future, we would be using information to predict the outcome of a fight with information that already knows what the outcome is. Thus it is critical to step back through time, creating a new network at each point and evaluate the centraility measures. Then this data will be added back onto the correct observations.</p>
 <pre class="r"><code>pageRank &lt;- list()
 for (i in 2:length(time)) {
   
@@ -405,11 +396,9 @@ sum(page[, 1] &lt; page[, 2])</code></pre>
 <pre><code>## [1] 4052</code></pre>
 <pre class="r"><code>sum(page[, 1] &gt; page[, 2])</code></pre>
 <pre><code>## [1] 9119</code></pre>
-<pre class="r"><code>############################
-#
-# Create model dataset
+<p>I am still </p>
 
-
+<pre class="r"><code>
 p1 &lt;- pageRank[, c('id', 'oid', 'date', 'cl', 'bet', 'eig', 'hub', 'auth', 'page')]
 p2 &lt;- pageRank[, c('oid', 'id', 'date', 'ocl', 'obet', 'oeig', 'ohub', 'oauth', 'opage')]
 names(p2) &lt;- c('id', 'oid', 'date', 'cl', 'bet', 'eig', 'hub', 'auth', 'page')
