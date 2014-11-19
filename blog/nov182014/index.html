@@ -400,7 +400,7 @@ sum(page[, 1] &lt; page[, 2])</code></pre>
 <pre class="r"><code>f3 &lt;- f3[order(f3$date), ]
 
 train &lt;- f3[f3$date &lt;= f3$date[30000], -1]
-test &lt;- f3[f3$date &gt;- f3$date[30000], -1]
+test &lt;- f3[f3$date &gt; f3$date[30000], -1]
 
 mod &lt;- randomForest(y ~ ., data = train, ntree = 100, do.trace = 1)</code></pre>
 
