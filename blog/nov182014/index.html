@@ -396,7 +396,7 @@ sum(page[, 1] &lt; page[, 2])</code></pre>
 <pre><code>## [1] 4052</code></pre>
 <pre class="r"><code>sum(page[, 1] &gt; page[, 2])</code></pre>
 <pre><code>## [1] 9119</code></pre>
-<p>I am still thinking through if this is the best way to setup this model. I will move forward now and revert if any validation or out of sample results seem to say that it is wrong. Now that things are ready to build a model I need to create a training and testing set. This will be done using a 70/30 split. From there we can pass the cleaned up data to the algorithm.</p>
+<p>I am still thinking through if this is the best way to setup this model. I am not sure what all of the implications are to make a prediction for both sides. I will move forward as is though. Now that things are ready to build a model I need to create a training and testing set. This will be done using a roughly 70/30 split. One difference is that the training data will be before a certain point in time and the testing will be after. This will enforce that both sides from a fight fall in the same split. It also enforces that there are no leaks from the future. From there we can pass the cleaned up data to the algorithm.</p>
 <pre class="r"><code>f3 &lt;- f3[order(f3$date), ]
 
 train &lt;- f3[f3$date &lt;= f3$date[30000], -1]
@@ -429,7 +429,7 @@ points(seq(0, 1, .01), seq(0, 1, .01), type = 'l')</code></pre>
 
      <div class="separator" style="clear: both; text-align: center;"><img src="roc.png" height="350" width="600"></a></div>
      
-<p>These results seem pretty good. My concern from earlier may still be valid. Since some of the cases in the test may be part of the training but from the other side. We can check it against data that has occured since I collected the first sample. There has been a few events since the maximum date contained in the data set. We can check these and be completely sure that the model has never seen the observations.</p>
+<p>These results seem pretty good. My concern from earlier may still be valid. Since some of the cases in the test may be part of the training but from the other side. We can check it against data that has occurred since I collected the first sample. There has been a few events since the maximum date contained in the data set. We can check these and be completely sure that the model has never seen the observations.</p>
 
 <pre class="r"><code>max(f2$date)</code></pre>
 <pre><code>## [1] &quot;2014-11-02&quot;</code></pre>
@@ -502,7 +502,7 @@ new_pred(past[1])</code></pre>
 <pre class="r"><code>new_pred(past[3])</code></pre>
 <pre><code>##     loser  winner        wp        lp
 ## 1 3097617 3153263 0.5256547 0.4799444</code></pre>
-<p>These look pretty good as well. It gets 5 out of 7. I think I am going to let it run for a few more events before I make any real conclusions.</p>
+<p>These look pretty good as well. It gets 6 out of 7. The only one we got wrong was very close. I think I am going to let it run for a few more events before I make any real conclusions.</p>
 <br>
 <br>
 <br>
