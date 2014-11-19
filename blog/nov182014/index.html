@@ -397,11 +397,10 @@ sum(page[, 1] &lt; page[, 2])</code></pre>
 <pre class="r"><code>sum(page[, 1] &gt; page[, 2])</code></pre>
 <pre><code>## [1] 9119</code></pre>
 <p>I am still thinking through if this is the best way to setup this model. I will move forward now and revert if any validation or out of sample results seem to say that it is wrong. Now that things are ready to build a model I need to create a training and testing set. This will be done using a 70/30 split. From there we can pass the cleaned up data to the algorithm.</p>
-<pre class="r"><code># 70 / 30 split
-id &lt;- sample(1:nrow(f3), .7 * nrow(f3))
+<pre class="r"><code>f3 &lt;- f3[order(f3$date), ]
 
-train &lt;- f3[id, ]
-test &lt;- f3[setdiff(1:n, id), ]
+train &lt;- f3[f3$date &lt;= f3$date[30000], -1]
+test &lt;- f3[f3$date &gt;- f3$date[30000], -1]
 
 mod &lt;- randomForest(y ~ ., data = train, ntree = 100, do.trace = 1)</code></pre>
 
@@ -424,7 +423,7 @@ mod &lt;- randomForest(y ~ ., data = train, ntree = 100, do.trace = 1)</code></p
 
 xp &lt;- prediction(eval, test$y)
 performance(xp, 'auc')</code></pre>
-<pre><code>## [1] 0.832575</code></pre>
+<pre><code>## [1] 0.8277932</code></pre>
 <pre class="r"><code>plot(performance(xp, &quot;tpr&quot;,&quot;fpr&quot;))
 points(seq(0, 1, .01), seq(0, 1, .01), type = 'l')</code></pre>
 
@@ -492,17 +491,17 @@ new_pred &lt;- function(event) {
 
 new_pred(past[1])</code></pre>
 <pre><code>##     loser  winner        wp        lp
-## 1 2614776 3040385 0.6652222 0.4166667
-## 2 2972878 2989176 0.4138333 0.5000556</code></pre>
+## 1 2614776 3040385 0.5667222 0.4365436
+## 2 2972878 2989176 0.5284568 0.5169444</code></pre>
 <pre class="r"><code>new_pred(past[2])</code></pre>
 <pre><code>##     loser  winner        wp        lp
-## 1 3077213 3088238 0.6005556 0.2953333
-## 2 3077809 3026147 0.6116111 0.4243889
-## 3 3114205 2546733 0.4125556 0.5771111
-## 4 3155286 3122040 0.8022941 0.1869114</code></pre>
+## 1 3077213 3088238 0.6611667 0.4375436
+## 2 3077809 3026147 0.5157658 0.5275556
+## 3 3114205 2546733 0.5475000 0.4849880
+## 4 3155286 3122040 0.7240323 0.2706634</code></pre>
 <pre class="r"><code>new_pred(past[3])</code></pre>
 <pre><code>##     loser  winner        wp        lp
-## 1 3097617 3153263 0.5778889 0.4441111</code></pre>
+## 1 3097617 3153263 0.5256547 0.4799444</code></pre>
 <p>These look pretty good as well. It gets 5 out of 7. I think I am going to let it run for a few more events before I make any real conclusions.</p>
 <br>
 <br>
