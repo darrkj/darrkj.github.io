@@ -30,7 +30,7 @@
 
     <header>
       <div class="container">
-        <h1>Simplifying Things with Neo4j</h1>
+        <h1>Capital Bikeshare Network</h1>
         <h2></h2>
 
 <h4 class="author"><em>Kenny Darrell</em></h4>
@@ -47,72 +47,19 @@
 <p>You can find the data <a href="https://www.capitalbikeshare.com/trip-history-data">here</a>.</p>
 <pre class="r"><code>options(stringsAsFactors = FALSE)
 
-require(lubridate)</code></pre>
-<pre><code>## Loading required package: lubridate</code></pre>
-<pre class="r"><code>require(devtools)</code></pre>
-<pre><code>## Loading required package: devtools</code></pre>
-<pre class="r"><code>require(igraph)</code></pre>
-<pre><code>## Loading required package: igraph
-## 
-## Attaching package: 'igraph'
-## 
-## The following object is masked from 'package:lubridate':
-## 
-##     %--%</code></pre>
-<pre class="r"><code>require(XML)</code></pre>
-<pre><code>## Loading required package: XML</code></pre>
-<pre class="r"><code>require(dplyr)</code></pre>
-<pre><code>## Loading required package: dplyr
-## 
-## Attaching package: 'dplyr'
-## 
-## The following objects are masked from 'package:lubridate':
-## 
-##     intersect, setdiff, union
-## 
-## The following object is masked from 'package:stats':
-## 
-##     filter
-## 
-## The following objects are masked from 'package:base':
-## 
-##     intersect, setdiff, setequal, union</code></pre>
-<pre class="r"><code>require(googleVis)</code></pre>
-<pre><code>## Loading required package: googleVis
-## 
-## Welcome to googleVis version 0.5.6
-## 
-## Please read the Google API Terms of Use
-## before you start using the package:
-## https://developers.google.com/terms/
-## 
-## Note, the plot method of googleVis will by default use
-## the standard browser to display its output.
-## 
-## See the googleVis package vignettes for more details,
-## or visit http://github.com/mages/googleVis.
-## 
-## To suppress this message use:
-## suppressPackageStartupMessages(library(googleVis))</code></pre>
-<pre class="r"><code>require(ggplot2)</code></pre>
-<pre><code>## Loading required package: ggplot2</code></pre>
-<pre class="r"><code>require(BreakoutDetection)</code></pre>
-<pre><code>## Loading required package: BreakoutDetection</code></pre>
-<pre class="r"><code>require(changepoint)</code></pre>
-<pre><code>## Loading required package: changepoint
-## Loading required package: zoo
-## 
-## Attaching package: 'zoo'
-## 
-## The following objects are masked from 'package:base':
-## 
-##     as.Date, as.Date.numeric
-## 
-## Successfully loaded changepoint package version 1.1.5
-## Created on 2014-06-25
-##  Substantial changes to the structure of the package have occured from version 1.0.  Please see the package NEWS for details.</code></pre>
-<pre class="r"><code>source_url('https://raw.githubusercontent.com/darrkj/home/gh-pages/rcode/recurBind.R')</code></pre>
-<pre><code>## SHA-1 hash of file is 20c3cfcaa5a0e606ab174426e2aa20a5d0a0c4d2</code></pre>
+require(lubridate)
+require(devtools)
+require(igraph)
+require(XML)
+require(dplyr)
+require(googleVis)
+require(ggplot2)
+require(BreakoutDetection)
+require(changepoint)
+
+source_url('https://raw.githubusercontent.com/darrkj/home/gh-pages/rcode/recurBind.R')</code></pre>
+
+
 <div id="flow" class="section level3">
 <h3>Flow</h3>
 <p>First lets look at the the flow of bikes from the perspective of a station. That is how do bikes flow through a given station.</p>
@@ -149,10 +96,12 @@ inner_join(outFlow, inFlow, by = 'Station') %&gt;%
 ## 11       Georgetown Harbor / 30th St NW  2163</code></pre>
 <p>Here we can see the stations that are most likely to accumulate bikes or always have a deficit. To get a better sense of what is ahppeing I wanted to visulaize this data. To play with this data and get you thinking about flow I thought an app would help. THe app should allow you to select stations and see how many trips move through each of these stations. This seemed like a great place to use the chord diagram from d3. You can add different stations and see how they move between them.</p>
 
-<div style="text-align:center;"> <iframe src="http://darrkj.github.io/blog/nov302014/map1" width="730" height="550"></iframe></div>
 
 
-<p><a href="https://darrkj.shinyapps.io/bikes/" class="uri">https://darrkj.shinyapps.io/bikes/</a></p>
+<div style="text-align:center;"> <iframe src="https://darrkj.shinyapps.io/bikes/" width="730" height="850"></iframe></div>
+
+
+
 <p>So, does there ever appear to be an abundence at one location, or does another get depleted. I can imagine the stations I would most likely use would be my daily trips from Court House to Rosslyn. I would enjoy riding a bike from Court House to Rosslyn, all down hill, but back up the hill is another story. Bikes should accumulate at Rosslyn, but they could also be taken from Rosslyn into DC, so maybe they just get depleted from Court House, but they could still come in from other sources. This sounds like a network flow problem.</p>
 <p>This should also highlight that chord diagrams are much better for a smaller number of interactions, like passes between players in basketball. It also falls apart becuase we lose the ability to follow longer chains, a larger scale network is hard to hold in memory, your brain that is not RAM.</p>
 </div>
@@ -220,6 +169,10 @@ df$LatLong &lt;- paste(df$lat, df$long, sep = ':')
 m &lt;- gvisMap(df, 'LatLong', 'cluster', options = list(showTip = T, 
              showLine = F, enableScrollWheel = T))
 plot(m)</code></pre>
+
+<div style="text-align:center;"> <iframe src="http://darrkj.github.io/blog/nov302014/map1" width="730" height="550"></iframe></div>
+
+
 <pre><code>## starting httpd help server ... done</code></pre>
 <p>For moving forward we should only consider the larger community, the DC area. We need to add the lat and long info onto the trip data. This requires the data to be joined twice, once for the starting location and once for the ending location.</p>
 <pre class="r"><code>raw %&gt;%
@@ -342,7 +295,6 @@ abline(v = bd_rec$loc)</code></pre>
 
 
 
-<div style="text-align:center;"> <iframe src="https://darrkj.shinyapps.io/bikes/" width="730" height="550"></iframe></div>
 
 
 <div style="text-align:center;"> <iframe src="http://darrkj.github.io/blog/nov302014/map" width="730" height="550"></iframe></div>
