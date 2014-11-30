@@ -165,7 +165,9 @@ geo %&gt;%
 
 ggplot(stations, aes(long, lat)) + geom_point(aes(colour = factor(cluster)))</code></pre>
 
-<img src="cluster.png" height="200" width="350" align="middle">
+
+<div class="separator" style="clear: both; text-align: center;"><img src="cluster.png" height="350" width="600"></a></div>
+
 
 
 <p>That is not really a map, but we can see that we have one group in the DC area and another in the Rockville area. This is a pretty good validation of the communty detection via clustering approach. Below is a map, but I got to frustrated with map API to actually get the colors to appear correctly. If you hover over you can see cluster one and cluster two.</p>
@@ -243,7 +245,8 @@ plot(g$date, g$reciprocity, main = 'Reciprocity')</code></pre>
 
 
 
-<img src="hourly_multi.png" height="350" width="600" align="middle">
+<div class="separator" style="clear: both; text-align: center;"><img src="hourly_multi.png" height="350" width="600"></a></div>
+
 
 <pre class="r"><code>par(mfrow = c(1, 1))
 plot(graph_change$date[1:400], graph_change$size[1:400], 'l', 
@@ -251,7 +254,8 @@ plot(graph_change$date[1:400], graph_change$size[1:400], 'l',
      main = 'Network Size Over time')</code></pre>
 
 
-<img src="size_hourly.png" height="350" width="600" align="middle">
+<div class="separator" style="clear: both; text-align: center;"><img src="size_hourly.png" height="350" width="600"></a></div>
+
 
 <p>Something interesting here is that there is a pretty consistent routine throught the week. There are lots commutes through the week in the morning and evening, peoples work travel. On the other hand there is only one spike on the weekends, and that occurs around lunch time.</p>
 
@@ -267,8 +271,11 @@ plot(g$date, g$clique, 'l', main = 'Max Clique')
 plot(g$date, g$reciprocity, 'l', main = 'Reciprocity')</code></pre>
 
 
-<img src="multi_min.png" height="350" width="600" align="middle">
-<img src="multi_minut.png" height="350" width="600" align="middle">
+<div class="separator" style="clear: both; text-align: center;"><img src="multi_min.png" height="350" width="600"></a></div>
+
+
+<div class="separator" style="clear: both; text-align: center;"><img src="multi_minut.png" height="350" width="600"></a></div>
+
 
 
 <pre class="r"><code>par(mfrow = c(1, 1))
@@ -277,7 +284,9 @@ plot(graph_change_m$date[1:4000], graph_change_m$average_path_length[1:4000],
      main = 'Avg Path Length Over time')</code></pre>
 
 
-<img src="avg_path_min.png" height="350" width="600" align="middle">
+
+<div class="separator" style="clear: both; text-align: center;"><img src="avg_path_min.png" height="350" width="600"></a></div>
+
 
 
 <p>This is perfect. The package I have heard of most for analysing when thing change in a time series is <a href="http://cran.r-project.org/web/packages/changepoint/index.html">changepoint</a>. For an interesting example usage you can see this <a href="http://diffuseprior.wordpress.com/2013/04/30/kalkalash-pinpointing-the-moments-the-simpsons-became-less-cromulent/">site</a> where it is used to analysis how the popularity of The Simpsons televsion show decresead in popularity.</p>
@@ -289,58 +298,77 @@ cp_size &lt;- cpt.meanvar(g$size, test.stat = 'Gamma', method = 'BinSeg', Q = 15
 plot(cp_size, cpt.width = 3, ylab = 'Network Size', 
      main = 'Changepoints in Network Size'))</code></pre>
 
-<img src="cp_size.png" height="350" width="600" align="middle">
+
+<div class="separator" style="clear: both; text-align: center;"><img src="cp_size.png" height="350" width="600"></a></div>
+
 
 <pre class="r"><code>cp_apl &lt;- cpt.meanvar(g$average_path_length, test.stat = 'Normal', 
                       method = 'BinSeg', Q = 25)
 plot(cp_apl, cpt.width = 3, ylab = 'Avg Path Length', 
      main = 'Changepoints in Average Path Length')</code></pre>
 
-<img src="cp_apl.png" height="350" width="600" align="middle">
+
+<div class="separator" style="clear: both; text-align: center;"><img src="cp_apl.png" height="350" width="600"></a></div>
+
 
 <pre class="r"><code>cp_rec &lt;- cpt.meanvar(g$reciprocity, test.stat = 'Normal',
                       method = 'BinSeg', Q = 25)
 plot(cp_rec, cpt.width = 3, ylab = 'Reciprocity', 
      main = 'Changepoints in Reciprocity')</code></pre>
 
-<img src="cp_rec.png" height="350" width="600" align="middle">
+
+<div class="separator" style="clear: both; text-align: center;"><img src="cp_rec.png" height="350" width="600"></a></div>
+
 
 <p>I wanted to use the changepoint package just as a benchmark to compare against the new Twitter <a href="https://github.com/twitter/BreakoutDetection">breakoutD</a> package. There have been other <a href="https://blog.twitter.com/2014/breakout-detection-in-the-wild">posts</a> of people talking about it lately as well.</p>
 
 <pre class="r"><code>bd_size &lt;- breakout(g$size, method = 'multi', plot = TRUE)
 bd_size$plot</code></pre>
 
-<img src="bd_size.png" height="350" width="600" align="middle">
+
+<div class="separator" style="clear: both; text-align: center;"><img src="bd_size.png" height="350" width="600"></a></div>
+
 
 <pre class="r"><code>bd_apl &lt;- breakout(g$average_path_length, method = 'multi', plot = TRUE)
 bd_apl$plot</code></pre>
 
-<img src="bd_apl.png" height="350" width="600" align="middle">
+
+<div class="separator" style="clear: both; text-align: center;"><img src="bd_apl.png" height="350" width="600"></a></div>
+
+
 
 <pre class="r"><code>bd_rec &lt;- breakout(g$reciprocity, method = 'multi', plot = TRUE)
 bd_rec$plot</code></pre>
 
 
-<img src="bd_rec.png" height="350" width="600" align="middle">
+
+<div class="separator" style="clear: both; text-align: center;"><img src="bd_rec.png" height="350" width="600"></a></div>
+
+
 
 <pre class="r"><code>plot(cp_size, cpt.width = 3, ylab = 'Network Size', 
      main = 'Changepoints in Network Size')
 abline(v = bd_size$loc)</code></pre>
 
-<img src="both_size.png" height="350" width="600" align="middle">
+
+<div class="separator" style="clear: both; text-align: center;"><img src="both_size.png" height="350" width="600"></a></div>
+
+
 
 <pre class="r"><code>plot(cp_apl,cpt.width = 3, ylab = 'Avg Path Length', 
      main = 'Changepoints in Average Path Length')
 abline(v = bd_apl$loc)</code></pre>
 
-<img src="both_apl.png" height="350" width="600" align="middle">
+
+<div class="separator" style="clear: both; text-align: center;"><img src="both_apl.png" height="350" width="600"></a></div>
+
 
 <pre class="r"><code>plot(cp_rec,cpt.width = 3, ylab = 'Reciprocity', 
      main = 'Changepoints in Reciprocity')
 abline(v = bd_rec$loc)</code></pre>
 
-<img src="oth_rec.png" height="350" width="600" align="middle">
 
+<div class="separator" style="clear: both; text-align: center;"><img src="both_rec.png" height="350" width="600"></a></div>
 
 <p><a href="http://perceivant.com/causality-time-series-determining-impact-marketing-interventions/" class="uri">http://perceivant.com/causality-time-series-determining-impact-marketing-interventions/</a></p>
 </div>
