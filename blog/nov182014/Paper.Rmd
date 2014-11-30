@@ -511,8 +511,9 @@ f2 <- merge(f, p, all.x = T)
 names(p) <- c('oid', 'id', 'date', 'ocl', 'obet', 'oeig', 'ohub', 'oauth', 'opage')
 
 f2 <- merge(f2, p, all.x = T)
+f2 <- f2[order(f2$date), ]
 
-f3 <- f2[, c("result", "exp", "oexp", "cl", "bet", "eig", "hub", "auth", 
+f3 <- f2[, c('date', "result", "exp", "oexp", "cl", "bet", "eig", "hub", "auth", 
              "page", "ocl", "obet", "oeig", "ohub", "oauth", "opage")]
 
 
@@ -546,20 +547,20 @@ Simple model start
 # Sample
 #
 #######################################
-
+f3 <- f3[order(f3$date), ]
 n <- nrow(f3)
 
 # 70 / 30 split
-id <- sample(1:n, .7 * n)
+#id <- sample(1:n, .7 * n)
 
 
 
-train <- f3[id, ]
-test <- f3[setdiff(1:n, id), ]
+train <- f3[, -1]
+test <- f3[f3$date > f3$date[30000], -1]
 
 
 
-mod <- randomForest(y ~ ., data = train, ntree = 100, do.trace = 1)
+mod2 <- randomForest(y ~ ., data = train, ntree = 400, do.trace = 1)
 eval <- as.numeric(predict(mod, newdata = test, type = 'response'))
 
 
@@ -609,9 +610,8 @@ new_pred <- function(event) {
     mutate(data = ymd(date)) %>%
     select(id, date, exp, cl, bet, eig, hub, auth, page) %>%
     group_by(id) %>%
-    mutate(max = max(date)) %>%
-    filter(max == max(date)) %>%
-    select(-max, -date) %>%
+    filter(date == max(date)) %>%
+    select(-date) %>%
     as.data.frame -> cc
   
   cc[is.na(cc)] <- 0
@@ -626,7 +626,7 @@ new_pred <- function(event) {
            eigDiff = eig - oeig, hubDiff = hub - ohub, authDiff = auth - oauth,
            pageDiff = page - opage) -> ndata
   
-  ndata$p <- predict(mod, newdata = ndata[, -c(1:2)], type = 'response')
+  ndata$p <- predict(mod2, newdata = ndata[, -c(1:2)], type = 'response')
   
   ev %>% 
     merge(select(ndata, winner = id, wp = p)) %>% 
@@ -634,7 +634,7 @@ new_pred <- function(event) {
 }
 ```
 
-```{r eval = F}
+```{r }
 
 past <- c('http://espn.go.com/mma/fightcenter?eventId=400603491',
           'http://espn.go.com/mma/fightcenter?eventId=400601611',
@@ -643,6 +643,7 @@ past <- c('http://espn.go.com/mma/fightcenter?eventId=400603491',
 new_pred(past[1])
 new_pred(past[2])
 new_pred(past[3])
+
 
 
 
