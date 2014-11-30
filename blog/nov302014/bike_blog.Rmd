@@ -1,0 +1,191 @@
+---
+title: "bikes"
+author: "Kenny Darrell"
+date: "October 13, 2014"
+output: html_document
+---
+
+What the data is
+talk about application
+in depth at one chord
+try to find a good chord
+what chord lacks (where reorg happens)
+network view
+cluster distance 
+stream graph
+try to tell a story
+
+
+
+I have been playing with the data made available from the Capital bikeshare. This data is very interesting becuase you can explore lots of different types of things. There is a network effect where bikes are moved from one station to another, potentially cuasing some imbalance that needs to be adjusted. There is also a temporal aspect, are some places hit harder at different time. There is also a spatial feature, where will a given bike travel to, and it alomost turns into a Markov Chain. Could some underlying model be build to determine how people travel, when and where they are going. 
+
+There is also another interesting feature about this data. All data is reprted as a trip, this starts at a given station and ends at another. Thus if you have any interest in stations, like how many bikes are there at any point you have to back this out, a sort of data inversion which can be a challange. People often claim that some data set is clean, but that is relative. This data is very clean if you want to look at trips, but if you are intersted in stations it is a mess. By this I mean it is doable but requires some real data transformation magic, ninja level shit.
+
+```{r}
+library(devtools)
+source_url('https://raw.githubusercontent.com/darrkj/home/gh-pages/rcode/import.R')
+import('html')
+
+```
+
+```{r cache=T}
+
+options(stringsAsFactors = FALSE)
+
+bike <- read.csv('2014-Q2-Trips-History-Data.csv')
+
+str(bike)
+
+```
+
+
+To play with this data a bit and get me thinking I made an app that allows you to select stations and see how many trips move from through each of these stations. This seemed like a great place to use the chord diagram from d3. 
+
+The first thing that comes to mind is, does there ever appear to be an abundence at one location, or does one get depleted. I can imagine the stations I would most likely use would be my daily trips from Court House to Rosslyn. I would enjoy riding a bike from Court House to Rosslyn, all down hill, but back up the hilll is another story. Bikes should accumulate at Rosslyn, but they could also be taken from Rosslyn into DC, so maybe they just get depleted from Court House, but they could still come in from other sources. This sounds like a network flow problem.
+
+Where do we start with this problem. The first place would be to see which stations have the most imbalance. Oh yeah, I also used dplyr to make this require as minimal an amount of code as possible.
+
+
+```{r cache = T}
+bike <- bike[, c(3, 6)]
+#names(bike) <- c('inn', 'out')
+
+library(dplyr)
+
+bike %>% 
+  count(Start.Station) %>%
+  rename(Station = Start.Station, out = n) ->
+  outFlow
+
+bike %>% 
+  count(End.Station) %>%
+  rename(Station = End.Station, inn = n) ->
+  inFlow
+
+inner_join(outFlow, inFlow, by = 'Station') %>%
+  mutate(delta = inn - out) %>%
+  select(Station, delta) %>%
+  arrange(delta) %>%
+  slice(c(1:5, (n() - 5):n()))
+```
+
+
+Put a good chord diagram here.
+
+This should also highlight that chord diagrams are much better for smaller number of interactions, like passes between players in basketball. It also falls apart becuase we lose the ability to follow longer chains, a larger scale network is hard to hold in memory, your brain that is not RAM.
+
+We need to either find a way to see the larger network flow or we need a way to find some smaller set of stations. In graph theory this would be a place to use communinity detection. A small subset that is more closely related that the rest of the stations. We could use community detection or we could try to find some other method. This is also a good place to use distnace metrics or clustering. Another possible appraoch is to use the spatial information and partition some portion of the map.
+
+
+```{r cache = T}
+station <- unique(c(bike$Start.Station, bike$End.Station))
+
+stat <- station[station != '']
+
+stat <- stat[order(stat)]
+x <- data.frame(tmp = stat)
+
+l <- length(stat)
+ss <- matrix(rep(0, l * l), nrow = l)
+
+rownames(ss) <- stat
+colnames(ss) <- stat
+
+for (i in stat) {
+  tmp <- bike[bike$Start.Station == i, ]
+  tmp <- tmp[tmp$Start.Station != tmp$End.Station, ]$End.Station
+  tmp <- as.data.frame(table(tmp))
+  t <- merge(x, tmp, all.x = T)
+  t$Freq <- ifelse(is.na(t$Freq), 0, t$Freq)
+  ss[, i] <- t$Freq / sum(t$Freq)
+  #print(i)
+}
+
+image(ss)
+
+
+```
+
+This looks strange. This is again becuase there is a lot of flow, one station may have bikes going to many other stations. We can still try to cluster it though.
+
+To do this we need to make the matrix symmetric. The best way to this is to averge the backa nd forthe between every two stations.
+
+
+
+
+```{r cache = T}
+
+av <- (ss + t(ss)) / 2
+
+rr <- av[322:1, ]
+# Ward Hierarchical Clustering
+d <- dist(rr, method = "euclidean") # distance matrix
+fit <- hclust(d, method="ward") 
+plot(fit) # display dendogram
+groups <- cutree(fit, k=5) # cut tree into 5 clusters
+# draw dendogram with red borders around the 5 clusters 
+rect.hclust(fit, k=5, border="red")
+
+
+```
+
+
+
+
+Network
+
+
+
+
+```{r eval = F}
+
+library(igraph)
+#tt <- graph.adjacency(rr)
+
+#tt <- graph.data.frame(unique(bike))
+
+
+
+
+d3net <- graph.data.frame(unique(bike)[1:100,])
+import('d3plot')
+import('igraph_2_d3')
+d3plot(d3net)
+
+
+```
+
+
+
+
+
+
+```{r eval = F}
+m <- c('Wilson Blvd & Franklin Rd',
+       'Clarendon Blvd & Pierce St',
+       'Clarendon Metro / Wilson Blvd & N Highland St',
+       'Court House Metro / Wilson Blvd & N Uhle St',
+       'Rosslyn Metro / Wilson Blvd & Ft Myer Dr')
+
+#m <- as.numeric(c(names(head(rev(sort(n)), 6))))
+
+z <- bike[bike$Start.Station %in% m & bike$End.Station %in% m, ]
+
+
+val <- table(z$Start.Station, z$End.Station)
+source('app.R')
+
+
+chord_plot(val)
+
+
+```
+
+
+Turn these into a stream graph.
+
+
+
+
+
+

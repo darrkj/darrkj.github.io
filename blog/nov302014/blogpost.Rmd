@@ -1,0 +1,255 @@
+---
+title: "Capital Bikeshare"
+author: "Kenny Darrell"
+date: "November 29, 2014"
+output: html_document
+---
+
+I have been playing with the data made available from the Capital bikeshare. This data is very interesting. It allows you to explore lots of different facets of analysis. You can view the data as a netowrk of bikes moving between stations. You can look at it froma netwrok perspective or temporal or even spatial. Let's explore some of these. 
+
+You can find the data [here](https://www.capitalbikeshare.com/trip-history-data).
+
+```{r init}
+options(stringsAsFactors = FALSE)
+
+require(lubridate)
+require(devtools)
+require(igraph)
+require(XML)
+require(dplyr)
+require(googleVis)
+require(ggplot2)
+
+source_url('https://raw.githubusercontent.com/darrkj/home/gh-pages/rcode/recurBind.R')
+```
+
+### Flow
+
+First lets look at the the flow of bikes from the perspective of a station. That is how do bikes flow through a given station.
+
+```{r simp_exp, cache = TRUE}
+bike <- read.csv('2014-Q2-Trips-History-Data.csv')
+
+bike %>% 
+  select (Start.Station, End.Station) %>%
+  count(Start.Station) %>%
+  rename(Station = Start.Station, out = n) -> outFlow
+
+bike %>% 
+  select (Start.Station, End.Station) %>%
+  count(End.Station) %>%
+  rename(Station = End.Station, inn = n) -> inFlow
+
+inner_join(outFlow, inFlow, by = 'Station') %>%
+  mutate(delta = inn - out) %>%
+  select(Station, delta) %>%
+  arrange(delta) %>%
+  slice(c(1:5, (n() - 5):n()))
+
+```
+
+Here we can see the stations that are most likely to accumulate bikes or always have a deficit. To get a better sense of what is ahppeing I wanted to visulaize this data. To play with this data and get you thinking about flow I thought an app would help. THe app should allow you to select stations and see how many trips move through each of these stations. This seemed like a great place to use the chord diagram from d3. You can add different stations and see how they move between them.
+
+https://darrkj.shinyapps.io/bikes/
+
+So, does there ever appear to be an abundence at one location, or does another get depleted. I can imagine the stations I would most likely use would be my daily trips from Court House to Rosslyn. I would enjoy riding a bike from Court House to Rosslyn, all down hill, but back up the hill is another story. Bikes should accumulate at Rosslyn, but they could also be taken from Rosslyn into DC, so maybe they just get depleted from Court House, but they could still come in from other sources. This sounds like a network flow problem.
+
+
+
+This should also highlight that chord diagrams are much better for a smaller number of interactions, like passes between players in basketball. It also falls apart becuase we lose the ability to follow longer chains, a larger scale network is hard to hold in memory, your brain that is not RAM.
+
+### Community Detection
+
+We need to either find a way to see the larger network flow or we need a way to find some smaller set of stations. In graph theory this would be a place to use communinity detection. It could provide smaller subsets that are more closely related than the rest of the stations. Another possible appraoch is to use the spatial information and partition some portion of the map via nearest neighbors. Or use one and see if the other validates it.
+
+
+
+```{r}
+
+bike %>% 
+  select(sdate = Start.date, sterm = Start.terminal, 
+         edate = End.date, eterm = End.terminal) %>%
+  # Change timestamps to local time.
+  mutate(sdate = force_tz(mdy_hm(sdate), 'EST'), 
+         edate = force_tz(mdy_hm(edate), 'EST')) %>%
+  na.omit() %>% 
+  # Get the midpoint between the start and end times.
+  transform(mid = sdate + floor((edate - sdate) / 2)) %>%
+  select(sterm, eterm, mid) %>%
+  mutate(sterm = as.character(sterm), eterm = as.character(eterm)) -> raw
+
+# A point in time from the data
+rand_day <- now() - months(5)
+
+# Get a three day period
+three_days <- unique(raw[raw$mid >= rand_day & raw$mid < rand_day + days(3), ])
+
+# All of the sations in this data.
+stations <- unique(c(three_days$sterm, three_days$eterm))
+
+# The flow network over this three day window.
+network <- graph.data.frame(three_days[, c('sterm', 'eterm')], vertices = stations)
+
+# These are the communities each of the stations belong to.
+stations <- data.frame(terminalName = stations, 
+                       cluster = clusters(network)$membership)
+
+# How are the communities set up
+table(stations$cluster)
+```
+
+THis approach will give us a very stringint set of communities. They will really be the weakly connected components. THis means that if there is any way to reach a statio from another station via a trip it will be part of the component. There is not a lot of seperation but we do have some communiteis. We can check what these look like by looking on a map. We first need the locations of the stations. We can find this by using the live [XML data]('http://www.capitalbikeshare.com/data/stations/bikeStations.xml) which has the latitude and longitude of each station.
+
+```{r geo}
+# Pull data from URL
+'http://www.capitalbikeshare.com/data/stations/bikeStations.xml' %>%
+  xmlToList() -> geo
+
+# Transform it into a more usable structure.
+geo <- plyr::ldply(geo[-length(geo)], function(x) data.frame(t(x)))
+
+# Clean the data.
+geo %>% 
+  select(terminalName, lat, long) %>%
+  # Clean up odd list structures and characters
+  transform(terminalName = unlist(terminalName), lat = as.numeric(unlist(lat)), 
+            long = as.numeric(unlist(long))) %>%
+  inner_join(stations, by = 'terminalName') %>%
+  na.omit() %>%
+  filter(cluster %in% c(1, 2)) -> stations
+
+
+ggplot(stations, aes(long, lat)) + geom_point(aes(colour = factor(cluster)))
+
+```
+
+That is not really a map, but we can see that we have one group in the DC area and another in the Rockville area. This is a pretty good validation of the communty detection via clustering approach. Below is a map, but I got to frustrated with map API to actually get the colors to appear correctly. If you hover over you can see cluster one and cluster two.
+
+
+```{r}
+df <- stations
+df$LatLong <- paste(df$lat, df$long, sep = ':')
+  
+m <- gvisMap(df, 'LatLong', 'cluster', options = list(showTip = T, 
+             showLine = F, enableScrollWheel = T))
+plot(m)
+```
+
+For moving forward we should only consider the larger community, the DC area. We need to add the lat and long info onto the trip data. This requires the data to be joined twice, once for the starting location and once for the ending location.
+
+```{r join}
+raw %>%
+  left_join(stations, by = c('sterm' = 'terminalName')) %>% 
+  rename(slat = lat, slong = long, sclus = cluster) %>%
+  left_join(stations, by = c('eterm' = 'terminalName')) %>%
+  rename(elat = lat, elong = long, eclus = cluster) %>%
+  filter(sclus == 1 & eclus == 1) %>%
+  select(-sclus, -eclus) -> raw
+
+raw %>% select(slat, slong) %>% distinct() %>%
+  mutate(LatLong = paste(slat, slong, sep = ':')) %>% 
+  na.omit() %>% gvisMap('LatLong') %>% plot()
+```
+
+How do we measure things chaning in the network.
+
+```{r macro_change}
+net_params <- function(g) { 
+  data.frame(size = ecount(g),
+             degree_cent = centralization.degree(g)$centralization,
+             closeness_cent = centralization.closeness(g)$centralization,
+             betweenness_cent = centralization.betweenness(g)$centralization,
+             eigenvector_cent = centralization.evcent(g)$centralization,
+             assortativity = assortativity.degree(g),
+             average_path_length = average.path.length(g, unconnected = F),
+             clique = suppressWarnings(clique.number(g)),
+             diameter = diameter(g, unconnected = F),
+             radius = radius(g),
+             girth = girth(g)$girth,
+             adhesion = graph.adhesion(g),
+             density = graph.density(g),
+             reciprocity = reciprocity(g),
+             transitivity = transitivity(g))
+}
+
+
+# How to cut the dataset to a region of time
+t1 <- mdy_hms("4-1-2014-4-0-0", tz = 'EST')
+
+
+# Function get prep data and call function.
+calc <- function(x, diff = 1) {
+  raw %>% filter(mid >= x & mid < x + hours(diff)) %>%
+    select(eterm, sterm) %>%
+    graph.data.frame(vertices = unique(c(raw$sterm, raw$eterm))) %>%
+    net_params() %>%
+    cbind(date = x) 
+}
+
+
+ggg <- recurBind(lapply(t1 + hours(0:200), calc))[[1]]
+
+gg <- ggg[1:200, ]
+
+par(mfrow = c(2, 2))
+plot(gg$date, gg$size, 'l', xlab = '', ylab = '', main = 'Size')
+plot(gg$date, gg$average_path_length, 'l', xlab = '', ylab = '', main = 'Avg Path Length')
+plot(gg$date, gg$clique, 'l', xlab = '', ylab = '', main = 'Max Clique')
+plot(gg$date, gg$reciprocity, 'l', xlab = '', ylab = '', main = 'Reciprocity')
+
+
+```
+
+Something interesting here is that there is a pretty consistent routine throught the week. There are lots commutes through the week in the morning and evening, peoples work travel. On the other hand there is only one spike on the weekends, and that occurs around lunch time.
+
+This was also very different than what I had expected. I thought that the parameters would be less volatile than this. I had actually hoped that I could use the new Twitter BreakouDetection package to see when spikes happened
+
+
+
+
+```{r micro_change}
+
+ggg <- recurBind(lapply(t1 + minutes(0:2000), calc))[[1]]
+
+gg <- ggg[1:2000, ]
+
+par(mfrow = c(2, 2))
+plot(gg$date, gg$size, 'l', xlab = '', ylab = '', main = 'Size')
+plot(gg$date, gg$average_path_length, 'l', xlab = '', ylab = '', main = 'Avg Path Length')
+plot(gg$date, gg$clique, 'l', xlab = '', ylab = '', main = 'Max Clique')
+plot(gg$date, gg$reciprocity, 'l', xlab = '', ylab = '', main = 'Reciprocity')
+
+library("BreakoutDetection")
+
+breakout(gg$size, method='multi', plot=TRUE)$plot
+
+breakout(gg$average_path_length, method='multi', plot=TRUE)$plot
+
+breakout(gg$reciprocity, method='multi', plot=TRUE)$plot
+
+
+library("changepoint")
+
+
+dis.bs = cpt.meanvar(gg$size, test.stat='Poisson',method='BinSeg')
+cpts.ts(dis.bs)
+
+
+data(discoveries)
+dis.pelt=cpt.meanvar(ts(gg$size),test.stat='Exponential',method='PELT')
+plot(dis.pelt,cpt.width=3)
+cpts.ts(dis.pelt)
+
+
+
+library(CausalImpact)
+
+
+
+
+impact = CausalImpact(gg[, c('size', 'average_path_length')], c(1, 1000), c(1001, 2000))
+
+plot(impact)
+```
+
+http://perceivant.com/causality-time-series-determining-impact-marketing-interventions/
