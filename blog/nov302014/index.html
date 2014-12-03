@@ -43,11 +43,17 @@
 
 
 
-<p>I have been playing with the data made available from the Capital Bikeshare. This data is very interesting. It allows you to explore lots of different facets of analysis. You can view the data as a network of bikes moving between stations. You can look at it from a network perspective or temporal or even spatial. Let’s explore some of these.</p>
-<p>You can find the data <a href="https://www.capitalbikeshare.com/trip-history-data">here</a>.</p>
-<pre class="r"><code>options(stringsAsFactors = FALSE)
+<p>I have been playing with the data made available from the You can find the data <a href="https://www.capitalbikeshare.com/">Capital Bikeshare</a>. This data is very interesting. It allows you to explore lots of different types of analysis. You can view the data as a network of bikes moving between stations. You can look at it from a network perspective or temporal or even spatial. I thought it would be interesting to explore some of these.</p>
 
-require(lubridate)
+<p>You can find the data <a href="https://www.capitalbikeshare.com/trip-history-data">here</a>.</p>
+
+
+
+<div id="flow" class="section level3">
+<h3>Flow</h3>
+<p>First lets look at the the flow of bikes from the perspective of a station. That is how do bikes flow through a given station. I thought it would be intersting to see if the network had pretty uniform flow, requiring know interventions. I did not expect this to be the case though.</p>
+
+<pre class="r"><code>require(lubridate)
 require(devtools)
 require(igraph)
 require(XML)
@@ -57,13 +63,9 @@ require(ggplot2)
 require(BreakoutDetection)
 require(changepoint)
 
-source_url('https://raw.githubusercontent.com/darrkj/home/gh-pages/rcode/recurBind.R')</code></pre>
+source_url('https://raw.githubusercontent.com/darrkj/home/gh-pages/rcode/recurBind.R')
 
-
-<div id="flow" class="section level3">
-<h3>Flow</h3>
-<p>First lets look at the the flow of bikes from the perspective of a station. That is how do bikes flow through a given station.</p>
-<pre class="r"><code>bike &lt;- read.csv('2014-Q2-Trips-History-Data.csv')
+bike &lt;- read.csv('2014-Q2-Trips-History-Data.csv')
 
 bike %&gt;% 
   select (Start.Station, End.Station) %&gt;%
@@ -95,23 +97,24 @@ inner_join(outFlow, inFlow, by = 'Station') %&gt;%
 ## 10 Massachusetts Ave &amp; Dupont Circle NW  2001
 ## 11       Georgetown Harbor / 30th St NW  2163</code></pre>
 
-<p>Here we can see the stations that are most likely to accumulate bikes or always have a deficit. To get a better sense of what is happening I wanted to visualize this data. To play with this data and get you thinking about flow I thought an app would help. The app should allow you to select stations and see how many trips move through each of these stations. This seemed like a great place to use the chord diagram from d3. You can add different stations and see how they move between them.</p>
+<p>We can see the stations that are most likely to accumulate bikes or always have a deficit. To get a better sense of what is happening I wanted to visualize this data. To play with this data and provide a method to interact with it, I thought an app would help. The app allows you to select stations and see how many trips move through each of these stations to each of the others. This seemed like a great place to use the chord diagram from d3.</p>
 
-
+<br>
 
 <div style="text-align:center;"> <iframe src="https://darrkj.shinyapps.io/bikes/" width="730" height="850"></iframe></div>
 
+<br>
 
+<p>So there can be an abundance at some locations, and others get depleted. I can imagine the stations I would most likely use would be my daily trips from Court House to Rosslyn. I would enjoy riding a bike from Court House to Rosslyn, all down hill, but back up the hill is another story. Bikes should accumulate at Rosslyn, but they could also be taken from Rosslyn into DC, so maybe they just get depleted from Court House, but they could still come in from other sources. This sounds like a network flow problem.</p>
 
-<p>So, does there ever appear to be an abundance at one location, or does another get depleted. I can imagine the stations I would most likely use would be my daily trips from Court House to Rosslyn. I would enjoy riding a bike from Court House to Rosslyn, all down hill, but back up the hill is another story. Bikes should accumulate at Rosslyn, but they could also be taken from Rosslyn into DC, so maybe they just get depleted from Court House, but they could still come in from other sources. This sounds like a network flow problem.</p>
-
-<p>This should also highlight that chord diagrams are much better for a smaller number of interactions, like passes between players in basketball. It also falls apart becuase we lose the ability to follow longer chains, a larger scale because is hard to hold in memory, your brain that is not RAM.</p>
+<p>This also highlights that chord diagrams are much better for a smaller number of interactions, like passes between players in basketball. It also falls apart becuase we lose the ability to follow longer chains, a larger scale because is hard to hold in memory, your brain that is not RAM.</p>
 </div>
 
 
 <div id="community-detection" class="section level3">
-<h3>Community Detection</h3>
-<p>We need to either find a way to see the larger network flow or we need a way to find some smaller set of stations. In graph theory this would be a place to use community detection. It could provide smaller subsets that are more closely related than the rest of the stations. Another possible approach is to use the spatial information and partition some portion of the map via nearest neighbors. Or use one and see if the other validates it.</p>
+<h3>Connected Components</h3>
+
+<p>We need to either find a way to see the larger network flow or we need a way to find some smaller set of stations. In graph theory this would be a place to use community detection or connected components. They could provide smaller subsets that are more closely related than the rest of the stations. Another possible approach is to use the spatial information and partition some portion of the map via nearest neighbors. Or use one and see if the other validates it. I am going to try the connected components method.</p>
 <pre class="r"><code>bike %&gt;% 
   select(sdate = Start.date, sterm = Start.terminal, 
          edate = End.date, eterm = End.terminal) %&gt;%
@@ -140,14 +143,23 @@ network &lt;- graph.data.frame(three_days[, c('sterm', 'eterm')], vertices = sta
 stations &lt;- data.frame(terminalName = stations, 
                        cluster = clusters(network)$membership)
 
-# How are the communities set up
+# How are the components set up
 table(stations$cluster)</code></pre>
 <pre><code>## 
 ##   1   2   3   4   5 
 ## 290  12   3   2   1</code></pre>
-<p>This approach will give us a very stringent set of communities. They will really be the weakly connected components. This means that if there is any way to reach a station from another station via a trip it will be part of the component. There is not a lot of separation but we do have some communities. We can check what these look like by looking on a map. We first need the locations of the stations. We can find this by using the live <a href="http://www.capitalbikeshare.com/data/stations/bikeStations.xml">XML data</a> which has the latitude and longitude of each station.</p>
-<pre class="r"><code># Pull data from URL
-'http://www.capitalbikeshare.com/data/stations/bikeStations.xml' %&gt;%
+
+<p>This approach will gives us the strongly connected components over the timespan that was used. This means that if there is any way to reach a station from another station via a trip it will be part of the component. There is not a lot of separation but we do remove some groups that do not interact.
+
+</div>
+
+
+<div id="mapping" class="section level3">
+<h3>Mapping Stations</h3>
+
+We can check what these look like by looking on a map. We first need the locations of the stations. We can find this by using the live <a href="http://www.capitalbikeshare.com/data/stations/bikeStations.xml">XML data</a> which has the latitude and longitude of each station.</p>
+
+<pre class="r"><code>'http://www.capitalbikeshare.com/data/stations/bikeStations.xml' %&gt;%
   xmlToList() -&gt; geo
 
 # Transform it into a more usable structure.
@@ -167,11 +179,13 @@ geo %&gt;%
 ggplot(stations, aes(long, lat)) + geom_point(aes(colour = factor(cluster)))</code></pre>
 
 
-<div class="separator" style="clear: both; text-align: center;"><img src="cluster.png" height="350" width="600"></a></div>
+<div class="separator" style="clear: both; text-align: center;"><img src="cluster.png" height="450" width="600"></a></div>
 
 
 
-<p>That is not really a map, but we can see that we have one group in the DC area and another in the Rockville area. This is a pretty good validation of the community detection via clustering approach. Below is a map, but I got to frustrated with map API to actually get the colors to appear correctly. If you hover over you can see cluster one and cluster two.</p>
+<p>It is not really a map, but we can see that we have one group in the DC area and another in the Rockville area. This is a pretty good validation of thesearching for components. I would like to try some community detection for groups of stations that interact more than others. I may try this another time as I am more interested in how the network changes.</p>
+
+<p>Below is a map, but I got to frustrated with map API to actually get the colors to appear correctly. If you hover over you can see cluster one and cluster two.</p>
 <pre class="r"><code>df &lt;- stations
 df$LatLong &lt;- paste(df$lat, df$long, sep = ':')
   
@@ -185,41 +199,22 @@ plot(m)</code></pre>
 
 
 
-<p>For moving forward we should only consider the larger community, the DC area. We need to add the lat and long info onto the trip data. This requires the data to be joined twice, once for the starting location and once for the ending location.</p>
-<pre class="r"><code>raw %&gt;%
-  left_join(stations, by = c('sterm' = 'terminalName')) %&gt;% 
-  rename(slat = lat, slong = long, sclus = cluster) %&gt;%
-  left_join(stations, by = c('eterm' = 'terminalName')) %&gt;%
-  rename(elat = lat, elong = long, eclus = cluster) %&gt;%
-  filter(sclus == 1 &amp; eclus == 1) %&gt;%
-  select(-sclus, -eclus) -&gt; raw
+</div>
 
-raw %&gt;% select(slat, slong) %&gt;% distinct() %&gt;%
-  mutate(LatLong = paste(slat, slong, sep = ':')) %&gt;% 
-  na.omit() %&gt;% gvisMap('LatLong') %&gt;% plot()</code></pre>
-  
-  
-<div style="text-align:center;"> <iframe src="http://darrkj.github.io/blog/nov302014/map1" width="730" height="400"></iframe></div>
 
-  
-<p>How do we measure things changing in the network.</p>
+<div id="changeDetection" class="section level3">
+<h3>Network Change Detection</h3>
+
+
+<p>For moving forward we should only consider the larger community, the DC area. Can we look at how things change over time? How do we measure things changing in the network.</p>
+
+
 <pre class="r"><code>net_params &lt;- function(g) { 
 data.frame(
-  size = ecount(g),
-  degree_cent = centralization.degree(g)$centralization,
-  closeness_cent = centralization.closeness(g)$centralization,
-  betweenness_cent = centralization.betweenness(g)$centralization,
-  eigenvector_cent = centralization.evcent(g)$centralization,
-  assortativity = assortativity.degree(g),
+  size = ecount(g)
   average_path_length = average.path.length(g, unconnected = F),
   clique = suppressWarnings(clique.number(g)),
-  diameter = diameter(g, unconnected = F),
-  radius = radius(g),
-  girth = girth(g)$girth,
-  adhesion = graph.adhesion(g),
-  density = graph.density(g),
-  reciprocity = reciprocity(g),
-  transitivity = transitivity(g))
+  reciprocity = reciprocity(g)
 }
 
 # How to cut the dataset to a region of time
@@ -248,18 +243,10 @@ plot(g$date, g$reciprocity, main = 'Reciprocity')</code></pre>
 <div class="separator" style="clear: both; text-align: center;"><img src="hourly_multi.png" height="350" width="600"></a></div>
 
 
-<pre class="r"><code>par(mfrow = c(1, 1))
-plot(graph_change$date[1:400], graph_change$size[1:400], 'l', 
-     xlab = 'Time', ylab = 'Network Size', 
-     main = 'Network Size Over time')</code></pre>
 
+<p>Something interesting here is that there is a pretty consistent routine through the week. There are lots commutes through the week in the morning and evening, peoples work travel. On the other hand there is only one spike on the weekends, and that occurs around lunch time. There is also a fluke in the data. You can see that that April 7, 2014 was very different than the days around it. I looked back at the <a href="http://www.wunderground.com/history/airport/KDCA/2014/4/7/WeeklyHistory.html">weather</a> for that day, it was 15 degrees colder than the day before and after, and it also rained about half an inch. Very interesting, you can see the weather in the deviation of communication throughout the network.</p>
 
-<div class="separator" style="clear: both; text-align: center;"><img src="size_hourly.png" height="350" width="600"></a></div>
-
-
-<p>Something interesting here is that there is a pretty consistent routine through the week. There are lots commutes through the week in the morning and evening, peoples work travel. On the other hand there is only one spike on the weekends, and that occurs around lunch time.</p>
-
-<p>This was also very different than what I had expected. I thought that the parameters would be less volatile than this. I want to try to see some slower evolving time series. In order to do this I should shrink the time change parameter from an hour to a minute.</p>
+<p>This was also a little different than what I had expected. I thought that the parameters would be less volatile than this. I want to try to see some slower evolving time series. In order to do this I should shrink the time change parameter from an hour to a minute.</p>
 <pre class="r"><code>graph_change_m &lt;- recurBind(lapply(t1 + minutes(0:4000), calc))[[1]]
 
 g &lt;- graph_change_m[1:4000, ]
@@ -271,7 +258,6 @@ plot(g$date, g$clique, 'l', main = 'Max Clique')
 plot(g$date, g$reciprocity, 'l', main = 'Reciprocity')</code></pre>
 
 
-<div class="separator" style="clear: both; text-align: center;"><img src="multi_min.png" height="350" width="600"></a></div>
 
 
 <div class="separator" style="clear: both; text-align: center;"><img src="multi_minut.png" height="350" width="600"></a></div>
@@ -289,7 +275,7 @@ plot(graph_change_m$date[1:4000], graph_change_m$average_path_length[1:4000],
 
 
 
-<p>This is perfect. The package I have heard of most for analysing when thing change in a time series is <a href="http://cran.r-project.org/web/packages/changepoint/index.html">changepoint</a>. For an interesting example usage you can see this <a href="http://diffuseprior.wordpress.com/2013/04/30/kalkalash-pinpointing-the-moments-the-simpsons-became-less-cromulent/">site</a> where it is used to analysis how the popularity of The Simpsons televsion show decresead in popularity.</p>
+<p>These look to have some very strong patterns. The package I have heard of most for analysing when thing change in a time series is <a href="http://cran.r-project.org/web/packages/changepoint/index.html">changepoint</a>. For an interesting example usage you can see this <a href="http://diffuseprior.wordpress.com/2013/04/30/kalkalash-pinpointing-the-moments-the-simpsons-became-less-cromulent/">site</a> where it is used to analysis how the popularity of The Simpsons televsion show decresead in popularity.</p>
 
 
 <pre class="r"><code>g &lt;- graph_change_m[1:1400, ]
@@ -320,33 +306,13 @@ plot(cp_rec, cpt.width = 3, ylab = 'Reciprocity',
 <div class="separator" style="clear: both; text-align: center;"><img src="cp_rec.png" height="350" width="600"></a></div>
 
 
-<p>I wanted to use the changepoint package just as a benchmark to compare against the new Twitter <a href="https://github.com/twitter/BreakoutDetection">breakoutD</a> package. There have been other <a href="https://blog.twitter.com/2014/breakout-detection-in-the-wild">posts</a> of people talking about it lately as well.</p>
-
-<pre class="r"><code>bd_size &lt;- breakout(g$size, method = 'multi', plot = TRUE)
-bd_size$plot</code></pre>
+<p>I wanted to use the changepoint package just as a benchmark to compare against the new Twitter <a href="https://github.com/twitter/BreakoutDetection">breakoutDetection</a> package. There have been other <a href="https://blog.twitter.com/2014/breakout-detection-in-the-wild">posts</a> of people talking about it lately as well. I am just going to place the times from breakout on the plot from changepoint to see how they stack up.</p>
 
 
-<div class="separator" style="clear: both; text-align: center;"><img src="bd_size.png" height="350" width="600"></a></div>
 
 
 <pre class="r"><code>bd_apl &lt;- breakout(g$average_path_length, method = 'multi', plot = TRUE)
-bd_apl$plot</code></pre>
-
-
-<div class="separator" style="clear: both; text-align: center;"><img src="bd_apl.png" height="350" width="600"></a></div>
-
-
-
-<pre class="r"><code>bd_rec &lt;- breakout(g$reciprocity, method = 'multi', plot = TRUE)
-bd_rec$plot</code></pre>
-
-
-
-<div class="separator" style="clear: both; text-align: center;"><img src="bd_rec.png" height="350" width="600"></a></div>
-
-
-
-<pre class="r"><code>plot(cp_size, cpt.width = 3, ylab = 'Network Size', 
+plot(cp_size, cpt.width = 3, ylab = 'Network Size', 
      main = 'Changepoints in Network Size')
 abline(v = bd_size$loc)</code></pre>
 
@@ -355,7 +321,8 @@ abline(v = bd_size$loc)</code></pre>
 
 
 
-<pre class="r"><code>plot(cp_apl,cpt.width = 3, ylab = 'Avg Path Length', 
+<pre class="r"><code>bd_size &lt;- breakout(g$size, method = 'multi', plot = TRUE)
+plot(cp_apl,cpt.width = 3, ylab = 'Avg Path Length', 
      main = 'Changepoints in Average Path Length')
 abline(v = bd_apl$loc)</code></pre>
 
@@ -363,7 +330,8 @@ abline(v = bd_apl$loc)</code></pre>
 <div class="separator" style="clear: both; text-align: center;"><img src="both_apl.png" height="350" width="600"></a></div>
 
 
-<pre class="r"><code>plot(cp_rec,cpt.width = 3, ylab = 'Reciprocity', 
+<pre class="r"><code>bd_rec &lt;- breakout(g$reciprocity, method = 'multi', plot = TRUE)
+plot(cp_rec,cpt.width = 3, ylab = 'Reciprocity', 
      main = 'Changepoints in Reciprocity')
 abline(v = bd_rec$loc)</code></pre>
 
