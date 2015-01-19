@@ -120,7 +120,11 @@ benchmark(replications = rep(100, 3),
 ## 3 q_comp(&quot;Queue_RC$new()&quot;)   0.986          100    2.917
 ## 5 q_comp(&quot;Queue_RC$new()&quot;)   0.990          100    2.929</code></pre>
 
-<p>So the R6 version is indeed faster, about 3x faster. There is more though. The R6 approach provides some other possible methods to improve the speed. These can be realized by turning different options off. The main two are the portable argument and class argument to FALSE.</p>
+<p>So the R6 version is indeed faster, about 3x faster.</p>
+
+<h1>Optimizations</h1>
+
+<p>There is more though. The R6 approach provides some other possible methods to improve the speed. These can be realized by turning different options off. The main two are the portable argument and class argument to FALSE.</p>
 
 <p>We can create a function with each of these options and one with both modified. Then we can compare each of them to the base with everything set to TRUE.</p>
 <pre class="r"><code>benchmark(replications = rep(100, 3),
@@ -144,6 +148,8 @@ benchmark(replications = rep(100, 3),
 ## 9        q_comp(&quot;Queue_R6$new()&quot;)   0.353          100    3.461</code></pre>
 
 <p>It seems as long as you have the class argument set to FALSE you will see 3x to 4x improvements in speed. This means it is about an order of magnitude over the RC approach. This seems to be close to on par with the other things I have seen, maybe a bit less. I am sure it will change based on input size and complexity of the problem as well.</p>
+
+<h1>Stricter Comparison</h1>
 
 <p>Just out of curiosity I am also interested in seeing how fast this is to code in something known to be faster. The JVM should foot the bill here, and I can run it from inside of R in the same benchmark suite. I bet it will be much faster but not sure by how much.</p>
 
@@ -213,6 +219,9 @@ comp</code></pre>
 <pre><code>##    user  system elapsed 
 ##  10.922   0.224   9.909</code></pre>
 
+<p>Getting rid of the for loop takes out most of all of the load time. Getting things out may be a different story though.</p>
+
+<h1>Stricter Comparison</h1>
 
 <p>It is interesting though that the R version is much faster at first then it gets slower than the Scala version. After some thought this is obvious though. It takes some time to call out to the Scala version which is why it does not speed up for the first few iterations, the real computation time is dwarfed by the external call time. Then at a certain point the time is longer for the computation.</p>
 <p>This is pretty cool though because there is a pretty easy to use method to create common data structures that are also fast.</p>
