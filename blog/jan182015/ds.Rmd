@@ -1,0 +1,241 @@
+---
+title: "Untitled"
+author: "Kenny Darrell"
+date: "January 18, 2015"
+output: html_document
+---
+
+# Introduction
+
+If you have taken a class on data structures and/or algorithms you have probably learned a great deal about [Abstract Data Types](http://en.wikipedia.org/wiki/Abstract_data_type) (ADT). Most people who write code in R do not care about having access to many of these ADT's because they have other types that are more useful for data related tasks like data.frames. R is also peculiar because it is a very functional languages which means that side effects are quite rare. It also uses [copy on modify semantics](http://stackoverflow.com/questions/15759117/what-exactly-is-copy-on-modify-semantics-in-r-and-where-is-the-canonical-source) so if you tried to do some of these things they would get very expensive. You could hack these data structures together using environments though. R version 2.12 from 2012 added [Reference classes](http://adv-r.had.co.nz/OO-essentials.html#rc) (RC) that allow you to add mutation to a class as opposed to the [S3](http://adv-r.had.co.nz/OO-essentials.html#s3) and [S4](http://adv-r.had.co.nz/OO-essentials.html#s4) class systems.
+
+I have used these a few times but never really dug in and got and in depth understanding of them. I got a littler more interested when I saw the [R6](http://cran.r-project.org/web/packages/R6/vignettes/Introduction.html) package. If you code a lot in any language you will realize there are points in time when you need this machinery to create data structures that can make some problems much easier.
+
+
+I wanted to validate the performance comparisons in some of the R6 posts where it is stood up next to RC. To do this I created a [Queue](http://en.wikipedia.org/wiki/Queue_%28abstract_data_type%29) in each system.
+
+```{r}
+library(R6)
+library(rbenchmark)
+library(jvmr)
+
+Queue_R6 <- R6Class("Queue",
+  public = list(
+      data = NA,
+      initialize = function(data) {
+        if (!missing(data)) {
+            self$data <- as.list(data)
+        } else {
+            self$data <- list()
+        }
+      },
+      #
+      size = function() length(self$data),
+      #
+      push = function(item) self$data[[self$size() + 1]] <- item,
+      #
+      pop = function() {
+          if (self$size() == 0) return(NULL) # stop("queue is empty!")
+          value <- self$data[[1]]
+          self$data[[1]] <- NULL
+          value
+      }
+  )
+)
+
+Queue_RC <- setRefClass(
+  Class = "Queue",
+  fields = list(name = "character", data = "list"),
+  methods = list(
+    size = function() length(data),
+    #
+    push = function(item) data[[size() + 1]] <<- item,
+    #
+    pop = function() {
+      if (size() == 0) stop("queue is empty!")
+      value <- data[[1]]
+      data[[1]] <<- NULL
+      value
+    },
+    #
+    initialize=function(...) {
+      callSuper(...)
+      .self
+    }
+  )
+)
+```
+
+I wish they would just call the RC system R5, then you would have S3, S4, R5 and R6, but that is irrelevant. These functions almost look the exact same, only a few minor deviations. We can very easily compare these two implementations to see which performs better. The following benchmark will create an empty queue, then push the numbers from 1 to 100 into the queue and then pop each number back off. Not a very complex task but it should test the aspects of the data structure.
+
+
+```{r}
+q_comp <- function(str, num = 100) {
+  eval(parse(text = paste0('x <- ', str)))
+  for(i in seq(num)) x$push(i)
+  for(i in seq(num)) x$pop()
+}
+
+benchmark(replications = rep(100, 3),
+          q_comp('Queue_RC$new()'), q_comp('Queue_R6$new()'),
+          columns = c('test', 'elapsed', 'replications', 'relative'))
+```
+
+So the R6 version is indeed faster. There is more though. The R6 approach provides some other possible methods to improve the speed. These can be realized by turning different options off. The main two are the portable and class options to FALSE.
+
+
+
+```{r, echo = FALSE}
+Queue_R6_class <- R6Class("Queue",
+  class = FALSE,
+  public = list(
+      data = NA,
+      #
+      initialize = function(data) {
+        if (!missing(data)) {
+            self$data <- as.list(data)
+        } else {
+            self$data <- list()
+        }
+      },
+      #
+      size = function() length(self$data),
+      #
+      push = function(item) self$data[[self$size() + 1]] <- item,
+      #
+      pop = function() {
+          if (self$size() == 0) return(NULL) # stop("queue is empty!")
+          value <- self$data[[1]]
+          self$data[[1]] <- NULL
+          value
+      }
+  )
+)
+
+
+Queue_R6_port <- R6Class("Queue",
+  portable = FALSE,
+  public = list(
+      data = NA,
+      #
+      initialize = function(data) {
+        if (!missing(data)) {
+            self$data <- as.list(data)
+        } else {
+            self$data <- list()
+        }
+      },
+      #
+      size = function() length(self$data),
+      #
+      push = function(item) self$data[[self$size() + 1]] <- item,
+      #
+      pop = function() {
+          if (self$size() == 0) return(NULL) # stop("queue is empty!")
+          value <- self$data[[1]]
+          self$data[[1]] <- NULL
+          value
+      }
+  )
+)
+
+
+Queue_R6_both <- R6Class("Queue",
+  class = FALSE,
+  portable = FALSE,
+  public = list(
+      data = NA,
+      #
+      initialize = function(data) {
+        if (!missing(data)) {
+            self$data <- as.list(data)
+        } else {
+            self$data <- list()
+        }
+      },
+      #
+      size = function() length(self$data),
+      #
+      push = function(item) self$data[[self$size() + 1]] <- item,
+      #
+      pop = function() {
+          if (self$size() == 0) return(NULL) # stop("queue is empty!")
+          value <- self$data[[1]]
+          self$data[[1]] <- NULL
+          value
+      }
+  )
+)
+```
+
+
+
+We can create a function with each of these options and one with both modified. Then we can each of them to the base with everything set as TRUE.
+
+
+
+```{r}
+benchmark(replications = rep(100, 3),
+          q_comp('Queue_R6$new()'),
+          q_comp('Queue_R6_class$new()'),
+          q_comp('Queue_R6_port$new()'),
+          q_comp('Queue_R6_both$new()'),
+          columns = c('test', 'elapsed', 'replications', 'relative'))
+```
+
+
+Just out of curiosity I am interested to see how fast this is to code running on the JVM from inside of R. I bet it will be much faster but not sure by how much.
+
+
+
+```{r}
+# Create the interpreter instance. 
+scala <- scalaInterpreter()
+
+interpret(scala,'
+  def queue_scala(n: Int) {
+    val queue = new scala.collection.mutable.Queue[Integer]
+    for( x <- (1 to n)) queue += x
+  }
+')
+queue_scala <- function(n) {
+  eval(parse(text = paste0('scala["queue_scala(', n, ')"]')))
+}
+
+r_queue <- function(n) {
+  x <- Queue_R6_both$new()
+  for(i in seq(n)) x$push(i)
+}
+
+
+comp <- data.frame(n = numeric(), r = numeric(), 
+                   scala = numeric(), ratio = numeric())
+for(i in 0:5) {
+  n <- formatC(10 ^ i, format = "fg")
+  scalaTime <- system.time(queue_scala(n))[3]
+  rTime <- system.time(r_queue(10 ^ i))[3]
+  ratio <- rTime / scalaTime
+  comp <- rbind(comp, data.frame(10 ^ i, scalaTime, rTime, ratio))
+}
+
+comp
+
+
+
+comp <- data.frame(n = numeric(), scala = numeric())
+for(i in 0:7) {
+  n <- formatC(10 ^ i, format = "fg")
+  scalaTime <- system.time(queue_scala(n))[3]
+  comp <- rbind(comp, data.frame(n, scalaTime))
+}
+
+comp
+```
+
+This comparison is not completely fair because there are other things happening outside of the data structure itself. I think the explosion actually comes from the for loop in R, which is fairly easy to learn. More what I was interested in was is can it work in similar amount of time for smaller tasks. 
+
+It is interesting thought that the R version is much faster at first then get slower than the Scala version. After some thought this is obvious though. It takes some time to call out to the Scala version which is why it does not speed up for the first few iterations, the real computation time is dwarfed by the external call time. Then at a certain point the time is longer for the computation. 
+
+This is pretty cool though because there is a pretty easy to use method to create common data structures that is also fast.
+
+

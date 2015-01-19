@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<!-- saved from url=(0014)about:internet -->
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+<meta http-equiv="x-ua-compatible" content="IE=9" >
+
+<title>R6 Data Structures</title>
+
+
+<link rel="stylesheet" type="text/css" href="../../stylesheets/blog.css">
+
+<!-- Styles for R syntax highlighter -->
+<link rel="stylesheet" type="text/css" href="../../stylesheets/blog2.css">
+
+    <link rel="stylesheet" type="text/css" href="../../stylesheets/stylesheet.css" media="screen" />
+    <link rel="stylesheet" type="text/css" href="../../stylesheets/pygment_trac.css" media="screen" />
+    <link rel="stylesheet" type="text/css" href="../../stylesheets/print.css" media="print" />
+
+<!-- R syntax highlighter -->
+<script src="../../javascripts/r.js"></script>
+
+
+</head>
+
+<body>
+
+<div class="container">
+
+
+    <header>
+      <div class="container">
+        <h1>R6 Data Structures</h1>
+        <h2></h2>
+
+<h4 class="author"><em>Kenny Darrell</em></h4>
+<h4 class="date"><em>January 18, 2015</em></h4>
+        </section>
+      </div>
+    </header>
+
+
+
+
+
+<div id="introduction" class="section level1">
+<h1>Introduction</h1>
+<p>If you have taken a class on data structures and/or algorithms you have probably learned a great deal about <a href="http://en.wikipedia.org/wiki/Abstract_data_type">Abstract Data Types</a> (ADT). Most people who write code in R do not care about having access to many of these ADT’s because they have other types that are more useful for data related tasks like data.frames. R is also peculiar because it is a very functional languages which means that side effects are quite rare. It also uses <a href="http://stackoverflow.com/questions/15759117/what-exactly-is-copy-on-modify-semantics-in-r-and-where-is-the-canonical-source">copy on modify semantics</a> so if you tried to do some of these things they would get very expensive. You could hack these data structures together using environments though. R version 2.12 from 2012 added <a href="http://adv-r.had.co.nz/OO-essentials.html#rc">Reference classes</a> (RC) that allow you to add mutation to a class as opposed to the <a href="http://adv-r.had.co.nz/OO-essentials.html#s3">S3</a> and <a href="http://adv-r.had.co.nz/OO-essentials.html#s4">S4</a> class systems.</p>
+<p>I have used these a few times but never really dug in and got and in depth understanding of them. I got a littler more interested when I saw the <a href="http://cran.r-project.org/web/packages/R6/vignettes/Introduction.html">R6</a> package. If you code a lot in any language you will realize there are points in time when you need this machinery to create data structures that can make some problems much easier.</p>
+<p>I wanted to validate the performance comparisons in some of the R6 posts where it is stood up next to RC. To do this I created a <a href="http://en.wikipedia.org/wiki/Queue_%28abstract_data_type%29">Queue</a> in each system.</p>
+<pre class="r"><code>library(R6)
+library(rbenchmark)
+library(jvmr)
+
+Queue_R6 &lt;- R6Class(&quot;Queue&quot;,
+  public = list(
+      data = NA,
+      initialize = function(data) {
+        if (!missing(data)) {
+            self$data &lt;- as.list(data)
+        } else {
+            self$data &lt;- list()
+        }
+      },
+      #
+      size = function() length(self$data),
+      #
+      push = function(item) self$data[[self$size() + 1]] &lt;- item,
+      #
+      pop = function() {
+          if (self$size() == 0) return(NULL) # stop(&quot;queue is empty!&quot;)
+          value &lt;- self$data[[1]]
+          self$data[[1]] &lt;- NULL
+          value
+      }
+  )
+)
+
+Queue_RC &lt;- setRefClass(
+  Class = &quot;Queue&quot;,
+  fields = list(name = &quot;character&quot;, data = &quot;list&quot;),
+  methods = list(
+    size = function() length(data),
+    #
+    push = function(item) data[[size() + 1]] &lt;&lt;- item,
+    #
+    pop = function() {
+      if (size() == 0) stop(&quot;queue is empty!&quot;)
+      value &lt;- data[[1]]
+      data[[1]] &lt;&lt;- NULL
+      value
+    },
+    #
+    initialize=function(...) {
+      callSuper(...)
+      .self
+    }
+  )
+)</code></pre>
+<p>I wish they would just call the RC system R5, then you would have S3, S4, R5 and R6, but that is irrelevant. These functions almost look the exact same, only a few minor deviations. We can very easily compare these two implementations to see which performs better. The following benchmark will create an empty queue, then push the numbers from 1 to 100 into the queue and then pop each number back off. Not a very complex task but it should test the aspects of the data structure.</p>
+<pre class="r"><code>q_comp &lt;- function(str, num = 100) {
+  eval(parse(text = paste0('x &lt;- ', str)))
+  for(i in seq(num)) x$push(i)
+  for(i in seq(num)) x$pop()
+}
+
+benchmark(replications = rep(100, 3),
+          q_comp('Queue_RC$new()'), q_comp('Queue_R6$new()'),
+          columns = c('test', 'elapsed', 'replications', 'relative'))</code></pre>
+<pre><code>##                       test elapsed replications relative
+## 2 q_comp(&quot;Queue_R6$new()&quot;)   0.339          100    1.003
+## 4 q_comp(&quot;Queue_R6$new()&quot;)   0.357          100    1.056
+## 6 q_comp(&quot;Queue_R6$new()&quot;)   0.338          100    1.000
+## 1 q_comp(&quot;Queue_RC$new()&quot;)   1.044          100    3.089
+## 3 q_comp(&quot;Queue_RC$new()&quot;)   0.986          100    2.917
+## 5 q_comp(&quot;Queue_RC$new()&quot;)   0.990          100    2.929</code></pre>
+<p>So the R6 version is indeed faster. There is more though. The R6 approach provides some other possible methods to improve the speed. These can be realized by turning different options off. The main two are the portable and class options to FALSE.</p>
+<p>We can create a function with each of these options and one with both modified. Then we can each of them to the base with everything set as TRUE.</p>
+<pre class="r"><code>benchmark(replications = rep(100, 3),
+          q_comp('Queue_R6$new()'),
+          q_comp('Queue_R6_class$new()'),
+          q_comp('Queue_R6_port$new()'),
+          q_comp('Queue_R6_both$new()'),
+          columns = c('test', 'elapsed', 'replications', 'relative'))</code></pre>
+<pre><code>##                              test elapsed replications relative
+## 4   q_comp(&quot;Queue_R6_both$new()&quot;)   0.104          100    1.020
+## 8   q_comp(&quot;Queue_R6_both$new()&quot;)   0.106          100    1.039
+## 12  q_comp(&quot;Queue_R6_both$new()&quot;)   0.104          100    1.020
+## 2  q_comp(&quot;Queue_R6_class$new()&quot;)   0.104          100    1.020
+## 6  q_comp(&quot;Queue_R6_class$new()&quot;)   0.102          100    1.000
+## 10 q_comp(&quot;Queue_R6_class$new()&quot;)   0.102          100    1.000
+## 3   q_comp(&quot;Queue_R6_port$new()&quot;)   0.364          100    3.569
+## 7   q_comp(&quot;Queue_R6_port$new()&quot;)   0.363          100    3.559
+## 11  q_comp(&quot;Queue_R6_port$new()&quot;)   0.356          100    3.490
+## 1        q_comp(&quot;Queue_R6$new()&quot;)   0.366          100    3.588
+## 5        q_comp(&quot;Queue_R6$new()&quot;)   0.373          100    3.657
+## 9        q_comp(&quot;Queue_R6$new()&quot;)   0.353          100    3.461</code></pre>
+<p>Just out of curiosity I am interested to see how fast this is to code running on the JVM from inside of R. I bet it will be much faster but not sure by how much.</p>
+<pre class="r"><code># Create the interpreter instance. 
+scala &lt;- scalaInterpreter()
+
+interpret(scala,'
+  def queue_scala(n: Int) {
+    val queue = new scala.collection.mutable.Queue[Integer]
+    for( x &lt;- (1 to n)) queue += x
+  }
+')</code></pre>
+<pre><code>## NULL</code></pre>
+<pre class="r"><code>queue_scala &lt;- function(n) {
+  eval(parse(text = paste0('scala[&quot;queue_scala(', n, ')&quot;]')))
+}
+
+r_queue &lt;- function(n) {
+  x &lt;- Queue_R6_both$new()
+  for(i in seq(n)) x$push(i)
+}
+
+
+comp &lt;- data.frame(n = numeric(), r = numeric(), 
+                   scala = numeric(), ratio = numeric())
+for(i in 0:5) {
+  n &lt;- formatC(10 ^ i, format = &quot;fg&quot;)
+  scalaTime &lt;- system.time(queue_scala(n))[3]
+  rTime &lt;- system.time(r_queue(10 ^ i))[3]
+  ratio &lt;- rTime / scalaTime
+  comp &lt;- rbind(comp, data.frame(10 ^ i, scalaTime, rTime, ratio))
+}
+
+comp</code></pre>
+<pre><code>##              n scalaTime   rTime        ratio
+## elapsed  1e+00     0.150   0.000 0.000000e+00
+## elapsed1 1e+01     0.125   0.000 0.000000e+00
+## elapsed2 1e+02     0.116   0.000 0.000000e+00
+## elapsed3 1e+03     0.130   0.009 6.923077e-02
+## elapsed4 1e+04     0.104   0.818 7.865385e+00
+## elapsed5 1e+05     0.138 160.043 1.159732e+03</code></pre>
+<pre class="r"><code>comp &lt;- data.frame(n = numeric(), scala = numeric())
+for(i in 0:7) {
+  n &lt;- formatC(10 ^ i, format = &quot;fg&quot;)
+  scalaTime &lt;- system.time(queue_scala(n))[3]
+  comp &lt;- rbind(comp, data.frame(n, scalaTime))
+}
+
+comp</code></pre>
+<pre><code>##                 n scalaTime
+## elapsed         1     0.095
+## elapsed1       10     0.093
+## elapsed2      100     0.099
+## elapsed3     1000     0.090
+## elapsed4    10000     0.095
+## elapsed5   100000     0.088
+## elapsed6  1000000     0.557
+## elapsed7 10000000     9.983</code></pre>
+<p>This comparison is not completely fair because there are other things happening outside of the data structure itself. I think the explosion actually comes from the for loop in R, which is fairly easy to learn. More what I was interested in was is can it work in similar amount of time for smaller tasks.</p>
+<p>It is interesting thought that the R version is much faster at first then get slower than the Scala version. After some thought this is obvious though. It takes some time to call out to the Scala version which is why it does not speed up for the first few iterations, the real computation time is dwarfed by the external call time. Then at a certain point the time is longer for the computation.</p>
+<p>This is pretty cool though because there is a pretty easy to use method to create common data structures that is also fast.</p>
+</div>
+
+
+</div>
+
+
+
+<script>
+
+// add bootstrap table styles to pandoc tables
+$(document).ready(function () {
+  $('tr.header').parent('thead').parent('table').addClass('table table-condensed');
+});
+
+</script>
+
+<!-- dynamically load mathjax for compatibility with --self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://c328740.ssl.cf1.rackcdn.com/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>
+
