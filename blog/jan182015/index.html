@@ -221,7 +221,7 @@ comp</code></pre>
 
 <p>Getting rid of the for loop takes out most of all of the load time. Getting things out may be a different story though.</p>
 
-<h1>Stricter Comparison</h1>
+<h1>Conclusion</h1>
 
 <p>It is interesting though that the R version is much faster at first then it gets slower than the Scala version. After some thought this is obvious though. It takes some time to call out to the Scala version which is why it does not speed up for the first few iterations, the real computation time is dwarfed by the external call time. Then at a certain point the time is longer for the computation.</p>
 <p>This is pretty cool though because there is a pretty easy to use method to create common data structures that are also fast.</p>
