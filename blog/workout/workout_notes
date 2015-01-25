@@ -1,0 +1,59 @@
+Workout Application
+
+Need date
+
+Need workouts by muscle type
+
+Should recomend next workout, it should say what I did last time as well as an expected number or reps and sets.
+
+Basic groups
+
+Cardio
+Core
+Lower Body
+Upper Body
+
+Should it tell me what groups to do or can I pick them.
+
+Muscle Type
+
+NECK
+SHOULDERS
+CHEST
+BICEPS
+FOREARMS
+TRAPS
+TRICEPS
+LATS
+
+
+ABS
+MIDDLE BACK
+LOWER BACK
+
+
+GLUTES
+HAMSTRINGS
+CALVES
+QUADS
+
+
+
+Example Workout
+
+Treadmill, speed = 5, time = 6
+
+upperBody, bicep, dumbell curl, set 1, 10 reps, set 2, 8 reps
+
+upperyBody, tricep
+
+
+
+
+
+
+
+
+
+
+
