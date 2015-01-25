@@ -1,0 +1,131 @@
+        <!DOCTYPE html>
+        <meta charset="utf-8">
+        <body> 
+ <style>
+.link {
+stroke: red;
+opacity: 0.6;
+stroke-width: 1.5px;
+}
+.node circle {
+stroke: #fff;
+opacity: 0.6;
+stroke-width: 1.5px;
+}
+text {
+font: 7px serif;
+opacity: 0.6;
+pointer-events: none;
+}
+</style>
+
+<script src=http://d3js.org/d3.v3.min.js></script>
+
+<script> 
+ var links = [ { "source" : "189149", "target" : "189150" }, { "source" : "189149", "target" : "189151" }, { "source" : "189149", "target" : "189152" }, { "source" : "189149", "target" : "189153" }, { "source" : "189149", "target" : "189154" }, { "source" : "189149", "target" : "189155" }, { "source" : "189149", "target" : "189156" }, { "source" : "189149", "target" : "189157" }, { "source" : "189149", "target" : "189159" }, { "source" : "189149", "target" : "189160" }, { "source" : "189149", "target" : "189161" }, { "source" : "189149", "target" : "189162" }, { "source" : "189149", "target" : "189166" }, { "source" : "189149", "target" : "189168" }, { "source" : "189149", "target" : "189170" }, { "source" : "189149", "target" : "189180" }, { "source" : "189150", "target" : "189149" }, { "source" : "189150", "target" : "189151" }, { "source" : "189150", "target" : "189152" }, { "source" : "189150", "target" : "189156" }, { "source" : "189150", "target" : "189162" }, { "source" : "189150", "target" : "189166" }, { "source" : "189150", "target" : "189168" }, { "source" : "189150", "target" : "189170" }, { "source" : "189150", "target" : "189179" }, { "source" : "189151", "target" : "189149" }, { "source" : "189151", "target" : "189150" }, { "source" : "189151", "target" : "189152" }, { "source" : "189151", "target" : "189156" }, { "source" : "189151", "target" : "189157" }, { "source" : "189151", "target" : "189158" }, { "source" : "189151", "target" : "189162" }, { "source" : "189151", "target" : "189176" }, { "source" : "189151", "target" : "189177" }, { "source" : "189151", "target" : "189181" }, { "source" : "189152", "target" : "189149" }, { "source" : "189152", "target" : "189150" }, { "source" : "189152", "target" : "189151" }, { "source" : "189152", "target" : "189156" }, { "source" : "189152", "target" : "189161" }, { "source" : "189152", "target" : "189162" }, { "source" : "189153", "target" : "189149" }, { "source" : "189153", "target" : "189155" }, { "source" : "189153", "target" : "189159" }, { "source" : "189154", "target" : "189149" }, { "source" : "189154", "target" : "189155" }, { "source" : "189154", "target" : "189159" }, { "source" : "189154", "target" : "189165" }, { "source" : "189155", "target" : "189149" }, { "source" : "189155", "target" : "189153" }, { "source" : "189155", "target" : "189154" }, { "source" : "189155", "target" : "189165" }, { "source" : "189156", "target" : "189149" }, { "source" : "189156", "target" : "189150" }, { "source" : "189156", "target" : "189151" }, { "source" : "189156", "target" : "189152" }, { "source" : "189157", "target" : "189149" }, { "source" : "189157", "target" : "189151" }, { "source" : "189157", "target" : "189179" }, { "source" : "189157", "target" : "189181" }, { "source" : "189157", "target" : "189182" }, { "source" : "189158", "target" : "189151" }, { "source" : "189158", "target" : "189182" }, { "source" : "189159", "target" : "189149" }, { "source" : "189159", "target" : "189153" }, { "source" : "189159", "target" : "189154" }, { "source" : "189160", "target" : "189149" }, { "source" : "189161", "target" : "189149" }, { "source" : "189161", "target" : "189152" }, { "source" : "189162", "target" : "189149" }, { "source" : "189162", "target" : "189150" }, { "source" : "189162", "target" : "189151" }, { "source" : "189162", "target" : "189152" }, { "source" : "189162", "target" : "189182" }, { "source" : "189163", "target" : "189181" }, { "source" : "189163", "target" : "189182" }, { "source" : "189164", "target" : "189181" }, { "source" : "189164", "target" : "189182" }, { "source" : "189165", "target" : "189154" }, { "source" : "189165", "target" : "189155" }, { "source" : "189166", "target" : "189149" }, { "source" : "189166", "target" : "189150" }, { "source" : "189167", "target" : "189181" }, { "source" : "189167", "target" : "189182" }, { "source" : "189168", "target" : "189149" }, { "source" : "189168", "target" : "189150" }, { "source" : "189168", "target" : "189182" }, { "source" : "189169", "target" : "189181" }, { "source" : "189169", "target" : "189182" }, { "source" : "189170", "target" : "189149" }, { "source" : "189170", "target" : "189150" }, { "source" : "189171", "target" : "189181" }, { "source" : "189171", "target" : "189182" }, { "source" : "189172", "target" : "189174" }, { "source" : "189172", "target" : "189176" }, { "source" : "189172", "target" : "189178" }, { "source" : "189172", "target" : "189181" }, { "source" : "189172", "target" : "189182" }, { "source" : "189173", "target" : "189174" }, { "source" : "189173", "target" : "189176" }, { "source" : "189173", "target" : "189180" }, { "source" : "189174", "target" : "189172" }, { "source" : "189174", "target" : "189173" }, { "source" : "189174", "target" : "189180" }, { "source" : "189175", "target" : "189178" }, { "source" : "189175", "target" : "189182" }, { "source" : "189176", "target" : "189151" }, { "source" : "189176", "target" : "189172" }, { "source" : "189176", "target" : "189173" }, { "source" : "189176", "target" : "189182" }, { "source" : "189177", "target" : "189151" }, { "source" : "189177", "target" : "189180" }, { "source" : "189177", "target" : "189182" }, { "source" : "189178", "target" : "189172" }, { "source" : "189178", "target" : "189175" }, { "source" : "189178", "target" : "189181" }, { "source" : "189178", "target" : "189182" }, { "source" : "189179", "target" : "189150" }, { "source" : "189179", "target" : "189157" }, { "source" : "189179", "target" : "189181" }, { "source" : "189179", "target" : "189182" }, { "source" : "189180", "target" : "189149" }, { "source" : "189180", "target" : "189173" }, { "source" : "189180", "target" : "189174" }, { "source" : "189180", "target" : "189177" }, { "source" : "189180", "target" : "189181" }, { "source" : "189180", "target" : "189182" }, { "source" : "189181", "target" : "189151" }, { "source" : "189181", "target" : "189157" }, { "source" : "189181", "target" : "189163" }, { "source" : "189181", "target" : "189164" }, { "source" : "189181", "target" : "189167" }, { "source" : "189181", "target" : "189169" }, { "source" : "189181", "target" : "189171" }, { "source" : "189181", "target" : "189172" }, { "source" : "189181", "target" : "189178" }, { "source" : "189181", "target" : "189179" }, { "source" : "189181", "target" : "189180" }, { "source" : "189181", "target" : "189182" }, { "source" : "189182", "target" : "189157" }, { "source" : "189182", "target" : "189158" }, { "source" : "189182", "target" : "189162" }, { "source" : "189182", "target" : "189163" }, { "source" : "189182", "target" : "189164" }, { "source" : "189182", "target" : "189167" }, { "source" : "189182", "target" : "189168" }, { "source" : "189182", "target" : "189169" }, { "source" : "189182", "target" : "189171" }, { "source" : "189182", "target" : "189172" }, { "source" : "189182", "target" : "189175" }, { "source" : "189182", "target" : "189176" }, { "source" : "189182", "target" : "189177" }, { "source" : "189182", "target" : "189178" }, { "source" : "189182", "target" : "189179" }, { "source" : "189182", "target" : "189180" }, { "source" : "189182", "target" : "189181" } ] ; 
+ var nodes = {}
+
+// Compute the distinct nodes from the links.
+links.forEach(function(link) {
+link.source = nodes[link.source] ||
+(nodes[link.source] = {name: link.source});
+link.target = nodes[link.target] ||
+(nodes[link.target] = {name: link.target});
+link.value = +link.value;
+});
+
+var width = 500
+height = 350;
+
+var force = d3.layout.force()
+.nodes(d3.values(nodes))
+.links(links)
+.size([width, height])
+.linkDistance(50)
+.charge(-200)
+.on("tick", tick)
+.start();
+
+var svg = d3.select("body").append("svg")
+.attr("width", width)
+.attr("height", height);
+
+var link = svg.selectAll(".link")
+.data(force.links())
+.enter().append("line")
+.attr("class", "link");
+
+var node = svg.selectAll(".node")
+.data(force.nodes())
+.enter().append("g")
+.attr("class", "node")
+.on("mouseover", mouseover)
+.on("mouseout", mouseout)
+.on("click", click)
+.on("dblclick", dblclick)
+.call(force.drag);
+
+node.append("circle")
+.attr("r", 8)
+.style("fill", "#3182bd");
+
+node.append("text")
+.attr("x", 12)
+.attr("dy", ".35em")
+.style("fill", "orange")
+.text(function(d) { return d.name; });
+
+function tick() {
+link
+.attr("x1", function(d) { return d.source.x; })
+.attr("y1", function(d) { return d.source.y; })
+.attr("x2", function(d) { return d.target.x; })
+.attr("y2", function(d) { return d.target.y; });
+
+node.attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; });
+}
+
+function mouseover() {
+d3.select(this).select("circle").transition()
+.duration(750)
+.attr("r", 16);
+}
+
+function mouseout() {
+d3.select(this).select("circle").transition()
+.duration(750)
+.attr("r", 8);
+}
+// action to take on mouse click
+function click() {
+d3.select(this).select("text").transition()
+.duration(750)
+.attr("x", 22)
+.style("stroke-width", ".5px")
+.style("opacity", 1)
+.style("fill", "#E34A33")
+.style("font", "17.5px serif");
+d3.select(this).select("circle").transition()
+.duration(750)
+.style("fill", "#E34A33")
+.attr("r", 16)
+}
+
+// action to take on mouse double click
+function dblclick() {
+d3.select(this).select("circle").transition()
+.duration(750)
+.attr("r", 6)
+.style("fill", "#E34A33");
+d3.select(this).select("text").transition()
+.duration(750)
+.attr("x", 12)
+.style("stroke", "none")
+.style("fill", "#E34A33")
+.style("stroke", "none")
+.style("opacity", 0.6)
+.style("font", "7px serif");
+}
+
+</script>
+ </body>

@@ -1,0 +1,97 @@
+---
+title: "Live Webconnected Document"
+output: html_document
+runtime: shiny
+---
+
+Need a better grammer to specify what portion of the subgraph you want.
+
+Can pretty easily add ability to persist any info from here.
+
+
+```{r, echo = FALSE}
+
+library("RNeo4j")
+
+library(igraph)
+library(d3Network)
+
+igraph_2_d3 <- function(igr) {
+  Source <- c()
+  Target <- c()
+  
+  x <- V(igr)
+  for (i in seq(length(E(igr)))) {
+    e <- get.edge(igr, i)
+    
+    s <- if(is.null(x[e[1]]$name)) x[e[1]] else x[e[1]]$name
+    t <- if(is.null(x[e[2]]$name)) x[e[2]] else x[e[2]]$name
+    Source <- c(Source, s)
+    Target <- c(Target, t)
+  }
+  
+  data.frame(Source, Target)
+}
+
+# Create connection to graph database
+graph <- startGraph("http://localhost:7474/db/data/")
+
+
+types <- cypher(graph, 'match n return DISTINCT head(n.domain) limit 20;')[-1, 1]
+
+shinyApp(
+  
+  ui = fluidPage(
+      tags$head(tags$script(src = 'http://d3js.org/d3.v3.min.js')), 
+        selectInput("n_breaks", label = "Number of people:",
+              choices = c(5, 15, 25, 50, 1000), selected = 15),
+        selectInput("dom", label = "What subgraph:",
+              choices = c(types), selected = 'karate'),
+      textInput('txt', 'Comment', value = ""),
+      textInput('name', 'Name', value = ""),
+      actionButton('go', "Submit"),
+    htmlOutput('networkPlot')
+    
+  ),
+  
+  server = function(input, output) {
+  
+    a <- "MATCH (n)-[]->(m) where n.domain = '"
+    b <- "' return n.name, m.name;"
+    c <- "' return  ID(n), ID(m);"
+
+
+    reactiveB <- reactive({
+      cmt <- createNode(graph, 'Comment', txt = input$txt, domain = input$dom)
+      nd <- getNodes(graph, paste0('start n = node(', as.numeric(input$name), 
+                                   ') return n;'))[[1]]
+     print(class(nd))
+     print(class(cmt))
+      createRel(cmt, 'Commented', nd, domain = input$dom)
+    })
+
+    observe({
+      if(input$go) reactiveB()
+    })
+
+
+    output$networkPlot <- renderPrint({
+      q <- cypher(graph, paste0(a, input$dom, c))
+      if(is.na(q[1, 1])) {
+        q <- cypher(graph, paste0(a, input$dom, c))
+      }
+      q <- q[1:min(nrow(q):input$n_breaks), ]
+      qq <- graph.data.frame(q)
+
+      d3SimpleNetwork(igraph_2_d3(qq), width = 800, height = 350,
+                    textColour = 'orange', linkColour = 'red',
+                    parentElement = '#networkPlot')
+})
+  },
+  
+  options = list(height = 600)
+)
+```
+
+
+
