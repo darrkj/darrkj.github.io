@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<!-- saved from url=(0014)about:internet -->
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+<meta http-equiv="x-ua-compatible" content="IE=9" >
+
+<title>MMA Network</title>
+
+
+<link rel="stylesheet" type="text/css" href="../../stylesheets/blog.css">
+
+<!-- Styles for R syntax highlighter -->
+<link rel="stylesheet" type="text/css" href="../../stylesheets/blog2.css">
+
+    <link rel="stylesheet" type="text/css" href="../../stylesheets/stylesheet.css" media="screen" />
+    <link rel="stylesheet" type="text/css" href="../../stylesheets/pygment_trac.css" media="screen" />
+    <link rel="stylesheet" type="text/css" href="../../stylesheets/print.css" media="print" />
+
+<!-- R syntax highlighter -->
+<script src="../../javascripts/r.js"></script>
+
+
+</head>
+
+<body>
+
+<div class="container">
+
+
+    <header>
+      <div class="container">
+        <h1>MMA Network</h2>
+
+<h4 class="author"><em>Kenny Darrell</em></h4>
+<h4 class="date"><em>November 15, 2014</em></h4>
+        </section>
+      </div>
+    </header>
+
+
+<div id="history" class="section level3">
+<h3>History</h3>
+<p>Mixed Martial Arts (MMA) is a new sport, but it has grown pretty fast. I remember being young and seeing advertisments for the first UFC event. Being a kid from the eighties who enjoyed profesional wrestling I was pretty fascinated. It was a different beast back then in the early ninties. It has evolved into a very large and organized sport.</p>
+<p>There are also different organizations in this realm, <a href="http://www.bellator.com/">Bellator</a>, <a href="http://en.wikipedia.org/wiki/Pride_Fighting_Championships">PRIDE</a> and <a href="http://www.ufc.com/">UFC</a>.</p>
+<p>For many reasons this interests me. If you have read any of my past blogs you can see lots if topics related to sports. My other intersts of temoral data and network data are both very appearent here. (Needs more)</p>
+</div>
+<div id="espn" class="section level3">
+<h3>ESPN</h3>
+<p>Talk about pulling data from ESPN</p>
+<p>There are quite a few sources for information in this area. Some are pretty explicit about not scrpping data and others seem to be more open. There is alot of data on <a href="http://espn.go.com/mma/">ESPN</a>. To pull this data I used the new <a href="https://github.com/hadley/rvest">rvest</a> package which made things very easy than other methods I have used in the past. I tried to use some of the newer webscriping tools but ran into some issues. I hope that these tools continue to evolve, and perhaps I should retry or try others to see which ones are more capable, perhaps a blog for another day.</p>
+<p>Using rvest and dplyr together makes the code look like a pipeline, very clean and readable.</p>
+<pre class="r"><code>'http://espn.go.com/mma/fighters' %&gt;% 
+  html() %&gt;%
+  html_nodes('.evenrow, a') %&gt;% 
+  html_attrs() %&gt;%
+  grep('/fighter/', ., value = T) %&gt;%
+  sapply(function(x) x[[1]]) %&gt;%
+  as.character() %&gt;%
+  head()</code></pre>
+<pre><code>## [1] &quot;/mma/fighter/_/id/3043549/niina-aaltonen&quot;   
+## [2] &quot;/mma/fighter/_/id/2504991/tom-aaron&quot;        
+## [3] &quot;/mma/fighter/_/id/3088828/joshua-aarons&quot;    
+## [4] &quot;/mma/fighter/_/id/3089919/mike-aarts&quot;       
+## [5] &quot;/mma/fighter/_/id/2511451/zyad-abada&quot;       
+## [6] &quot;/mma/fighter/_/id/2966179/kadzhik-abadzhyan&quot;</code></pre>
+<pre class="r"><code>'http://espn.go.com/mma/fighter/history/_/id/3031574/matthew-lozano' %&gt;%
+  html() %&gt;% 
+  html_nodes('div div div .evenrow td') %&gt;%
+  html_text() %&gt;%
+  matrix(ncol = 7, byrow = T) %&gt;%
+  data.frame() %&gt;%
+  select(date = X1, opponent = X3, result = X4, method = X5, time = X7)</code></pre>
+<pre><code>##           date      opponent result                      method time
+## 1 Oct 11, 2013   Klayton Mai    Win Submission (Triangle Choke) 1:14
+## 2 Oct 19, 2012   Dave Morgan    Win Submission (Triangle Choke) 2:28
+## 3 Jun 29, 2012 Joshua Aarons    Win Submission (Triangle Choke) 4:23</code></pre>
+<pre class="r"><code>'http://espn.go.com/mma/fighter/stats/_/id/3031574/matthew-lozano' %&gt;% 
+  html() %&gt;%
+  html_nodes('.general-info li') %&gt;% 
+  html_text()</code></pre>
+<pre><code>## [1] &quot;Bantamweight&quot;    &quot;5'7\&quot;, 135 lbs.&quot;</code></pre>
+<p>You can set up a process to pull the data in its entirety by putting a few loops or lapply functions around the above code. You then need to clean it up a bit and get it into a tidy data format. You can find my attempt here.</p>
+<p>Link to flat files or RData files here.</p>
+<pre class="r"><code>load('final_espn.RData')
+
+head(fights)</code></pre>
+<pre><code>
+##        id       date                   opp     result
+## 1 3032062 2011-09-03       eduard folayang       Loss
+## 2 3032062 2010-09-24         guangyou ning        Win
+## 3 3050604 2010-02-21           john robles       Loss
+## 4 2557041 2009-08-15      francisco rivera       Loss
+## 5 2499256 2004-12-18             dan hardy       Loss
+## 6 2504979 2010-05-07            keto allen       Loss
+##                opp result                  dec round time   oppid exp
+## 1  eduard folayang   Loss Decision - Unanimous     3 5:00 2975101   2
+## 2    guangyou ning    Win   Unanimous Decision     3 5:00 2996677   1
+## 3      john robles   Loss                   KO     1 0:48 3044362   1
+## 4 francisco rivera   Loss    Majority Decision     3 5:00 2531855   1
+## 5        dan hardy   Loss                   KO     1 0:13 2354205   1
+## 6       keto allen   Loss                  TKO     1 2:58 2504978   1</code></pre>
