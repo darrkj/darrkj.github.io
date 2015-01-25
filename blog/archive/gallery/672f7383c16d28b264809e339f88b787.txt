@@ -1,0 +1,10 @@
+Source: local data frame [6 x 3]
+Groups: Start.terminal, End.terminal
+
+  Start.terminal End.terminal       route
+1          31249        31258 0.006134969
+2          31249        31258 0.006134969
+3          31249        31258 0.006134969
+4          31249        31258 0.006134969
+5          31258        31258 0.004601227
+6          31258        31247 0.004601227
