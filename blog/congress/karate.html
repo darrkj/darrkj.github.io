@@ -1,0 +1,142 @@
+<html>
+  <head>
+  <link rel="stylesheet" href="http://cdn.graphalchemist.com/alchemy.min.css"/>
+  </head>
+<body>
+  <script src="http://cdn.graphalchemist.com/alchemy.min.js"></script>  
+  <div id="alchemy" class="alchemy"></div> 
+  
+  <script type="text/javascript">
+     var some_data = 
+      {"nodes": [
+{"id":"1","caption":"Mr Hi","cluster":1},
+{"id":"2","caption":"Actor 2","cluster":1},
+{"id":"4","caption":"Actor 4","cluster":1},
+{"id":"8","caption":"Actor 8","cluster":1},
+{"id":"12","caption":"Actor 12","cluster":1},
+{"id":"13","caption":"Actor 13","cluster":1},
+{"id":"18","caption":"Actor 18","cluster":1},
+{"id":"20","caption":"Actor 20","cluster":1},
+{"id":"22","caption":"Actor 22","cluster":1},
+{"id":"3","caption":"Actor 3","cluster":2},
+{"id":"10","caption":"Actor 10","cluster":2},
+{"id":"14","caption":"Actor 14","cluster":2},
+{"id":"29","caption":"Actor 29","cluster":2},
+{"id":"5","caption":"Actor 5","cluster":3},
+{"id":"6","caption":"Actor 6","cluster":3},
+{"id":"7","caption":"Actor 7","cluster":3},
+{"id":"11","caption":"Actor 11","cluster":3},
+{"id":"17","caption":"Actor 17","cluster":3},
+{"id":"9","caption":"Actor 9","cluster":4},
+{"id":"15","caption":"Actor 15","cluster":4},
+{"id":"16","caption":"Actor 16","cluster":4},
+{"id":"19","caption":"Actor 19","cluster":4},
+{"id":"21","caption":"Actor 21","cluster":4},
+{"id":"23","caption":"Actor 23","cluster":4},
+{"id":"31","caption":"Actor 31","cluster":4},
+{"id":"32","caption":"Actor 32","cluster":4},
+{"id":"33","caption":"Actor 33","cluster":4},
+{"id":"34","caption":"John A","cluster":4},
+{"id":"24","caption":"Actor 24","cluster":5},
+{"id":"25","caption":"Actor 25","cluster":5},
+{"id":"26","caption":"Actor 26","cluster":5},
+{"id":"28","caption":"Actor 28","cluster":5},
+{"id":"27","caption":"Actor 27","cluster":6},
+{"id":"30","caption":"Actor 30","cluster":6}
+
+        ],
+      "edges": [
+{"source":"1","target":"2"},
+{"source":"1","target":"3"},
+{"source":"1","target":"4"},
+{"source":"1","target":"5"},
+{"source":"1","target":"6"},
+{"source":"1","target":"7"},
+{"source":"1","target":"8"},
+{"source":"1","target":"9"},
+{"source":"1","target":"11"},
+{"source":"1","target":"12"},
+{"source":"1","target":"13"},
+{"source":"1","target":"14"},
+{"source":"1","target":"18"},
+{"source":"1","target":"20"},
+{"source":"1","target":"22"},
+{"source":"1","target":"32"},
+{"source":"2","target":"3"},
+{"source":"2","target":"4"},
+{"source":"2","target":"8"},
+{"source":"2","target":"14"},
+{"source":"2","target":"18"},
+{"source":"2","target":"20"},
+{"source":"2","target":"22"},
+{"source":"2","target":"31"},
+{"source":"3","target":"4"},
+{"source":"3","target":"8"},
+{"source":"3","target":"9"},
+{"source":"3","target":"10"},
+{"source":"3","target":"14"},
+{"source":"3","target":"28"},
+{"source":"3","target":"29"},
+{"source":"3","target":"33"},
+{"source":"4","target":"8"},
+{"source":"4","target":"13"},
+{"source":"4","target":"14"},
+{"source":"5","target":"7"},
+{"source":"5","target":"11"},
+{"source":"6","target":"7"},
+{"source":"6","target":"11"},
+{"source":"6","target":"17"},
+{"source":"7","target":"17"},
+{"source":"9","target":"31"},
+{"source":"9","target":"33"},
+{"source":"9","target":"34"},
+{"source":"10","target":"34"},
+{"source":"14","target":"34"},
+{"source":"15","target":"33"},
+{"source":"15","target":"34"},
+{"source":"16","target":"33"},
+{"source":"16","target":"34"},
+{"source":"19","target":"33"},
+{"source":"19","target":"34"},
+{"source":"20","target":"34"},
+{"source":"21","target":"33"},
+{"source":"21","target":"34"},
+{"source":"23","target":"33"},
+{"source":"23","target":"34"},
+{"source":"24","target":"26"},
+{"source":"24","target":"28"},
+{"source":"24","target":"30"},
+{"source":"24","target":"33"},
+{"source":"24","target":"34"},
+{"source":"25","target":"26"},
+{"source":"25","target":"28"},
+{"source":"25","target":"32"},
+{"source":"26","target":"32"},
+{"source":"27","target":"30"},
+{"source":"27","target":"34"},
+{"source":"28","target":"34"},
+{"source":"29","target":"32"},
+{"source":"29","target":"34"},
+{"source":"30","target":"33"},
+{"source":"30","target":"34"},
+{"source":"31","target":"33"},
+{"source":"31","target":"34"},
+{"source":"32","target":"33"},
+{"source":"32","target":"34"},
+{"source":"33","target":"34"}
+        ]
+      };
+    </script>
+  
+    <script type="text/javascript">
+        var config = {dataSource: some_data};
+        alchemy.begin({"dataSource": some_data,
+            nodeCaption: 'caption', 
+            nodeMouseOver: 'caption',
+            cluster: true,
+            clusterColours: ["#1B9E77","#D95F02","#7570B3","#E7298A","#66A61E","#E6AB02"]})
+    </script>
+
+</body>
+</html>
+  
