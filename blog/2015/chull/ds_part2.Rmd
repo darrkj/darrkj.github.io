@@ -1,0 +1,105 @@
+---
+title: "Untitled"
+author: "Kenny Darrell"
+date: "January 31, 2015"
+output: html_document
+---
+
+In my last [post](http://darrkj.github.io/blog/jan182015/) I spoke about using R6 data structures and why it was so important to be able to create efficient and idiomatic version of these data structures. I felt as though the post was a little lacking though. I never said why this was so necessary or where you need them. I thought it may be good to expand on it some and show where such things may be useful.
+
+One place where data structures come in handy is the construction of algorithms. Many algorithms can be quite daunting to write if you don't have any of the required data structures. Stacks are fundamental data structures that are a part of a large number of algorithms. I did a search for the word stack in [The Algorithms Book](http://mitpress.mit.edu/books/introduction-algorithms) and took a random instance where it was used as a building block of an algorithm. This resolved to the [Graham Scan](http://en.wikipedia.org/wiki/Graham_scan) algorithm which is used to find the [Convex Hull](http://en.wikipedia.org/wiki/Convex_hull), which is a fundamental problem in [computational geometry](http://en.wikipedia.org/wiki/Computational_geometry). There is currently a function that will find the convex hull of a set of points in R called `chull`. If it did not exist, or if you wanted to learn about it by implementing your own or if you needed to implement another algorithm you would need the stack data structure I created last time.
+
+```r
+library(R6)
+
+Stack <- R6Class("Stack",
+    public = list(
+        data = NA,
+        initialize = function(data, ...) {
+            if (!missing(data)) {
+              self$data <- as.list(c(data, ...))
+            } else {
+              self$data <- list()
+            }
+        },
+        #
+        size = function() length(self$data),
+        #
+        push = function(item) self$data[[self$size() + 1]] <- item,
+        #
+        pop = function() {
+            if (self$size() == 0) return(NULL)
+            value <- self$data[[self$size()]]
+            self$data[[self$size()]] <- NULL
+            value
+        },
+        top = function() self$data[[self$size()]],
+        next_top = function() self$data[[self$size() - 1]]
+    )
+)
+```
+
+The algorithm in question also needs two new capabilities added to the stack implementation, a top and a next_top. The return the value but do not pop it off of the data structure. This is akin to the peak capability often given to a Queue data structure. These are quite trivial to add and can be seen in the code above. Now on to creating the algorithm.
+
+
+```r
+convex_hull <- function(data) {
+  # Graham Scan Algorithm
+  data <- data[!duplicated(data[, 1:2]), ]
+  # Get point with minimum y value.
+  miny <- data[data$y == min(data$y), ]
+  
+  # If more than one point at min y, take point with min x
+  if (nrow(miny) > 1) miny <- miny[miny$x == min(miny$x), ]
+  
+  # Remove min y point from data
+  data <- data[data$y != miny$y & data$x != miny$x, ]
+  
+  delta_y <- (data$y - miny$y)
+  delta_x <- (data$x - miny$x) 
+  
+  data$deg <- asin(delta_y / sqrt(delta_y ^ 2 + delta_x ^ 2))
+  data$deg <- ifelse(delta_x < 0, (pi/2) - data$deg + (pi/2), data$deg)
+  
+  # Sort by polor angle
+  data <- data[order(data$deg), ]
+  
+  # Add min y point to head and tail of data.
+  new <- plyr::rbind.fill(miny, data, miny)
+  new$id <- 1:nrow(new)
+  
+  # Create stack data structure, and init with 1, 2 and 3.
+  S <- Stack$new()
+  S$push(1); S$push(2); S$push(3)
+  
+  for (i in 4:max(new$id)) {
+    cross <- -1
+    while (cross < 0) {
+      f <- S$next_top(); s <- S$top()
+      cross <- (new$x[s] - new$x[f]) * (new$y[i] - new$y[f]) - 
+        (new$y[s] - new$y[f]) * (new$x[i] - new$x[f])
+      
+      if (cross < 0) S$pop()
+    }
+    S$push(i)
+  }
+  
+  result <- c()
+  for(i in 1:S$size()) {
+    result <- c(result, new[new$id == S$pop(), ]$id)
+  }
+  
+  new[rev(result[-1]), -which(names(new) %in% c('deg', 'id'))]
+}
+
+```
+
+We can use this code to create an interesting application. It can let us explore what convex hull really is.
+
+Just click anywhere.
+
+Need iframe around this
+https://darrkj.shinyapps.io/chull/
+
+Nothing groundbreaking was added but I feel as though my last post is a little more justified now.
+
