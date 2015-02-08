@@ -200,13 +200,13 @@ path &lt;- read.log('LOG_2014-08-30_11-59-00K330_3-axis_Accelerometer.log')
 
 plotGPS(path, v = 500)</code></pre>
 
-<div style="text-align:center;"> <iframe src="http://darrkj.github.io/blog/aug302014/plot" width="650" height="450"></iframe></div>
+<div style="text-align:center;"> <iframe src="http://darrkj.github.io/blog/2014/aug302014/plot" width="650" height="450"></iframe></div>
 
 
 <pre class="r"><code>plotGPS(path, v = 3000)</code></pre>
 
 
-<div style="text-align:center;"> <iframe src="http://darrkj.github.io/blog/aug302014/plot" width="650" height="450"></iframe></div>
+<div style="text-align:center;"> <iframe src="http://darrkj.github.io/blog/2014/aug302014/plot" width="650" height="450"></iframe></div>
 
 
 <p>It looks like there is an upper limit to the number of points I can place on the map. The map looks exactly the same and it is a clear giveaway when it says in the top left corner that some data was truncated. I can down-sample it by doing the following.</p>
@@ -214,7 +214,7 @@ plotGPS(path, v = 500)</code></pre>
 
 
 
-<div style="text-align:center;"> <iframe src="http://darrkj.github.io/blog/aug302014/plot2" width="650" height="450"></iframe></div>
+<div style="text-align:center;"> <iframe src="http://darrkj.github.io/blog/2014/aug302014/plot2" width="650" height="450"></iframe></div>
 
 
 <p>That is pretty rough though. We can eliminate many rows by just removing points that have the same latitude and longitude, this was a point in time where I was standing still. Now I am starting to think I need more utility functions to process this data though.</p>
@@ -224,7 +224,7 @@ plotGPS(path, v = 500)</code></pre>
 plotGPS(newPath[seq(1, 1625, 8), ], v = -1)</code></pre>
 
 
-<div style="text-align:center;"> <iframe src="http://darrkj.github.io/blog/aug302014/plot3" width="650" height="450"></iframe></div>
+<div style="text-align:center;"> <iframe src="http://darrkj.github.io/blog/2014/aug302014/plot3" width="650" height="450"></iframe></div>
 
 
 
