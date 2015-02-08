@@ -5,7 +5,7 @@
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
 <meta http-equiv="x-ua-compatible" content="IE=9" >
 
-<title>Neo4j Soc Bal</title>
+<title>R6 DS Part 2</title>
 
 
 <link rel="stylesheet" type="text/css" href="../../../stylesheets/blog.css">
@@ -30,17 +30,103 @@
 
     <header>
       <div class="container">
-        <h1>Simplifying Things with Neo4j</h1>
+        <h1>R6 Data Structures: Part Deux</h1>
         <h2></h2>
 
 <h4 class="author"><em>Kenny Darrell</em></h4>
-<h4 class="date"><em>July 4, 2014</em></h4>
+<h4 class="date"><em>February 8, 2015</em></h4>
         </section>
       </div>
     </header>
 
 
 
+<p>In my last <a href="http://darrkj.github.io/blog/jan182015/">post</a> I spoke about using R6 data structures and why it was so important to be able to create efficient and idiomatic version of these data structures. I felt as though the post was a little lacking though. I never said why this was so necessary or where you need them. I thought it may be good to expand on it some and show where such things may be useful.</p>
+<p>One place where data structures come in handy is the construction of algorithms. Many algorithms can be quite daunting to write if you don’t have any of the required data structures. Stacks are fundamental data structures that are a part of a large number of algorithms. I did a search for the word stack in <a href="http://mitpress.mit.edu/books/introduction-algorithms">The Algorithms Book</a> and took a random instance where it was used as a building block of an algorithm. This resolved to the <a href="http://en.wikipedia.org/wiki/Graham_scan">Graham Scan</a> algorithm which is used to find the <a href="http://en.wikipedia.org/wiki/Convex_hull">Convex Hull</a>, which is a fundamental problem in <a href="http://en.wikipedia.org/wiki/Computational_geometry">computational geometry</a>. There is currently a function that will find the convex hull of a set of points in R called <code>chull</code>. If it did not exist, or if you wanted to learn about it by implementing your own or if you needed to implement another algorithm you would need the stack data structure I created last time.</p>
+<pre class="r"><code>library(R6)
+
+Stack &lt;- R6Class(&quot;Stack&quot;,
+    public = list(
+        data = NA,
+        initialize = function(data, ...) {
+            if (!missing(data)) {
+              self$data &lt;- as.list(c(data, ...))
+            } else {
+              self$data &lt;- list()
+            }
+        },
+        #
+        size = function() length(self$data),
+        #
+        push = function(item) self$data[[self$size() + 1]] &lt;- item,
+        #
+        pop = function() {
+            if (self$size() == 0) return(NULL)
+            value &lt;- self$data[[self$size()]]
+            self$data[[self$size()]] &lt;- NULL
+            value
+        },
+        top = function() self$data[[self$size()]],
+        next_top = function() self$data[[self$size() - 1]]
+    )
+)</code></pre>
+<p>The algorithm in question also needs two new capabilities added to the stack implementation, a top and a next_top. The return the value but do not pop it off of the data structure. This is akin to the peak capability often given to a Queue data structure. These are quite trivial to add and can be seen in the code above. Now on to creating the algorithm.</p>
+<pre class="r"><code>convex_hull &lt;- function(data) {
+  # Graham Scan Algorithm
+  data &lt;- data[!duplicated(data[, 1:2]), ]
+  # Get point with minimum y value.
+  miny &lt;- data[data$y == min(data$y), ]
+  
+  # If more than one point at min y, take point with min x
+  if (nrow(miny) &gt; 1) miny &lt;- miny[miny$x == min(miny$x), ]
+  
+  # Remove min y point from data
+  data &lt;- data[data$y != miny$y &amp; data$x != miny$x, ]
+  
+  delta_y &lt;- (data$y - miny$y)
+  delta_x &lt;- (data$x - miny$x) 
+  
+  data$deg &lt;- asin(delta_y / sqrt(delta_y ^ 2 + delta_x ^ 2))
+  data$deg &lt;- ifelse(delta_x &lt; 0, (pi/2) - data$deg + (pi/2), data$deg)
+  
+  # Sort by polor angle
+  data &lt;- data[order(data$deg), ]
+  
+  # Add min y point to head and tail of data.
+  new &lt;- plyr::rbind.fill(miny, data, miny)
+  new$id &lt;- 1:nrow(new)
+  
+  # Create stack data structure, and init with 1, 2 and 3.
+  S &lt;- Stack$new()
+  S$push(1); S$push(2); S$push(3)
+  
+  for (i in 4:max(new$id)) {
+    cross &lt;- -1
+    while (cross &lt; 0) {
+      f &lt;- S$next_top(); s &lt;- S$top()
+      cross &lt;- (new$x[s] - new$x[f]) * (new$y[i] - new$y[f]) - 
+        (new$y[s] - new$y[f]) * (new$x[i] - new$x[f])
+      
+      if (cross &lt; 0) S$pop()
+    }
+    S$push(i)
+  }
+  
+  result &lt;- c()
+  for(i in 1:S$size()) {
+    result &lt;- c(result, new[new$id == S$pop(), ]$id)
+  }
+  
+  new[rev(result[-1]), -which(names(new) %in% c('deg', 'id'))]
+}
+</code></pre>
+<p>We can use this code to create an interesting application. It can let us explore what convex hull really is.</p>
+<p>Just click anywhere.</p>
+<p>Need iframe around this <a href="https://darrkj.shinyapps.io/chull/" class="uri">https://darrkj.shinyapps.io/chull/</a></p>
+<p>Nothing groundbreaking was added but I feel as though my last post is a little more justified now.</p>
+
+
+</div>
 
 
 
