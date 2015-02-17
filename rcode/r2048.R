@@ -146,4 +146,4 @@ auto_play <- function(p = c(.25, .25, .25, .25)) {
 }
 
 
-#auto_play(gen_board(), c(.25, .25, .25, .25)) 
+#auto_play(c(.25, .25, .25, .25)) 
