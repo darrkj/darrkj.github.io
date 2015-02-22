@@ -142,7 +142,7 @@ auto_play <- function(p = c(.25, .25, .25, .25)) {
     j <- j + 1
     b
   }
-  c(board_sum = sum(b), max = max(b), moves = j)
+  data.frame(board_sum = sum(b), max = max(b), moves = j, log_sum = sum(log2(b)), depth = log2(max(b)))
 }
 
 
