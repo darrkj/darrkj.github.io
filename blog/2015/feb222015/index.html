@@ -49,7 +49,7 @@
 <pre class="r"><code>devtools::source_url('https://raw.githubusercontent.com/darrkj/darrkj.github.io/master/rcode/r2048.R')</code></pre>
 <pre><code>## SHA-1 hash of file is bb990681619d5e7dc3928fd77345347cea459d0a</code></pre>
 
-<p>We can play the game in the R console as can ve seen below. I thought about making an app to let you play it from either Shiny or R-Fiddle. It looks pretty bad though as I only made it playable for testing the game logic.</p>
+<p>We can play the game in the R console as can be seen below. I thought about making an app to let you play it from either Shiny or R-Fiddle. It looks pretty bad though as I only made it playable for testing the game logic.</p>
 
 
 <pre><code>play(gen_board())
@@ -71,7 +71,7 @@
 </code></pre>
 
 
-<p>The real way to use this is by simulating a game, or a large number of games. With this you can feed a stratagy to play the game. SO it is really meant more as a harness around the game. Now we can simulate an entire game by running the following.</p>
+<p>The real way to use this is by simulating a game, or a large number of games. With this you can feed a strategy to play the game. So it is really meant more as a harness around the game. Now we can simulate an entire game by running the following.</p>
 <pre class="r"><code>auto_play()</code></pre>
 <pre><code>##   board_sum max moves log_sum depth
 ## 1       308 128   153      47     7</code></pre>
