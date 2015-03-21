@@ -1,0 +1,56 @@
+---
+title: "Untitled"
+author: "Kenny Darrell"
+date: "March 13, 2015"
+output: html_document
+---
+
+### A Technology Stack For Data Science
+
+Last [time](http://darrkj.github.io/blog/2015/mar142015/) I mentioned how I wanted to diversify my posts and write more on the softer side of data science. This is my first attempt.
+
+Lately I have done some reflection over lots of projects I have worked on, especially with The [Three legged Stool of an Analytics Project](http://www.predictiveanalyticsworld.com/patimes/three-legged-stool-analytics-project/) requiring me to think through many projects I have worked on over the years. This was pretty enlightening.
+
+Here are a few things I realized in that exercise. A lot of projects are missing some peice of technology. There is no common set of tools, data science does not have a default software stack. At work we have a default request list for software but this is not really a stack.
+
+
+I started thinkin about what I need to get going and make some real progress. I need a tool that can process data and model/analyse data. The key here is the process part. I have worked on many projects where I have been given a set of tools, hence what I had to work with was mostly out of my control. Many project get software that lets them build models around the data, they give lots of methods for anaysis, but can fall short in the area of processing, cleaning and reshaping the data. The title of this [article](http://www.nytimes.com/2014/08/18/technology/for-big-data-scientists-hurdle-to-insights-is-janitor-work.html?_r=0") says it all. This is to bad because most of the time and effort is spent cleaning and reshaping data. Getting it into a [Tidy Data](http://vita.had.co.nz/papers/tidy-data.pdf) format. 
+
+This makes sense though as many enterprise tools claim to be for analyzing data. There are plenty of tools that just do one side but some that give capabilites in each. 
+
+[SPSS Modeler](http://www-01.ibm.com/software/analytics/spss/products/modeler/) and [Enterprise Miner](http://www.sas.com/en_us/software/analytics/enterprise-miner.html) are more on the side of analysis while [bash](http://www.gnu.org/software/bash/) and [perl](https://www.perl.org/) are more on the side of processing. I think that [Python](https://www.python.org/) and [R](http://www.r-project.org/) are the big two that fit into both camps. Given one of these, I prefer R, you can do all of the prep work that is often hard in a purely modeling tool and then you can build the model or perform the needed analysis.
+
+Another thing that comes up a lot is a place to store data. I am not talking about a production data base here. This is important but for most of the analytics life cycle you need something further removed from anything production or enterprise. You need more flexibility. I have found that [Neo4j](http://neo4j.com/) does a great job of this. I often get many questions on this and most of it seems to come from the way Neo4j is typically used. What I am really talking about here is how I view data during this phase. I often have a bunch of types of things (nodes) and ways that those things are realted (edges) and then some data related to each (properties). I have worked on many projects where we have a relationa database at this stage. We often end up with lots of tables that are all very similar. As we get new data we create a new table, sometimes the same as an already existing table with on new field. If I start to break the data up into things and how they are realted it is very easy to incorperate this new data into my current data in a much cleaner way. This does deviate from the normal usage here though, but I am mre interested in how I can use it to my advantage than what it was meant to do. This talk I gave may shed some light on what I am talking about here.
+
+
+I did this presentation on data science and neo4j.
+
+
+
+
+Another thing that is needed is a way to create visualizations or graphs. In many posts I have talked about or displayed things done in [D3](http://d3js.org/), [Shiny](http://shiny.rstudio.com/), [ggplot2](http://ggplot2.org/) and [Tableau](http://www.tableau.com/. I think that these are all amazing tools but for shear exploratory types of work that I find myself doing most often, Tableau has the least impedence. In Shiny I have to create a mechanism for everything to be interative and a plot for each. Since I can use either D3 or ggplot2 here it is not that bad, but it is not at the speed of thought. I have see something in a plot that cuases me to switch gears and ask a new question I often have to create a new app. On there own D3 and ggplot2 are very different. D3 will let me create a very precise interactive visualization that is very easy to distribute. ggplot2 lets me create a plot to answer a question I have of the data, I can also clean it up a bit and make it look very nice to put in a report or a paper. For getting a deep understanding all aspects of the data as quickly as possible Tableau rocks.
+
+The last thing that is needed is a way to track what you have done, a way to go back and change some of the code you wrote when you learn something new about the data. When you first get data you have all sorts of known unknowns and unknown unknowns. I usually start by importing the data somewhere and creating some quick plots. I figure out what I have and then try to persist it somewhere. Then I will think of a bunch of questions that turn into smaller analysis. I may be writing code to do many things in parallel. If I learn something or clear up one of the unknowns in one area I need to go back and change something from another since the assumtion wrong or I can be more pricese since what was unknown is now known. This is where [git](http://git-scm.com/) is perfect, it will also do a lot more for you as well. It can make it easier to work in a group of analysts, have various branches in different states, etc
+
+There are many tools I have mentioned here but four that really stick out as prominent. There are also many tools that I have used for very specific purposes aside form these. It does seem though that the 80/20 rule is valid here. I can get 80%, if not more, of my work done with 20% of the available tools. This again is not taking about putting something in production, this is me finding my way in the data, figuring out what it is trying to say, validating what it is claiming to be, a creating some proof of concept models that show that it can be used to solve some problem. These four tools are Git, Neo4j, Tableau, and R. 
+
+I did find a few mentions of something along these lines [here](http://thenewstack.io/oreilly-survey-data-scientists-make-good-money-but-women-dont-get-paid-as-well-as-men/) and [here](https://becomingadatascientist.wordpress.com/2013/07/26/choosing-a-data-science-technology-stack-w-survey/). There was no data science [LAMP](http://en.wikipedia.org/wiki/LAMP_%28software_bundle%29) (Linux, Apache HTTP Server, MySQL, PHP) stack though. The thoughts for data science stacks where a bit too open. I was thinking it would be nice to have something more opinionated. If there is some opposition to this that would be great as well. The lamp stack now has the [MEAN](http://en.wikipedia.org/wiki/MEAN) (MongoDB, Express.js, AngularJS, Node.js) stack. You can now argue about the pros and cons of each of them in a reasonable way since they have been realized. I don't intend a for a flame war to be created or thought of as useful but it is impossible to say where something fails without actually having the thing defined. There may be stacks that are more specific for various types of data science work. For instance if you are working with truly large amounts of data you may have some stack that revolves around [Spark](https://spark.apache.org/) or [Hadoop](http://hadoop.apache.org/). There may also be something very similar to this if you switch up each tool for the next best, which may be the best in some people's eyes, like Python over R, [SQLite](https://sqlite.org/) over Neo4j, [QlikView](http://www.qlik.com/) over Tableau and [Mercurial](http://mercurial.selenic.com/) over Git. You could go to the other extreme and just switch out one tool, or anything in between.
+
+What this still needs though is an acronym. The two that came to mind, and they are a little fudged since nothing here starts with a vowel.
+
+trng pronounced TURiNG - TableaU R Neoj Git
+
+ntgr pronounced iNTeger - Neo4j TablEau Git R
+
+I was leaning towards the Turing acronym though.
+
+This stack that I have laid out here is really great for another reason. Anybody can download git and R from there sites and Neo4j and Tableau free versions that anybody can download. Many tools in the data science realm come with a price tag or require you to have a cluster to run on. For this reason it is hard to train up on tools, for the aspiring data scientist this is a real pain. The self education process requires that you have the tools you need. Some of the larger enterprise tools like SAS have started to create some student version that are free or minimal in cost. There is also some debate though as to what a student is. Somebody wanting to change fields who plays with data in there free time is a student of data science but may not have the student id from an accredited university to get some of these types of access. But each of these tools allows aspiring data scientists to navigate to a few different sites and they can be up and running in a few hours. 
+
+
+
+
+
+
+
+
+
