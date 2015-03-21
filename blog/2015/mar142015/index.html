@@ -1,0 +1,137 @@
+
+<!DOCTYPE html>
+<!-- saved from url=(0014)about:internet -->
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+<meta http-equiv="x-ua-compatible" content="IE=9" >
+
+<title>DS Stool</title>
+
+
+<link rel="stylesheet" type="text/css" href="../../../stylesheets/blog.css">
+
+<!-- Styles for R syntax highlighter -->
+<link rel="stylesheet" type="text/css" href="../../../stylesheets/blog2.css">
+
+    <link rel="stylesheet" type="text/css" href="../../../stylesheets/stylesheet.css" media="screen" />
+    <link rel="stylesheet" type="text/css" href="../../../stylesheets/pygment_trac.css" media="screen" />
+    <link rel="stylesheet" type="text/css" href="../../../stylesheets/print.css" media="print" />
+
+<!-- R syntax highlighter -->
+<script src="../../../javascripts/r.js"></script>
+
+
+</head>
+
+<body>
+
+<div class="container">
+
+
+    <header>
+      <div class="container">
+        <h1>Three Legged Stool</h1>
+        <h2></h2>
+
+<h4 class="author"><em>Kenny Darrell</em></h4>
+<h4 class="date"><em>March 15, 2015</em></h4>
+        </section>
+      </div>
+    </header>
+
+
+
+<p>A few months back I wrote an article on the <a href="http://www.predictiveanalyticsworld.com/patimes/">Predictive Analytics Times</a>. One thing that I really thought was interesting about writing this was that it was not really that technical. For a while I have somewhat resisted writing my thoughts here unless there was some code or something to go along with it.</p>
+
+<p>I think I may try to write more on these types of subjects as they give me a good place to persist some of my thoughts and also force me to polish them up a bit. If anybody else is able to learn from them as well that is an additional bonus. I have included the gist of that article below.</p>
+
+
+
+<p>Perhaps you have heard <a href="http://www.informationweek.com/big-data/software-platforms/big-data-meets-trough-of-disillusionment-gartner/d/d-id/898939">rumors</a> going around that analytics is marching into the “trough of disillusionment”?  Or pundits who say that analytics may fail to provide <a href="https://gigaom.com/2015/01/23/the-promise-of-big-data-still-looms-but-execution-lags/">results</a>?  One reason those claims have a grain of truth is that people have failed to even allow their projects to succeed.</p>
+
+
+<p>What does an analytics project need to get off on the right foot? It is a short list: a three legged stool. (How have we gone this long without that metaphor? Every field has a 3-legged stool – even Big Data, though it’s very <a href="http://www.forbes.com/sites/prospernow/2014/04/23/three-legs-of-big-data-stool-needed-for-success/">different</a>.</p>
+
+
+<p>If you have been following along in Predictive Analytics Times, John Elder is doing a great job digging into the Top 10 Data Mining Mistakes. The lessons learned from these are a cornerstone to a great project, but many of them detail things that occur once the project is moving forward. Without addressing a few things up front you may never even get to the point where you have to confront one of these issues. You could fail before you even start.</p>
+
+<p>So what are the three legs? It starts off with &#8212; no surprise &#8212; <em>data</em>. “It is a capital mistake to theorize before one has data. Insensibly one begins to twist facts to suit theories, instead of theories to suit facts” said Sherlock Holmes. There are many finer points to consider &#8212; do you have the correct data, how was the data sampled, etc. &#8212; but these are moot without some data to start with.</p>
+
+<p>Once you have data you come to the second leg of the stool: a <em>problem</em> or a goal to meet. In a typical project the need is explained by a client and a smart data scientist will mold that squishy real-world problem into a crisp approximation that is solvable via data science. If the client can’t articulate the problem well, the analyst needs some real freedom to explore the business situation and access to a good bit of subject matter expertise to root out a good goal.</p>
+
+
+<p>The third leg of the stool, and often the one I find most ignored, is a little hard to define. You need the <em>ability to take action</em> on the problem or illuminate the best path at a critical decision point. A human needs to be presented with facts and other data products to steer some action to a desirable outcome (faster, better, cheaper). Or a machine needs to be given a model that can cause the action with the most positive expected outcome given the input. The key is to do analysis to take action, not for its own sake.</p>
+
+
+<p>It may seem hard to believe that projects lacking any of these could exist. For the doubtful reader I can assure you they do. I have been involved in projects for every possible permutation of these three binary conditions (legs). And not just ones missing one leg but two or even all three!</p>
+
+<p><strong>Data, Problem, Actionability </strong></p>
+
+<p>In the literature, the closest I could find to the third leg (actionability) is discussion of model feasibility. Is the model practical to use? A strong example is Netflix not using the (million dollar) Netflix Competition Winner because the model was too complicated to actually <a href="https://www.techdirt.com/blog/innovation/articles/20120409/03412518422/why-netflix-never-implemented-algorithm-that-won-netflix-1-million-challenge.shtml">implement</a>. And, because the business had marched on and the problem had changed by the time the contest was over a year and a half after starting. For the third leg though, I am talking about the ability to actually make a decision.</p>
+
+
+<p>Let’s examine what each of these eight cases look like and, more importantly, what you might do to get them moving forward.</p>
+
+<h3>Case NNN</h3>
+
+<p>You have nothing; these projects are merely theoretical discussions. They will not fall like most improperly supported stools because they are not even above ground to begin with. They never get anywhere and they should take very little effort. The work they do require though is very frustrating because you cannot ground any of the issues or debates in reality. If you find yourself in this situation there is no hope for success, if your goal is actually solving a problem. Lots of these projects popped off with the rise in hype about big data, and many resulted in the purchase of expensive software (shelfware).</p>
+
+<h3>Case NNY (Data)</h3>
+
+<p>If you are given data you can start to do analysis, and it often turns into everybody having different conversations at the same time. These usually resolve to “what would be useful to do” or “what algorithms should be tried” &#8211; analysis for its own sake. If you have good data scientists they will find the other two legs of the stool (a problem to solve and a set of actions to take), so long as the bureaucracy does not drive them crazy. They start asking questions, finding out where the pain and value are and how they can avoid one and capture the other. You can see who is fully on board when people start to object to these activities.</p>
+
+<h3>Case NYN (Problem)</h3>
+
+<p>If you are given a problem, the project turns into an exploration, “where could we find something that could help us”, looking for existing data to re-purpose. If you have smart data scientists and allow them to think outside of the box they will devise ways to collect the data you need or find some other data source that can be useful. This still does not spell success; you need a clever angle on how to make this practicable, which is often the hardest part because you have to change people and how they think, act and make decisions. This “soft” part of the problem is often much more difficult than the “hard” technical issues. Young techies are often blindsided by “change management” challenges as, without experience, they are completely unexpected.</p>
+
+<h3>Case YNN (Actionability)</h3>
+
+<p>If you are given a practicable place where decisions are made you need to determine a useful cost function, that will define “best”. This is trying to find the problem to focus on and how you can come out of it ahead. This is very hard when things are done anecdotally (e.g., “we do things this way because we do them this way”). Look for money to follow, and ask lots of dumb questions. Listen, take notes, repeat back what you’re hearing; keep poking.</p>
+
+<h3>Case YYN (no Data)</h3>
+
+<p>If you are only missing data, you need a scientist mindset. Brainstorm about what data could we collect, or what can we repurpose. I actually like this one; I know I can find data in this day and age. I can scrape something together from somewhere while I start to concoct experiments to get the rest.</p>
+
+<h3>Case YNY (no Problem)</h3>
+
+<p>If you are missing a problem, you are working for somebody wishing to use data science to confirm their thoughts. They dislike you telling them anything they do not believe. It is really hard work changing their minds. Best advice here is to run and not look back.</p>
+
+<h3>Case NYY (no Actionability)</h3>
+
+<p>If you are missing practicable ways to take action on your insights you can write great papers and other data scientist may learn a lot from them. No business value can be gained but you may make some interesting discoveries. A good enough paper may create a place where somebody will be called to action to make decisions. This is also the case where there are lots of regrets. Out there exist tons of data and tons of problems. People conjuring up new types of practicable actions led to Netflix, Uber and Amazon. This case is where you need obscure thinking &#8212; people who try things nobody else thinks of – people who may not know there is a “box”. If you want to hear “Why didn&#8217;t I think of that?”, my best advise is to think of &#8216;that&#8217;.</p>
+
+<h3>Case YYY</h3>
+
+<p>All systems are <strong>go</strong>, proceed to read up on the Top 10 Data Mining Mistakes.</p>
+
+
+<h3>Conclusion</h3>
+
+<p>I believe the counter-hype for predictive analytics comes from projects that exhibit one of these scenarios. Results were promised, people misunderstood what they needed and failures thereby abounded. If this has happened to you, don&#8217;t jump ship; just make sure you get started on the correct footing. Heed these warning and you can make your way into the “slope of enlightenment”. Most of these the types of projects described above are not doomed, they just need work in the correct place. Don&#8217;t think about results before you have data. Don&#8217;t think about algorithms until you know how the solution can be made practicable. Don&#8217;t think of buying software before you have a problem to solve. If you have all three, proceed to avoiding the ten mining mistakes, and to a smashing success!</p>
+
+
+
+
+<script>
+
+// add bootstrap table styles to pandoc tables
+$(document).ready(function () {
+  $('tr.header').parent('thead').parent('table').addClass('table table-condensed');
+});
+
+</script>
+
+<!-- dynamically load mathjax for compatibility with --self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://c328740.ssl.cf1.rackcdn.com/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>
+
