@@ -1,0 +1,746 @@
+<!doctype html>
+<html lang="en">
+
+	<head>
+		<meta charset="utf-8">
+
+		<title>reveal.js - The HTML Presentation Framework</title>
+
+		<meta name="description" content="A framework for easily creating beautiful presentations using HTML">
+		<meta name="author" content="Kenny Darrell">
+
+		<meta name="apple-mobile-web-app-capable" content="yes" />
+		<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, minimal-ui">
+
+		<link rel="stylesheet" href="css/reveal.css">
+		<link rel="stylesheet" href="css/theme/black.css" id="theme">
+
+		<!-- Code syntax highlighting -->
+		<link rel="stylesheet" href="lib/css/zenburn.css">
+
+		<!-- Printing and PDF exports -->
+		<script>
+			var link = document.createElement( 'link' );
+			link.rel = 'stylesheet';
+			link.type = 'text/css';
+			link.href = window.location.search.match( /print-pdf/gi ) ? 'css/print/pdf.css' : 'css/print/paper.css';
+			document.getElementsByTagName( 'head' )[0].appendChild( link );
+		</script>
+
+		<!--[if lt IE 9]>
+		<script src="lib/js/html5shiv.js"></script>
+		<![endif]-->
+	</head>
+
+	<body>
+
+		<div class="reveal">
+
+			<!-- Any section element inside of this container is displayed as a slide -->
+			<div class="slides">
+				<section>
+					<h2>Do You Speak Data?</h1>
+					<h3>March 13, 2015</h3>
+					<p>
+						<small>Kenny Darrell</small>
+					</p>
+				</section>
+				
+				
+       <section>
+        <h2>For Whom Does This Apply?</h2>
+
+          <ul>
+            <li>
+                <p>The Project Sponsor -&nbsp;Represents the business interests; champions the project.</p>
+            </li>
+            <li>
+                <p>The Client -&nbsp;Represents end users' interests; domain expert.</p>
+            </li>
+            <li>
+                <p>The Data Scientist -&nbsp;Sets and executes analytic strategy; communicates with Sponsor and Client</p>
+            </li>
+            <li>
+                <p>The Data Architect -&nbsp;Manages data and data storage; sometimes manages data collection.</p>
+            </li>
+            <li>
+                <p>Operations -&nbsp;￼Manages infrastructure; deploys final project results</p>
+            </li>
+        </ul>
+
+        <p>
+            <a href="http://wiki.elderresearch.com/wiki/images/5/52/Practical_Data_Scien_v6_MEAP.pdf" target="_blank">From Practical Data Science with R</a>
+        </p>
+
+				</section>
+
+
+
+
+      <section>
+        <section>
+  
+          <h2>Goal</h2>
+
+          <p class="fragment">When we speak of data it is too ambiguous</p>
+          
+          <p class="fragment">I argue that we should add some precision</p>
+          
+          <p class="fragment">What would this take and what value would it provide?</p>
+          
+        </section>
+        
+        <section>
+          
+          <p style="text-align:left">A Data Scientist, A Project Manager and Client walk into a <strike>bar</strike> <span class="fragment" roll-in>meeting</span></p>
+          
+          <p style="text-align:left" class="fragment">An analyst on the phone says, <font color="red">just got the data and currently cleaning it</font>.</p>
+          <p style="text-align:left" class="fragment">The client hears, <font color="red">I'll have my results by COB!</font></p>
+          <p style="text-align:left" class="fragment">The PM hears, <font color="red">Great we can finally start working</font>.</p>
+          <p style="text-align:left" class="fragment">The data scientist hears, <font color="red">Making sure this is even the data we wanted!</font></p>
+
+
+          <p style="text-align:left" class="fragment">There is no punchline, that was not a joke.</p>
+
+        </section>
+
+        <section>
+
+          <p>Could we talk like a recipe about data?</p>
+          <p>
+            <a href="http://www.wikihow.com/Bake-a-Cake" target="_blank">example</a>
+          </p>
+          
+          <p style="text-align:left">Somebody with very little knowledge could recreate this</p>
+
+        </section>
+        
+        
+        <section>
+          <h2>Example</h2>
+          
+        </section>
+        
+      </section>
+
+
+
+      <section>
+
+        <h2>What This Talk is Not</h2>
+
+        <p style="text-align: left;">A method to do data science in any way, shape, or form</p>
+
+      </section>
+      
+      
+      
+
+
+
+      <section>
+        
+        <section>
+          <h2>English 101</h2>
+        </section>
+      
+      
+        <section>
+          <h2>Vocabulary</h2>
+          <p style="text-align:left">noun</p>
+          
+          <p style="text-align:left">Words used on a particular occasion or in a particular sphere.</p>
+          
+          <p style="text-align:left">The body of words known to an individual person.</p>
+
+        </section>
+        
+      
+        <section>
+          <h2>Grammar</h2>
+
+          <p style="text-align:left">noun</p>
+          <p style="text-align:left">the study of the way the sentences of a language are constructed; morphology and syntax</p>
+          <p style="text-align:left">an account of these features; a set of rules accounting for these constructions</p>
+          <p style="text-align:left">knowledge or usage of the preferred or prescribed forms in speaking or writing</p>
+          <p style="text-align:left">the elements of any science, art, or subject</p>
+
+        </section>
+
+
+        <section>
+          <h2>Syntax</h2>
+
+          <p style="text-align: left;">noun</p>
+          
+          <p style="text-align: left;">the arrangement of words and phrases to create well-formed sentences in a language</p>
+         
+          <p style="text-align: left;">a set of rules for or an analysis of this</p>
+        
+        </section>
+
+
+        <section>
+          <h2>Language</h2>
+
+          <p style="text-align: left;">noun</p>
+          
+          <p style="text-align: left;">a body of words and the systems for their use common to a people who are of the same community or nation</p>
+
+          <p style="text-align: left;">any set or system of such symbols as used in a more or less uniform fashion by a number of people, who are thus enabled to communicate intelligibly with one another</p>
+
+
+        </section>
+      </section>
+
+
+
+
+      <section>
+        
+        <section>
+          <h2>None of those get us very far</h2>
+
+          <p>We really need building blocks or rules.</p>
+        </section>
+        
+        <section>
+          <h2>Parts of Speech</h2>
+
+          <p style="text-align: left;">A part of speech is a category of words (or, more generally, of lexical items) which have similar grammatical properties.</p>
+        </section>
+        
+        <section>
+          <h2>Noun</h2>
+
+          <p style="text-align: left;">a word or lexical item denoting any abstract or concrete entity; a person, place, thing, idea, or quality</p>
+        </section>
+        
+        
+        <section>
+          <h2>Adjective</h2>
+
+          <p style="text-align: left;">a qualifier of a noun or pronoun (big, brave)</p>
+        </section>
+        
+        <section>
+          <h2>Verb</h2>
+
+          <p style="text-align: left;">a word denoting an action (walk), occurrence (happen), or state of being (be)</p>
+        </section>
+        
+        <section>
+          <h2>Adverb</h2>
+
+          <p style="text-align: left;">a qualifier of an adjective, verb, clause, sentence, or other adverb (very, quite)</p>
+        </section>
+        
+        <section>
+          <h2>Preposition</h2>
+
+          <p style="text-align: left;">an establisher of relation and syntactic context (in, of)</p>
+        </section>
+        
+        <section>
+          <h2>Conjunction</h2>
+
+          <p style="text-align: left;">a syntactic connector (and, but)</p>
+        </section>
+        
+        <section>
+          <h2>Article</h2>
+
+          <p style="text-align: left;">a grammatical marker of definiteness (the) or indefiniteness (a, an). Not always listed among the parts of speech. Sometimes determiner (a broader class) is used instead</p>
+        </section>
+        
+        
+
+        <section>
+          <h2>Interjections</h2>
+
+          <p style="text-align: left;">words used to express emotional states</p>
+          <p style="text-align: left;" class="fragment">We have no need for such non-sense, they will not be mentioned again</p>
+        </section>
+
+
+
+
+
+      <section>
+        <h2>Chenopodium album</h2>
+
+        <p style="text-align: left;" class="fragment">Chenopodium album is a fast-growing weedy annual plant in the genus Chenopodium.</p>
+        <p style="text-align: left;" class="fragment">Our current surroundings, as we have got in the weeds</p>
+        
+        <p style="text-align: left;" class="fragment">This is not English Class, this should be technical</p>
+
+      </section>
+
+    </section>
+
+
+      <section>
+        <h2>A Comical Attempt</h2>
+        
+        <iframe src="http://blog.datacamp.com/how-to-speak-data-science/" width="800" height="650"></iframe>
+
+      </section>
+
+
+      <section>
+        <section>
+          <h2>Nouns</h2>
+        </section>
+
+
+
+        <section>
+          <h2>
+            <a href="http://en.wikipedia.org/wiki/Data" target="_blank">Data</a>
+          </h2>
+
+
+          <p style="text-align: left;">Data is a set of values of qualitative or quantitative variables; restated, pieces of data are individual pieces of information.</p>
+        
+          <p style="text-align: left;">Data as an abstract concept can be viewed as the lowest level of abstraction, from which information and then knowledge are derived.</p>
+
+          <p style="text-align: left;">The word "data" used to be considered as the plural of "datum", but now is generally used in the singular, as a mass noun.</p>
+
+        </section>
+      
+
+        <section>
+          <h2>
+            <a href="http://en.wikipedia.org/wiki/Analytical_base_table" target="_blank">Analytical base table</a>
+          </h2>
+        
+          <iframe src="http://en.wikipedia.org/wiki/Analytical_base_table" width="800" height="500"></iframe>
+        
+        </section>
+      
+        <section>
+          <p>I am sure there are more nouns, but they are less interesting</p>
+        </section>
+      </section>
+
+
+
+      <section>
+        <section>
+          <h2>Adjective</h2>
+        </section>
+
+
+        <section>
+          <p style="text-align: left;">The most prominant adjective, <b>Big</b></p>
+
+          <p style="text-align: left;" class="fragment">As in <b>Big Data</b></p>
+        
+          <p style="text-align: left;" class="fragment">Buzzword - a word or phrase, often an item of jargon, that is fashionable at a particular time or in a particular context.</p>
+        </section>
+      
+      
+        <section>
+          <h2>Tall Data vs Wide Data</h2>
+        
+          <iframe src="http://seananderson.ca/2013/10/19/reshape.html" width="800" height="650"></iframe>
+        
+        </section>
+      
+      
+        <section>
+          <h2>Raw Data vs Processed Data</h2>
+          
+          <p style="text-align: left;">Raw Data - This is the data as it was natuarlly collected.</p>
+          
+          <p style="text-align: left;">Processed Data - It has been modified from its original form in any way.</p>
+        </section>
+
+        <section>
+          <h2>Tidy Data vs Messy Data</h2>
+          
+          <p style="text-align: left;">All data is messy!</p>
+          <p style="text-align: left;"><a href="http://vita.had.co.nz/papers/tidy-data.pdf" target="_blank">Stricter definition</a></p>
+        
+        </section>
+
+        
+        
+        <section>
+          <h2>What is Tidy Data?</h2>
+          
+          <p style="text-align: left;" class="fragment">A dataset is said to be tidy if it satisfies the following conditions</p>
+          <p style="text-align: left;" class="fragment">observations are in rows</p>
+  
+          <p style="text-align: left;" class="fragment">variables are in columns</p>
+  
+          <p style="text-align: left;" class="fragment">contained in a single dataset</p>
+
+          <p style="text-align: left;" class="fragment">Tidy data makes it easy to carry out data analysis</p>
+        </section>
+        
+        
+        
+
+        <section>
+          <h2>Causes of Messiness</h2>
+
+          <p style="text-align: left;" class="fragment">There are various features of messy data that one can observe in practice. Here are some of the more commonly observed patterns.</p>
+          
+          <p style="text-align: left;" class="fragment">Column headers are values, not variable names</p>
+            
+          <p style="text-align: left;" class="fragment">Multiple variables are stored in one column</p>
+            
+          <p style="text-align: left;" class="fragment">Variables are stored in both rows and columns</p>
+            
+          <p style="text-align: left;" class="fragment">Multiple types of experimental unit stored in the same table</p>
+            
+          <p style="text-align: left;" class="fragment">One type of experimental unit stored in multiple tables</p>
+        </section>
+
+      </section>
+
+
+      <section>
+        
+      <p>The most interesting part of speech, verb, moves data from messy to tidy</p> 
+      
+      <iframe src="http://www.nytimes.com/2014/08/18/technology/for-big-data-scientists-hurdle-to-insights-is-janitor-work.html?_r=0" width="800" height="500"></iframe>
+      
+      
+        
+      </section>
+      
+      
+      <section>
+        <h2>Hadleyverse</h2>
+
+        <p style="text-align: left;">Hadley Wickham is a prolific programmer; he has recreated big chunks of R’s standard library, making his versions so much better that people call it ‘the Hadleyverse’. His paper The split-apply-combine strategy for data analysis argues that much of what we do day-to-day is reshaping data. His packages help in that direction, and the Hadleyverse is a collection of R packages (dplyr, lubridate, ggplot2, etc). If you are starting with R, it’s advisable to forget about the standard lib and use these.</p>
+
+      </section>
+
+
+
+      
+      
+      <section>
+
+        <h2>History</h2>
+        
+        <p style="text-align: left;">In the beginning there was <a href="http://had.co.nz/reshape/" target="_blank">reshape</a> and <a href="http://plyr.had.co.nz/" target="_blank">plyr</a></p>
+        
+        
+        <p style="text-align: left;">These gave us access to the <a href="http://www.jstatsoft.org/v21/i12/paper" target="_blank">tidy</a> method and the <a href="http://www.jstatsoft.org/v40/i01/paper" target="_blank">split apply combine</a> philosophy.</p>
+                            
+      </section>
+      
+      
+      <section> 
+        <p style="text-align: left;"><blockquote>
+          This was all to much. Just as reshape2 did less than reshape, tidyr does less than reshape2.
+        </blockquote></p>
+        
+        
+        
+        <p style="text-align: left;"><blockquote>
+          tidyr is a reframing of reshape2 designed to accompany the tidy data framework, and to work hand-in-hand with magrittr and dplyr to build a solid pipeline for data analysis.
+          </blockquote></p>
+
+        <p>Hadley Wickham</p>
+        </section>
+        
+
+
+
+      <section>
+
+        <h2>Verbs</h2>
+
+      </section>
+
+
+      <section>
+        <section>
+          <h2>
+            <a href="http://blog.rstudio.org/2014/07/22/introducing-tidyr/" target="_blank">tidyR</a>
+          </h2>
+                        
+              <p><blockquote>tidyr is new package that makes it easy to “tidy” your data. Tidy data is data that’s easy to work with: it’s easy to munge (with dplyr), visualise (with ggplot2 or ggvis) and model (with R’s hundreds of modeling packages).</blockquote> Hadley Wickham</p>
+
+        </section>
+
+        <section>
+          <h2>Gather</h2>
+
+        <p style="text-align: left;">gather() takes multiple columns, and gathers them into key-value pairs: it makes “wide” data longer.</p>
+
+        </section>
+        
+        <section>
+          <h2>Separate</h2>
+
+        <p style="text-align: left;">Sometimes two variables are clumped together in one column. separate() allows you to tease them apart.</p>
+
+        </section>
+        
+        <section>
+          <h2>Spread</h2>
+
+        <p style="text-align: left;">spread() takes two columns (a key-value pair) and spreads them into multiple columns, making “long” data wider. spread() is used when you have variables that form rows instead of columns. You need spread() less frequently than gather() or separate()</p>
+
+        </section>
+      </section>
+      
+      
+      <section>
+        <p>These verbs have a number of synonyms:</p>
+
+        <table>
+          <thead>
+            <tr>
+              <th>tidyr</th>
+              <th>gather</th>
+              <th>spread</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>reshape(2)</td>
+              <td>melt</td>
+              <td>cast</td>
+            </tr>
+            <tr>
+              <td>spreadsheets</td>
+              <td>pivot</td>
+              <td>unpivot</td>
+            </tr>
+            <tr>
+              <td>databases</td>
+              <td>fold</td>
+              <td>unfold</td>
+            </tr>
+          </tbody>
+        </table>
+
+
+      </section>  
+
+
+
+      <section>
+
+          <h2>
+            <a href="https://github.com/hadley/dplyr" target="_blank">dplyr</a>
+          </h2>
+
+        <p style="text-align: left;">dplyr is the next iteration of plyr, focussed on tools for working with data frames. It has three main goals:</p>
+
+        <ul class="task-list">
+          <li><p>Identify the most important data manipulation tools needed for data analysis and make them easy to use from R.</p></li>
+          <li><p>Provide blazing fast performance for in-memory data by writing key pieces in <a href="http://www.rcpp.org/">C++</a>.</p></li>
+          <li><p>Use the same interface to work with data no matter where it's stored, whether in a data frame, a data table or database.</p></li>
+        </ul>
+
+        <p><a href="http://cran.rstudio.com/web/packages/dplyr/vignettes/introduction.html" target="_blank">Intro</a></p>
+
+      </section>
+      
+      <section>
+        <section>
+          <h2>Single table verbs</h2>
+          <p style="text-align: left;">dplyr aims to provide a function for each basic verb of data manipulating:</p>
+        </section>
+        
+        
+        <section>
+          <h2>select</h2>
+          <p style="text-align: left;">select takes certain columns from a table, you can also rename them in the process</p>
+        </section>
+        
+        
+        <section>
+          <h2>filter</h2>
+          <p style="text-align: left;">filter removes observations based on some condition, similar to where</p>
+          <p style="text-align: left;">slice is similar but different, remove every third every second row (keeps even rows)</p>
+        </section>
+        
+        
+        <section>
+          <h2>arrange</h2>
+          <p style="text-align: left;">arrange allows you to order by rows in some specific order</p>
+        </section>
+        
+        
+        <section>
+          <h2>distinct</h2>
+
+          <p style="text-align: left;">distinct remove redundant rows</p>
+        </section>
+        
+        
+        <section>
+          <h2>mutate</h2>
+            
+          <p style="text-align: left;">mutate lets you add new variables based on some expression applied to existing variables</p> 
+          <p style="text-align: left;">transmute is similar but modifies in place</p>
+        
+        </section>
+        
+        
+        <section>
+          <h2>sample</h2>
+          <p style="text-align: left;">sample gives various ways to downsize the rows of your data</p>
+        </section>
+        
+        
+        
+        <section>
+          <h2>others</h2>
+          <p style="text-align: left;">I am sure there are many more, let me know if you know some common data processing step that was missed.</p>
+        </section>
+      </section>
+      
+      
+        <section>
+          <h2>Adverbs</h2>
+          <p><blockquote>I believe the road to hell is paved with adverbs, and I will shout it from the rooftops</blockquote> Stephen King, <i>On Writing</i> </p>
+
+          <p>I am open to suggestions here, they may not exist</p>
+        </section>
+        
+        
+             
+      <section>
+
+        <section>
+          <h2>Adverbs of place</h2>
+          <p style="text-align: left;">describe where something happens</p>
+          <p style="text-align: left;">here, nowhere</p>
+          <p style="text-align: left;">Maybe the machine, VM, server IP?</p>
+        </section>
+        
+        
+        <section>
+          <h2>Adverbs of purpose</h2>
+          <p style="text-align: left;">describe why something happens</p>
+          <p style="text-align: left;">because, accidentally</p>
+          <p style="text-align: left;">Since it comes from Excel, etc</p>
+        </section>
+        
+        
+        <section>
+          <h2>Adverbs of frequency</h2>
+          <p style="text-align: left;">describe how often something happens</p>
+          <p style="text-align: left;">always, seldom</p>
+          <p style="text-align: left;">real time, every 30 days</p>
+        </section>
+        
+        
+        <section>
+          <h2>Adverbs of time</h2>
+          <p style="text-align: left;">describe when something happens</p>
+          <p style="text-align: left;">after, during</p>
+          <p style="text-align: left;">after we get new payment data we can inner_join()</p>
+        </section>
+        
+        <section>
+          <h2>Adverbs of manner</h2>
+          <p style="text-align: left;">describe how something happens</p>
+          <p style="text-align: left;">carefully, eagerly</p>
+          <p style="text-align: left;">what you do when a client is watching, carefully seperate columns</p>
+        </section>
+        
+      </section>
+        
+        
+
+        <section>
+          <h2>Preposition</h2>
+
+          <p style="text-align: left;">Does this qualify</p>
+          <pre><code>group_by (person) %>% summarise (gpa = mean(grades))</code></pre> 
+          
+        </section>
+        
+
+      <section>
+        <section>
+          <h2>Conjunction</h2>
+          
+          <p style="text-align: left;">dplyr calls joins and exclusions Two table verbs</p> 
+          <p style="text-align: left;">They seem more correct here though</p>
+          
+        </section>
+            
+        <section>
+          <h2>Mutating joins</h2>
+          <p style="text-align: left;">Add new variables to one table from matching rows in another</p>
+          <p style="text-align: left"; class="fragment">inner_join</p> 
+          <p style="text-align: left"; class="fragment">left_join</p>
+          <p style="text-align: left"; class="fragment">right_join</p>
+          <p style="text-align: left"; class="fragment">full_join</p>
+          <p style="text-align: left"; class="fragment">Support for non-equi joins is planned for dplyr 0.5.0.</p>
+        </section>
+            
+        <section>
+          <h2>Filtering joins</h2>
+          <p style="text-align: left;" class="fragment">Filter observations from one table based on whether or not they match an observation in the other table</p>
+
+
+          <p style="text-align: left"; class="fragment"><a href="https://mariadb.com/kb/en/mariadb/semi-join-subquery-optimizations/" target="_blank">semi_join</a></p>
+          <p style="text-align: left"; class="fragment">anti_join</p>
+        </section>
+        
+        <section>
+          <h2>Set operations</h2>
+          <p style="text-align: left;">Combine the observations in two data sets as if they were set elements</p>   
+          <p style="text-align: left"; class="fragment">intersect</p>
+          <p style="text-align: left"; class="fragment">union</p>
+          <p style="text-align: left"; class="fragment">setdiff</p>
+
+        </section>
+      </section>  
+   
+      
+      <section>
+        <h2>More Verbs!</h2>
+
+        <p>expand, extract, unite, unnest</p>
+      </section>
+
+			</div>
+
+		</div>
+
+		<script src="lib/js/head.min.js"></script>
+		<script src="js/reveal.js"></script>
+
+		<script>
+
+			// Full list of configuration options available at:
+			// https://github.com/hakimel/reveal.js#configuration
+			Reveal.initialize({
+				controls: true,
+				progress: true,
+				history: true,
+				center: true,
+
+				transition: 'slide', // none/fade/slide/convex/concave/zoom
+
+				// Optional reveal.js plugins
+				dependencies: [
+					{ src: 'lib/js/classList.js', condition: function() { return !document.body.classList; } },
+					{ src: 'plugin/markdown/marked.js', condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
+					{ src: 'plugin/markdown/markdown.js', condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
+					{ src: 'plugin/highlight/highlight.js', async: true, condition: function() { return !!document.querySelector( 'pre code' ); }, callback: function() { hljs.initHighlightingOnLoad(); } },
+					{ src: 'plugin/zoom-js/zoom.js', async: true },
+					{ src: 'plugin/notes/notes.js', async: true }
+				]
+			});
+
+		</script>
+
+	</body>
+</html>
