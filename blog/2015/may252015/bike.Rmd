@@ -1,0 +1,186 @@
+---
+title: "Untitled"
+author: "Kenny Darrell"
+date: "May 25, 2015"
+output: html_document
+---
+
+## Clustering Sequential data
+
+I have used the Capital Bikehare data to investigate a few ideas in the past and it has worked out quite well. I really is a pretty useful set of data for exploring algorithms. One thing that I have been interested in lately has been how to cluster sequences. What I mean by this is how do I take something that moves from one state/place/etc to another indefinitly and find the groups of locations that items ocsilate around inside of frequently.
+
+I found an interesting package that does this using [Markov Chains](http://en.wikipedia.org/wiki/Markov_chain). I was actually thinking that this would be an interesting approach. In the process of googling around to try to find some info to get started I found a package that has already done this. THe package is called MCL and you an find more info about it [here](http://www.micans.org/mcl/).
+
+```{r init}
+options(stringsAsFactors = FALSE)
+library(dplyr)
+library(lubridate)
+library(ggplot2)
+library(MCL) 
+library(xml2)
+```
+
+Read the file, and keep relevant data. I really like how easy dplyr makes it to clean data. It is both fast, minimal and intutitive.
+
+```{r read_data}
+'2014-Q2-Trips-History-Data.csv' %>% 
+  read.csv %>%
+  select(sdate = Start.date, edate = End.date, 
+         sterm = Start.terminal, eterm = End.terminal, 
+         bike  = Bike., type  = Subscriber.Type) %>% 
+  filter(type == 'Registered') -> bike 
+```
+
+In order to run this algorithm we need to convert this data into a different form. We currently have it in a transactional form.
+
+```{r}
+head(bike)
+```
+
+You can see we have when and where the trip started and ended. We also have which bike it was and the type of account the user has. The first thing we need to do is get a list of the terminals in the data set.
+
+```{r uniq_term}
+c(bike$sterm, bike$eterm) %>% unique %>% na.omit -> term
+```
+
+With this list of terminals and the trip data we need to create a transition matrix. This means we need a square matrix that has each terminal as a row and column. The simplest way to do this, not the most efficient is to initialize a matrix of all zeros and loop through each terminal and add the the count for each destination given that starting terminal. This will take a minute.
+
+```{r trans_matrix}
+# This initializes the transition matrix
+t_mat <- matrix(0, ncol = length(term), nrow = length(term))
+
+# Loop to get count of all station to station trips.
+for (i in 1:length(term)) {
+  # Subset local dataset for speed.
+  tmp <- bike[bike$sterm == term[i], ]
+  t_mat[i, ] <- sapply(term, function(x) sum(tmp$eterm == x, na.rm = T))
+}
+```
+
+Now we are ready to use the MCL package.
+
+```{r cluster}
+clus <- mcl(t_mat, F)
+```
+
+We get three things from this function. We get the number of clusters it creates, which makes it much more useful than soemthing like [k-means clustering](http://en.wikipedia.org/wiki/K-means_clustering) where we need to have some idea of before hand as to how many clusters there should be in the data. We also get the number of iterations it took to to converge and the actaul cluster which a terminal belongs. 
+
+```{r}
+clus
+```
+
+Lets add this new peice of information to the terminals
+
+```{r}
+station <- data.frame(terminalName = as.character(term), 
+                      clus_id = clus$Cluster)
+```
+
+We are also quite lucky here for a few reasons. Many things that have this type of sequence where they bounce around in a manner akin to a Markov Chain are hard to plot. There are a few ways but mostly I have seen it done by actually coloring the Markov Chain nodes. Here though since these are locations we could plot them on a map. We are also lucky that there is a [source]('http://www.capitalbikeshare.com/data/stations/bikeStations.xml') provided that will give us the coordinates to plot them each terminal on a map. Here is a function that will get the live data from each of the terminals, how many bikes are at each among other useful info, but for now we just need the latitude and longitude of each terminal.
+
+
+```{r functions}
+get_locs <- function() {
+  # Get data from web with locations
+  'http://www.capitalbikeshare.com/data/stations/bikeStations.xml' %>%
+    read_xml %>%
+    xml_find_all('.//station') -> stations
+  
+  . %>% paste0('.//', .) %>% xml_find_all(stations, .) %>% xml_text -> get_vals
+  
+  c('terminalName', 'lat', 'long', 'nbBikes', 
+    'nbEmptyDocks', 'lastCommWithServer') %>%
+    sapply(get_vals) %>% 
+    data.frame %>% 
+    filter(terminalName != "8D OPS test") %>%
+    mutate(lat = as.numeric(lat), long = as.numeric(long))
+}
+
+```
+
+We can join this data with our above cluster data to prep it in order to plot.
+
+```{r plot_data}
+get_locs() %>% 
+  select(terminalName, lat, long) %>%
+  inner_join(station, by = 'terminalName') %>%
+  na.omit() -> stations 
+```
+
+This stations data set is in a pretty tidy format now ready to visualize.
+
+```{r}
+head(stations)
+```
+
+We can use the the geom_point function and color by cluster.
+
+
+```{r map_plot}
+ggplot(stations, aes(long, lat)) + geom_point(aes(colour = factor(clus_id)))
+```
+
+This data has another interesing feature that I thought would be interesting to exploit. The main data file was constructed from a time period of three months in 2014, the location data comes from a live source that has terminals that did not exist then. We thus have new stations. 
+
+
+
+```{r new_stations}
+
+# Which ones have been added over the last year.
+geo <- get_locs()[, 1:5]
+geo[!geo$terminalName %in% stations$terminalName, ]
+
+new <- merge(geo, station, all = T)
+new$new <- ifelse(is.na(new$clus_id), 1, 0)
+
+
+ggplot(new, aes(long, lat)) + geom_point(aes(colour = factor(new)))
+
+```
+
+[Mike](http://bost.ocks.org/mike/) [Bostock](https://twitter.com/mbostock) gave some inspriation in a [great post](http://bost.ocks.org/mike/algorithms/), could we see how effectivly the new stations are placed. We can create a [Voronoi Diagram](http://en.wikipedia.org/wiki/Voronoi_diagram) from this and see if the distributions of areas decreases. With the new stations.
+
+
+```{r vor}
+library(deldir)
+library(tripack)
+
+par(mfrow = c(1, 2))
+
+stations %>% select(x = long, y = lat) -> before
+get_locs() %>% select(x = long, y = lat) -> after
+
+plot(tile.list(deldir(before$x, before$y)), close = TRUE)
+plot(tile.list(deldir(after$x, after$y)), close = TRUE)
+
+plot(voronoi.mosaic(before$x, before$y, duplicate = "error"))
+plot(voronoi.mosaic(after$x, after$y, duplicate = "error"))
+```
+
+After seeing these I have two different thoughts
+
+This approach is not valid because they really should not be uniformly distributed. There are palces where there is a greater need, even though they already have a station fairly close. The second thought is that these both look pretty rough. Even though this is not needed this is a plot that I think would work much better in d3.
+
+
+To do this I need to write the data out to a csv file.
+```{r, eval = F}
+norm <- function(v) (v - min(v)) / (max(v) - min(v))
+
+
+tile.list(deldir(before$x, before$y)) %>%
+  lapply(function(x) data.frame(x = x$x, y = x$y)) %>%
+  bind_rows %>%
+  unique %>%
+  mutate(x = norm(x), y = norm(y)) %>%
+  write.csv(file = 'before.csv', row.names = F)
+
+
+tile.list(deldir(after$x, after$y)) %>%
+  lapply(function(x) data.frame(x = x$x, y = x$y)) %>%
+  bind_rows %>%
+  unique %>%
+  mutate(x = norm(x), y = norm(y)) %>%
+  write.csv(file = 'after.csv', row.names = F)
+
+
+```
