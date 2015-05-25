@@ -37,10 +37,10 @@
 
       </div>
     </header>
-<div id="clustering-sequential-data" class="section level2">
-<h2>Clustering Sequential data</h2>
-<p>I have used the Capital Bikehare data to investigate a few ideas in the past and it has worked out quite well. I really is a pretty useful set of data for exploring algorithms. One thing that I have been interested in lately has been how to cluster sequences. What I mean by this is how do I take something that moves from one state/place/etc to another indefinitly and find the groups of locations that items ocsilate around inside of frequently.</p>
-<p>I found an interesting package that does this using <a href="http://en.wikipedia.org/wiki/Markov_chain">Markov Chains</a>. I was actually thinking that this would be an interesting approach. In the process of googling around to try to find some info to get started I found a package that has already done this. THe package is called MCL and you an find more info about it <a href="http://www.micans.org/mcl/">here</a>.</p>
+<div id="Introduction" class="section level2">
+<h2>Introduction</h2>
+<p>I have used the Capital Bikeshare data to investigate a few ideas in the past and it has worked out quite well. I really is a pretty useful set of data for exploring algorithms. One thing that I have been interested in lately has been how to cluster sequences. What I mean by this is how do I take something that moves from one state/place/etc to another indefinitely and find the groups of locations that items oscillate around inside of frequently.</p>
+<p>I found an interesting package that does this using <a href="http://en.wikipedia.org/wiki/Markov_chain">Markov Chains</a>. I was actually thinking that this would be an interesting approach. In the process of googling around to try to find some info to get started I found a package that has already done this. The package is called MCL and you an find more info about it <a href="http://www.micans.org/mcl/">here</a>.</p>
 <pre class="r"><code>options(stringsAsFactors = FALSE)
 library(dplyr)
 library(lubridate)
@@ -77,7 +77,7 @@ for (i in 1:length(term)) {
 }</code></pre>
 <p>Now we are ready to use the MCL package.</p>
 <pre class="r"><code>clus &lt;- mcl(t_mat, F)</code></pre>
-<p>We get three things from this function. We get the number of clusters it creates, which makes it much more useful than soemthing like <a href="http://en.wikipedia.org/wiki/K-means_clustering">k-means clustering</a> where we need to have some idea of before hand as to how many clusters there should be in the data. We also get the number of iterations it took to to converge and the actaul cluster which a terminal belongs.</p>
+<p>We get three things from this function. We get the number of clusters it creates, which makes it much more useful than something like <a href="http://en.wikipedia.org/wiki/K-means_clustering">k-means clustering</a> where we need to have some idea of before hand as to how many clusters there should be in the data. We also get the number of iterations it took to to converge and the actual cluster which a terminal belongs.</p>
 <pre class="r"><code>clus</code></pre>
 <pre><code>## $K
 ## [1] 17
@@ -100,7 +100,7 @@ for (i in 1:length(term)) {
 ## [254]  5  3  6  8 12  8  3  6  5  7  1 13  7 12  6  1  1  3 14  6  7 14 12
 ## [277] 14  1  5  7  7  5  3 12  1  3 12 11 17 14 10  6  6  6  5 15 16 13  1
 ## [300]  3  7  6  5  7 16 12 14  7  6 14 17 14  1 17 15 17 14 14 14 14  0</code></pre>
-<p>Lets add this new peice of information to the terminals.</p>
+<p>Lets add this new piece of information to the terminals.</p>
 <pre class="r"><code>station &lt;- data.frame(terminalName = as.character(term), 
                       clus_id = clus$Cluster)</code></pre>
 <p>We are also quite lucky here for a few reasons. Many things that have this type of sequence where they bounce around in a manner akin to a Markov Chain are hard to plot. There are a few ways but mostly I have seen it done by actually coloring the Markov Chain nodes. Here though since these are locations we could plot them on a map. We are also lucky that there is a <a href="http://www.capitalbikeshare.com/data/stations/bikeStations.xml">source</a> provided that will give us the coordinates to plot them each terminal on a map. Here is a function that will get the live data from each of the terminals, how many bikes are at each among other useful info, but for now we just need the latitude and longitude of each terminal.</p>
@@ -138,7 +138,7 @@ for (i in 1:length(term)) {
 
 <div class="separator" style="clear: both; text-align: center;"><img src="clus_mem.png" height="550" width="700"></a></div>
 
-<p>This data has another interesing feature that I thought would be interesting to exploit. The main data file was constructed from a time period of three months in 2014, the location data comes from a live source that has terminals that did not exist then. We thus have new stations.</p>
+<p>This data has another interesting feature that I thought would be interesting to exploit. The main data file was constructed from a time period of three months in 2014, the location data comes from a live source that has terminals that did not exist then. We thus have new stations.</p>
 <pre class="r"><code># Which ones have been added over the last year.
 geo &lt;- get_locs()[, 1:5]
 geo[!geo$terminalName %in% stations$terminalName, ]</code></pre>
@@ -181,7 +181,7 @@ ggplot(new, aes(long, lat)) + geom_point(aes(colour = factor(new)))</code></pre>
 
 <div class="separator" style="clear: both; text-align: center;"><img src="new_stat.png" height="550" width="700"></a></div>
 
-<p><a href="http://bost.ocks.org/mike/">Mike</a> <a href="https://twitter.com/mbostock">Bostock</a> gave some inspriation in a <a href="http://bost.ocks.org/mike/algorithms/">great post</a>, could we see how effectivly the new stations are placed. We can create a <a href="http://en.wikipedia.org/wiki/Voronoi_diagram">Voronoi Diagram</a> from this and see if the distributions of areas decreases. With the new stations.</p>
+<p><a href="http://bost.ocks.org/mike/">Mike</a> <a href="https://twitter.com/mbostock">Bostock</a> gave some inspiration in a <a href="http://bost.ocks.org/mike/algorithms/">great post</a>, could we see how effectively the new stations are placed. We can create a <a href="http://en.wikipedia.org/wiki/Voronoi_diagram">Voronoi Diagram</a> from this and see if the distributions of areas decreases. With the new stations.</p>
 <pre class="r"><code>library(deldir)
 library(tripack)
 
@@ -206,7 +206,7 @@ plot(voronoi.mosaic(after$x, after$y, duplicate = &quot;error&quot;))</code></pr
 
 
 <p>After seeing these I have two different thoughts</p>
-<p>This approach is not valid because they really should not be uniformly distributed. There are palces where there is a greater need, even though they already have a station fairly close. The second thought is that these both look pretty rough. Even though this is not needed this is a plot that I think would work much better in d3.</p>
+<p>This approach is not valid because they really should not be uniformly distributed. There are places where there is a greater need, even though they already have a station fairly close. The second thought is that these both look pretty rough. Even though this is not needed this is a plot that I think would work much better in d3.</p>
 <p>To do this I need to write the data out to a csv file.</p>
 <pre class="r"><code>norm &lt;- function(v) (v - min(v)) / (max(v) - min(v))
 
