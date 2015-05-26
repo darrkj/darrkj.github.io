@@ -39,22 +39,29 @@
     </header>
 <div id="Introduction" class="section level2">
 <h2>Introduction</h2>
-<p>I have used the Capital Bikeshare data to investigate a few ideas in the past and it has worked out quite well. I really is a pretty useful set of data for exploring algorithms. One thing that I have been interested in lately has been how to cluster sequences. What I mean by this is how do I take something that moves from one state/place/etc to another indefinitely and find the groups of locations that items oscillate around inside of frequently.</p>
-<p>I found an interesting package that does this using <a href="http://en.wikipedia.org/wiki/Markov_chain">Markov Chains</a>. I was actually thinking that this would be an interesting approach. In the process of googling around to try to find some info to get started I found a package that has already done this. The package is called MCL and you an find more info about it <a href="http://www.micans.org/mcl/">here</a>.</p>
+<p>I have used the Capital Bikeshare data to investigate a few ideas in the past and it has worked out quite well. It is a pretty useful set of data for exploring algorithms and ideas. One thing that I have been interested in lately has been how to cluster sequences. What I mean by this is how do I take something that moves from one state or place to another over some range of time and find groups of locations that entities oscillate between frequently.</p>
+<p>I found an interesting package that does this using <a href="http://en.wikipedia.org/wiki/Markov_chain">Markov Chains</a>. I was already thinking that this would be an interesting approach. In the process of googling around to find some info to get started I found a package that has already done this. The package is called MCL and you an find more info about it <a href="http://www.micans.org/mcl/">here</a>.</p>
+
+<p>So lets dive in. Read the file, and keep relevant data. I really like how easy dplyr makes it to clean data. It is both fast, minimal and intutitive.</p>
+
 <pre class="r"><code>options(stringsAsFactors = FALSE)
 library(dplyr)
 library(lubridate)
 library(ggplot2)
 library(MCL) 
-library(xml2)</code></pre>
-<p>Read the file, and keep relevant data. I really like how easy dplyr makes it to clean data. It is both fast, minimal and intutitive.</p>
-<pre class="r"><code>'2014-Q2-Trips-History-Data.csv' %&gt;% 
+library(xml2)
+
+'2014-Q2-Trips-History-Data.csv' %&gt;% 
   read.csv %&gt;%
   select(sdate = Start.date, edate = End.date, 
          sterm = Start.terminal, eterm = End.terminal, 
          bike  = Bike., type  = Subscriber.Type) %&gt;% 
   filter(type == 'Registered') -&gt; bike </code></pre>
+  
+  
 <p>In order to run this algorithm we need to convert this data into a different form. We currently have it in a transactional form.</p>
+
+
 <pre class="r"><code>head(bike)</code></pre>
 <pre><code>##             sdate         edate sterm eterm   bike       type
 ## 1 6/30/2014 23:59 7/1/2014 0:12 31254 31623 W21070 Registered
@@ -65,7 +72,8 @@ library(xml2)</code></pre>
 ## 6 6/30/2014 23:54 7/1/2014 0:03 31227 31268 W20220 Registered</code></pre>
 <p>You can see we have when and where the trip started and ended. We also have which bike it was and the type of account the user has. The first thing we need to do is get a list of the terminals in the data set.</p>
 <pre class="r"><code>c(bike$sterm, bike$eterm) %&gt;% unique %&gt;% na.omit -&gt; term</code></pre>
-<p>With this list of terminals and the trip data we need to create a transition matrix. This means we need a square matrix that has each terminal as a row and column. The simplest way to do this, not the most efficient is to initialize a matrix of all zeros and loop through each terminal and add the the count for each destination given that starting terminal. This will take a minute.</p>
+<p>With this list of terminals and the trip data we need to create a transition matrix. This means we need a square matrix that has each terminal as a row and column. The simplest way to do this, not the most efficient, is to initialize a matrix of all zeros and loop through each terminal and add the the count for each destination given that starting terminal. This will take a minute.</p>
+
 <pre class="r"><code># This initializes the transition matrix
 t_mat &lt;- matrix(0, ncol = length(term), nrow = length(term))
 
@@ -77,7 +85,7 @@ for (i in 1:length(term)) {
 }</code></pre>
 <p>Now we are ready to use the MCL package.</p>
 <pre class="r"><code>clus &lt;- mcl(t_mat, F)</code></pre>
-<p>We get three things from this function. We get the number of clusters it creates, which makes it much more useful than something like <a href="http://en.wikipedia.org/wiki/K-means_clustering">k-means clustering</a> where we need to have some idea of before hand as to how many clusters there should be in the data. We also get the number of iterations it took to to converge and the actual cluster which a terminal belongs.</p>
+<p>We get three things from this function. We get the number of clusters it creates, which makes it much more useful than something like <a href="http://en.wikipedia.org/wiki/K-means_clustering">k-means clustering</a> where we need to have some idea before hand as to how many clusters there should be in the data. We also get the number of iterations it took to to converge and the actual cluster which a terminal belongs.</p>
 <pre class="r"><code>clus</code></pre>
 <pre><code>## $K
 ## [1] 17
@@ -103,7 +111,7 @@ for (i in 1:length(term)) {
 <p>Lets add this new piece of information to the terminals.</p>
 <pre class="r"><code>station &lt;- data.frame(terminalName = as.character(term), 
                       clus_id = clus$Cluster)</code></pre>
-<p>We are also quite lucky here for a few reasons. Many things that have this type of sequence where they bounce around in a manner akin to a Markov Chain are hard to plot. There are a few ways but mostly I have seen it done by actually coloring the Markov Chain nodes. Here though since these are locations we could plot them on a map. We are also lucky that there is a <a href="http://www.capitalbikeshare.com/data/stations/bikeStations.xml">source</a> provided that will give us the coordinates to plot them each terminal on a map. Here is a function that will get the live data from each of the terminals, how many bikes are at each among other useful info, but for now we just need the latitude and longitude of each terminal.</p>
+<p>We are also quite lucky here for a few reasons. Many things that have this type of sequence where they bounce around in a manner akin to a Markov Chain are hard to plot. There are a few ways but mostly I have seen it done by actually coloring the Markov Chain nodes. Since these are locations we could plot them on a map. We are also lucky that there is a <a href="http://www.capitalbikeshare.com/data/stations/bikeStations.xml">source</a> provided that will give us the coordinates to plot each terminal on a map. Here is a function that will get the live data from each of the terminals, how many bikes are at each among other useful info, but for now we just need the latitude and longitude of each terminal.</p>
 <pre class="r"><code>get_locs &lt;- function() {
   # Get data from web with locations
   'http://www.capitalbikeshare.com/data/stations/bikeStations.xml' %&gt;%
@@ -119,12 +127,12 @@ for (i in 1:length(term)) {
     filter(terminalName != &quot;8D OPS test&quot;) %&gt;%
     mutate(lat = as.numeric(lat), long = as.numeric(long))
 }</code></pre>
-<p>We can join this data with our above cluster data to prep it in order to plot.</p>
+<p>We can join this data with our above cluster data in order to plot it.</p>
 <pre class="r"><code>get_locs() %&gt;% 
   select(terminalName, lat, long) %&gt;%
   inner_join(station, by = 'terminalName') %&gt;%
   na.omit() -&gt; stations </code></pre>
-<p>This stations data set is in a pretty tidy format now ready to visualize.</p>
+<p>This stations data set is in a pretty tidy format now and is ready to be visualized.</p>
 <pre class="r"><code>head(stations)</code></pre>
 <pre><code>##   terminalName      lat      long clus_id
 ## 1        31000 38.85610 -77.05120       7
@@ -138,7 +146,10 @@ for (i in 1:length(term)) {
 
 <div class="separator" style="clear: both; text-align: center;"><img src="clus_mem.png" height="550" width="700"></a></div>
 
-<p>This data has another interesting feature that I thought would be interesting to exploit. The main data file was constructed from a time period of three months in 2014, the location data comes from a live source that has terminals that did not exist then. We thus have new stations.</p>
+<p>From a qualitative perspective this looks pretty good. Regions that are further away from each other tend to create there own clusters. You can also see of the roads that people travel on. I think a cool source of data to add to this would be metro loactions. Are clusters centered around these. Peole get off the metro and bike to there job?</p>
+
+
+<p>This data has another interesting feature that I thought would be interesting to exploit. The main data file was constructed from a time period of three months in 2014. The location data comes from a live source that has terminals that did not exist then. We thus have new stations.</p>
 <pre class="r"><code># Which ones have been added over the last year.
 geo &lt;- get_locs()[, 1:5]
 geo[!geo$terminalName %in% stations$terminalName, ]</code></pre>
@@ -174,14 +185,16 @@ geo[!geo$terminalName %in% stations$terminalName, ]</code></pre>
 ## 349        31095 38.86247 -77.06824      10            5
 ## 350        31280 38.91376 -77.02702       7           16</code></pre>
 <pre class="r"><code>new &lt;- merge(geo, station, all = T)
-new$new &lt;- ifelse(is.na(new$clus_id), 1, 0)
+new$new &lt;- ifelse(is.na(new$clus_id), 1, 0)</code></pre>
 
-ggplot(new, aes(long, lat)) + geom_point(aes(colour = factor(new)))</code></pre>
+<p>Here we can gt a look at where the new stations were added.</p>
+
+<pre class="r"><code>ggplot(new, aes(long, lat)) + geom_point(aes(colour = factor(new)))</code></pre>
 
 
 <div class="separator" style="clear: both; text-align: center;"><img src="new_stat.png" height="550" width="700"></a></div>
 
-<p><a href="http://bost.ocks.org/mike/">Mike</a> <a href="https://twitter.com/mbostock">Bostock</a> gave some inspiration in a <a href="http://bost.ocks.org/mike/algorithms/">great post</a>, could we see how effectively the new stations are placed. We can create a <a href="http://en.wikipedia.org/wiki/Voronoi_diagram">Voronoi Diagram</a> from this and see if the distributions of areas decreases. With the new stations.</p>
+<p><a href="http://bost.ocks.org/mike/">Mike</a> <a href="https://twitter.com/mbostock">Bostock</a> wrote a <a href="http://bost.ocks.org/mike/algorithms/">great post</a> that gave me plenty of inspiration for this. Could we see how effectively the new stations are placed. We can create a <a href="http://en.wikipedia.org/wiki/Voronoi_diagram">Voronoi Diagram</a> from this and see if the distributions of areas decreases with the new stations. I found two different packages that do this in R, so i figured I would try both of them out.</p>
 <pre class="r"><code>library(deldir)
 library(tripack)
 
@@ -191,7 +204,6 @@ stations %&gt;% select(x = long, y = lat) -&gt; before
 get_locs() %&gt;% select(x = long, y = lat) -&gt; after
 
 plot(tile.list(deldir(before$x, before$y)), close = TRUE)
-
 plot(tile.list(deldir(after$x, after$y)), close = TRUE)</code></pre>
 
 
@@ -205,7 +217,7 @@ plot(voronoi.mosaic(after$x, after$y, duplicate = &quot;error&quot;))</code></pr
 <div class="separator" style="clear: both; text-align: center;"><img src="vor2.png" height="350" width="600"></a></div>
 
 
-<p>After seeing these I have two different thoughts</p>
+<p>We can only see slight differences in both of them. After seeing these I have two different thoughts</p>
 <p>This approach is not valid because they really should not be uniformly distributed. There are places where there is a greater need, even though they already have a station fairly close. The second thought is that these both look pretty rough. Even though this is not needed this is a plot that I think would work much better in d3.</p>
 <p>To do this I need to write the data out to a csv file.</p>
 <pre class="r"><code>norm &lt;- function(v) (v - min(v)) / (max(v) - min(v))
@@ -228,6 +240,11 @@ tile.list(deldir(after$x, after$y)) %&gt;%
 </div>
 
 <div style="text-align:center;"> <iframe src="http://darrkj.github.io/blog/2015/may252015/before.html" width="515" height="515"></iframe></div>
+
+
+<p>Each region contains an area that anywhere inside is closest to the station that it encloses. So regions that are larger are areas where there are fewer stations. If you move the mouse around you can see how much it would impact that area by placing a station at that point.</p>
+
+<p>I think another method is needed to determine the best placement of new stations. One thought was that you could use the live data to see where there is the most demand, stations which are always empty. This may also just mean that you need to add more bikes at this location. This part of the problem may need more thought. I thnk the clustering worked quite well though.</p>
 
 <div style="text-align:center;"> <iframe src="http://darrkj.github.io/blog/2015/may252015/after.html" width="515" height="515"></iframe></div>
 
