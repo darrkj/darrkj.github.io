@@ -363,7 +363,7 @@ ggplot(c_stat[c_stat$score != .5, ], aes(prob, fill = factor(score))) +
   ylab('Density') + labs(colour = &quot;Result&quot;)</code></pre>
   
   
-  <div class="separator" style="clear: both; text-align: center;"><img src="img/.png" height="550" width="700"></a></div>
+  <div class="separator" style="clear: both; text-align: center;"><img src="img/big_chess_density.png" height="550" width="700"></a></div>
 
   
 <pre class="r"><code>big_c_wl &lt;- c_stat[c_stat$score != .5, ]
@@ -375,7 +375,7 @@ ggplot(big_c_wl, aes(p, fill = factor(1))) + geom_density(alpha = 0.2) +
   
   
   
-  <div class="separator" style="clear: both; text-align: center;"><img src="img/.png" height="550" width="700"></a></div>
+  <div class="separator" style="clear: both; text-align: center;"><img src="img/big_chess_density_one_side.png" height="550" width="700"></a></div>
 
   
 <pre class="r"><code>big_val &lt;- validate(big_c_wl, T)
@@ -389,7 +389,7 @@ ggplot(big_val, aes(x = mid, y = mean)) +
   
   
   
-  <div class="separator" style="clear: both; text-align: center;"><img src="img/.png" height="550" width="700"></a></div>
+  <div class="separator" style="clear: both; text-align: center;"><img src="img/big_chess_pob_prob_gg.png" height="550" width="700"></a></div>
 
   
 <p>Having more data seems to clear up the chaos. There still seems to be something interesting happening as it is not a straight line. Coming from an engineering background this looks very familiar. It reminds me of all of the places where we had nonlinear effects that we would linearize</p>
@@ -402,7 +402,7 @@ abline(a = reg$coefficients[1], b = reg$coefficients[2])</code></pre>
 
 
 
-<div class="separator" style="clear: both; text-align: center;"><img src="img/.png" height="550" width="700"></a></div>
+<div class="separator" style="clear: both; text-align: center;"><img src="img/big_chess_regresion.png" height="550" width="700"></a></div>
 
 
 <p>Once we go out of this region it becomes a bit more nonlinear.</p>
@@ -414,7 +414,7 @@ abline(a = reg$coefficients[1], b = reg$coefficients[2])</code></pre>
 
 
 
-<div class="separator" style="clear: both; text-align: center;"><img src="img/.png" height="550" width="700"></a></div>
+<div class="separator" style="clear: both; text-align: center;"><img src="img/big_chess_regression_wider.png" height="550" width="700"></a></div>
 
 
 <p>I have <a href="https://en.wikipedia.org/wiki/First-move_advantage_in_chess">read</a> that there is an advantage to going first. We saw some hints of this above. It seems as though it is equivalent to white getting <a href="http://www.robweir.com/blog/2014/01/first-move-advantage-in-chess.html">35 points</a> to added to their Elo. We should be able to validate this, even though neither source tells the exact method.</p>
@@ -467,7 +467,7 @@ qplot(d, p, data = x, color = factor(r)) +
   
   
   
-  <div class="separator" style="clear: both; text-align: center;"><img src="img/.png" height="550" width="700"></a></div>
+  <div class="separator" style="clear: both; text-align: center;"><img src="img/multi_prob.png" height="550" width="700"></a></div>
 
   
 <pre class="r"><code># Intersection is around 16 to 18, twice this is the advantage.
@@ -477,7 +477,7 @@ qplot(d, p, data = x[x$d &gt; -30 &amp; x$d &lt; 10, ], color = factor(r)) +
   
   
   
-  <div class="separator" style="clear: both; text-align: center;"><img src="img/.png" height="550" width="700"></a></div>
+  <div class="separator" style="clear: both; text-align: center;"><img src="img/multi_prob_small.png" height="550" width="700"></a></div>
 
   
 <p>This seems to line up with other sources.</p>
@@ -512,7 +512,7 @@ hist(final$rating, main = &quot;Distribution of Final Elo Rating&quot;,
 
 
 
-<div class="separator" style="clear: both; text-align: center;"><img src="img/.png" height="550" width="700"></a></div>
+<div class="separator" style="clear: both; text-align: center;"><img src="img/elo_hist.png" height="550" width="700"></a></div>
 
 
 <p>This does a great job of showing the current standings of all players.</p>
@@ -523,7 +523,7 @@ qplot(per, rating, data = x, color = factor(id)) + ylab('Elo Rating') +
   
 
 
-<div class="separator" style="clear: both; text-align: center;"><img src="img/.png" height="550" width="700"></a></div>
+<div class="separator" style="clear: both; text-align: center;"><img src="img/player_elo_over_time.png" height="550" width="700"></a></div>
 
 
 <p>We should try this on some data other than chess. How about the MLB 2014 season.</p>
@@ -540,7 +540,7 @@ ggplot(mlb_stat[mlb_stat$score != .5, ], aes(prob, fill = factor(score))) +
   
 
 
-<div class="separator" style="clear: both; text-align: center;"><img src="img/.png" height="550" width="700"></a></div>
+<div class="separator" style="clear: both; text-align: center;"><img src="img/mlb_density.png" height="550" width="700"></a></div>
 
 
 <pre class="r"><code>baseball &lt;- validate(mlb_stat)
@@ -550,7 +550,7 @@ reg &lt;- lm(baseball$mean ~ baseball$mid)
 abline(a = reg$coefficients[1], b = reg$coefficients[2])</code></pre>
 
 
-<div class="separator" style="clear: both; text-align: center;"><img src="img/.png" height="550" width="700"></a></div>
+<div class="separator" style="clear: both; text-align: center;"><img src="img/mlb_regression.png" height="550" width="700"></a></div>
 
 
 
@@ -564,7 +564,7 @@ abline(a = reg$coefficients[1], b = reg$coefficients[2])</code></pre>
 
 
 
-<div class="separator" style="clear: both; text-align: center;"><img src="img/.png" height="550" width="700"></a></div>
+<div class="separator" style="clear: both; text-align: center;"><img src="img/mlb_mean.png" height="550" width="700"></a></div>
 
 
 <p>This does not seem to work so well for baseball games. What about MMA fights. One thing to note there is a bit of code here that randomly shuffles the result. This set of data always has the winner as white. So there is no variance in the score. I am sure there is a way to get the information out without doing this but it has not yet come to me.</p>
@@ -584,7 +584,7 @@ ggplot(stat, aes(prob, fill = factor(score))) +
 
 
 
-<div class="separator" style="clear: both; text-align: center;"><img src="img/.png" height="550" width="700"></a></div>
+<div class="separator" style="clear: both; text-align: center;"><img src="img/ufc_density.png" height="550" width="700"></a></div>
 
 
 <pre class="r"><code>ufc &lt;- validate(stat)
@@ -596,7 +596,7 @@ abline(a = reg$coefficients[1], b = reg$coefficients[2])</code></pre>
 
 
 
-<div class="separator" style="clear: both; text-align: center;"><img src="img/.png" height="550" width="700"></a></div>
+<div class="separator" style="clear: both; text-align: center;"><img src="img/ufc_regression.png" height="550" width="700"></a></div>
 
 
 
@@ -607,7 +607,7 @@ abline(a = reg$coefficients[1], b = reg$coefficients[2])</code></pre>
   ylab('Mean') + labs(colour = &quot;Result&quot;)</code></pre>
 <pre><code>## Warning: Removed 14 rows containing missing values (geom_point).</code></pre>
 
-<div class="separator" style="clear: both; text-align: center;"><img src="img/.png" height="550" width="700"></a></div>
+<div class="separator" style="clear: both; text-align: center;"><img src="img/ufc_mean.png" height="550" width="700"></a></div>
 
 
 
