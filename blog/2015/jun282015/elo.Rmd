@@ -1,0 +1,430 @@
+---
+title: "Untitled"
+author: "Kenny Darrell"
+date: "June 28, 2015"
+output: html_document
+---
+
+[Elo](https://en.wikipedia.org/wiki/Elo_rating_system) is a method used to rank players in head to head competitions. It gives a sense of the difference in skill level between two players.
+
+### Background
+
+The questions that Elo answers are as follows; given some history of head to head competitions, what can we say about the skill level of competitors, who is likely to win or rather what is the probability that they will win. It allows us to answer all sorts of interesting questions, the most interesting though is given two opponents who have never faced off and even from different periods who would have won. For instance who would win in bout between [Mike Tyson](https://en.wikipedia.org/?title=Mike_Tyson) vs [Muhammad Ali](https://en.wikipedia.org/wiki/Muhammad_Ali). People already try to determine the winner, example [here](http://bleacherreport.com/articles/582929-mike-tyson-versus-muhammad-alian-in-depth-analysis-of-who-would-really-win), but this seems rather subjective. It also has a lot of bias as both of there careers are over, we have some recency bias as well. Say we want both of them in there prime, this allows answers to even more interesting questions. Say a match did occur, were both players in there prime, would it be a different outcome at different points in each's career? Elo is not perfect but it is far more objective than other methods. It allows us to see the competitor's rise and fall. It handles issues like the cold start problem by defaulting to a base value.
+
+There are a few packages, [here](http://cran.r-project.org/web/packages/PlayerRatings/PlayerRatings.pdf) and [here](http://cran.r-project.org/web/packages/EloRating/EloRating.pdf), that provide the functionality to run Elo. To really understand Elo though I decided to implement it myself.
+
+The first thing that is needed is some assumptions on what the data will look like. The data requires a few things. The first thing is some form of id for both players. We also need the outcome of the event. I chose to use chess as the base for describing the structure. The structure of this should be the id for white, the id for black and the outcome or score from white's perspective The score field is assumed to be 0, .5 or 1 for lose, draw and win. If the domain differs from chess we can have a natural mapping, in baseball and most other team sports we can say that the home team is white, in things such as Boxing or MMA we can say a particular corner is white, and there should be a similar analogy to other domains.
+
+### Implementation
+
+The function I constructed takes a dataset as described above. It also takes a parameter called ratings, which is a data.frame that contains the id and rating for players. The id should be the fields in white/black for data, if there are id's that have not been seen they will get a default value, some ratings may not be needed. The mx parameter is the initial value if the player id has never been seen, they are a rookie with no history. The k parameter, often called the K-factor, is a parameter used in Elo to determine the maximum adjustment per match. This code also comes from a bunch of attempts and details learned through odd bugs so I won't discuss all of the details.
+
+
+```{r elo_func}
+library(dplyr)
+library(ggplot2)
+
+elo_int <- function(data, ratings, k = 16, mx = 400) {
+  # Function to initialize the rating for a new player.
+  . %>% ifelse(is.na(.), mx, .) -> new_rate
+  
+  # The first step is to add ratings onto each side.
+  data %>%
+    left_join(ratings, by = c('white' = 'id')) %>% rename(w_rate = rating) %>%
+    left_join(ratings, by = c('black' = 'id')) %>% rename(b_rate = rating) %>%
+    # Now impute the rating when it does not exist.
+    mutate(new = is.na(w_rate) | is.na(b_rate)) %>%
+    mutate(w_rate = new_rate(w_rate), b_rate = new_rate(b_rate)) %>%
+    # This is the equation to calculate new ratings.
+    mutate(e = 1 / (1 + 10 ^ ((b_rate - w_rate) / 400))) -> data
+  
+  # Get the expected score for every match from both sides.
+  data %>% select(id = white, rate = w_rate, score, e) -> white
+  data %>% select(id = black, rate = b_rate, score, e) %>% 
+    mutate(score = 1 - score, e = 1 - e) -> black
+  
+  # This will calculate the new elo rating for each player.
+  rbind(white, black) %>% 
+    group_by(id) %>% 
+    mutate(rating = mean(rate) + k * (sum(score) - sum(e))) %>%
+    select(id, rating) %>% 
+    distinct %>% 
+    ungroup %>% 
+    arrange(desc(rating)) -> new_rating
+  
+  data %>% mutate(p = b_rate - w_rate) %>% select(score, p, new) -> data
+  
+  list(data = data, new_rating = new_rating)
+}
+
+```
+
+This function will return two things: the new rating for each player and data frame with the outcome of the match with the differential and whether or not one of the players was new thus have a default value.
+
+### Example
+
+Here is a small dataset that will shed some light on what is happening.
+
+```{r test_elo_funct}
+data <- data.frame(white = c(1, 3, 5, 7, 9, 11), black = c(2, 4, 6, 8, 10, 12), score = c(1, 1, 1, 1, 0, 1))
+
+rate <- data.frame(id = 1:10, rating = c(400, 400, 500, 400, 400, 500, 800, 400, 1800, 400))
+
+elo_int(data, rate)
+```
+
+This small example provides a few cases of interest. We have a set of matches and the rating for each of the competitors involved. The first match is even 400-400. The winner jumps up to roughly 408 and the loser down to 392. Thus we can see an 8 point adjustment which is half of the total possible, and we can see how players move as they have more matches, over time converging to their real skill level, or trailing them if they are rising or falling. The next match has a 500-400, the higher ranked player wins, but he gets a much smaller bump because this was the more likely event. The next match has a 400-500 but here the higher ranked player loses. The shifts here are almost twice that of the last match and in the opposite direction. This is because this event was much less expected. It shows that if players are rated incorrectly the issue should resolve itself as they play more. The next case is a match between 800-400. The higher rated player wins and there is a very small change. This shows that the shift are related to the difference. It also tries to make it hard for a good player to play a lot of matches against lower players to increase their rating, something common to many other types of ranking systems. We have another case where there is a huge discrepancy in score, but the higher ranking player loses. Here we see roughly the maximum adjustment applied to both players. The last case shows how it handles the cold start problem. We can have a value to initialize players at a common value and over time they should move to there correct rating. 
+
+### Rolling Through Time
+
+If we have lots of matches we need some sort of wrapper to run this over time. This way we can see a players history. The next function will take care of this. It can take some form of initial ratings and also some method to denote how to step through time. This function takes a list of all of the matches, this dataset is similar to the above data except that it expects a field that displays some form of temporal element. The default rating is null, meaning you do not have ratings for any of the players. The verbose options simply displays an output after each step in time. The complete argument is meant to return the rating for each player at every point in time instead of just the places where we see them competing.
+
+```{r elo_loop}
+elo_loop <- function(data, rate = NULL, period = 'month',  verbose = F, complete = F, ...) {
+  if (is.null(rate)) {
+    rate <- data.frame(id = numeric(), rating = numeric(), per = numeric())
+  }
+  stat <- data.frame(score = numeric(), p = numeric(), per = numeric())
+  for (i in sort(unique(data[, period]))) {
+    month <- data[data[, period] == i, ]
+    rates <- rate[rev(!duplicated(rev(rate$id))), ]
+    
+    tmp <- elo_int(month, rates, ...)
+    if (nrow(tmp[[2]]) > 0) {
+      rate <- rbind(rate, data.frame(tmp[[2]], per = i))
+    }
+    if (complete == TRUE) {
+      old <- anti_join(rate[rate$per == i-1, ], 
+                       tmp$new_rating, by = 'id')
+      if (nrow(old) == 0) {
+        rate <- rbind(rate, data.frame(old))
+      } else {
+        rate <- rbind(rate, data.frame(old[, 1:2], per = i))
+      }
+    }
+    stat <- rbind(stat, data.frame(tmp[[1]], per = i))
+    if(verbose) print(i)
+  }
+  
+  stat$prob <- 1 / (1 + 10 ^ (stat$p / 400))
+  stat$d <- -round(stat$p)
+  stat <- stat[order(stat$p), ]
+  list(stat = stat, rate = rate)
+}
+```
+
+Here player one has no rating, but he plays another player each month who is rated. These players are better than the 400 default as well. They range from 500 to 1000. Our new player wins every match so he must be pretty good. This new function allows us to watch his climb.
+
+```{r test_elo_loop}
+data <- data.frame(white = 1, black = 2:10, score = rep(1, 9), month = 1:9)
+rate <- data.frame(id = 2:10, rating = seq(500, 1000, length.out = 9), per = 0)
+
+new_rate <- elo_loop(data, rate, 'month', complete = T)
+
+ggplot(new_rate$rate, aes(x = per, y = rating, group = factor(id), 
+                          colour = factor(id))) + 
+  geom_line() + geom_point() + xlab('Period') + 
+  ylab('Elo Rating') + labs(colour = "Player")
+```
+
+We can also speed the convergence process up. To do this we increase the value of k. Now we can see the competitor moving up faster with each victory.
+
+```{r}
+new_rate <- elo_loop(data, rate, 'month', k = 64, complete = T)
+
+ggplot(new_rate$rate, aes(x = per, y = rating, group = factor(id), 
+                          colour = factor(id))) + 
+  geom_line() + geom_point() + xlab('Period') + 
+  ylab('Elo Rating') + labs(colour = "Player")
+```
+
+### Real Data
+
+Lets try this out on some real data. This data is roughly 65,000 chess matches. For this data set we have the initial ratings for most players. After a bit of prepping we can send it into the our Elo utility.
+
+```{r small_base}
+load('data/small_chess.RData')
+load('data/initial_ratings.RData')
+
+chess_stat <- elo_loop(small_chess, verbose = F, rate = init)$stat
+
+ggplot(chess_stat[chess_stat$score != .5, ], aes(prob, fill = factor(score))) + 
+  geom_density(alpha = 0.2) + xlab('Win Probability') + 
+  ylab('Density') + labs(colour = "Result")
+```
+
+
+This plot attempts to show how white wins more when it has a higher probability of winning and loses more when the probability is lower. There are a few issues with it though. The first issue is related to the huge bulbs on the sides. We have a very poor initial value. Most of these players have very high Elo ratings, so a new player who takes the default value of 400 will have a large probability of losing. Which side it is on depends on whether they are white or black. The only logical decision here is to use the mean value of players in this cohort as the initial value. We can also see a slight difference in the peaks of each curve. This indicates that there is an advantage to one side, since the wins are shifted to right it means that the white player has a slight advantage in going first. First lets tackle the initial value problem.
+
+```{r small_better_init}
+chess_stat <- elo_loop(small_chess, verbose = F, rate = init,  
+                 mx = mean(init$rating))$stat 
+
+ggplot(chess_stat[chess_stat$score != .5, ], aes(prob, fill = factor(score))) + 
+  geom_density(alpha = 0.2) + xlab('Win Probability') + 
+  ylab('Density') + labs(colour = "Result")
+```
+
+This seems to have fixed that issue. Lets also make this plot more intuitive. We can flip the loses to the other side, making this always the view of the winner.
+
+```{r}
+chess_stat_wl <- chess_stat[chess_stat$score != .5, ]
+chess_stat_wl$p <- ifelse(chess_stat_wl$score == 1, chess_stat_wl$prob, 
+                          1 - chess_stat_wl$prob)
+
+ggplot(chess_stat_wl, aes(p, fill = factor(1))) + geom_density(alpha = 0.2) +
+  xlab('Win Probability') + ylab('Density')
+```
+
+This plot shows some of the probabilistic impacts of competitions. Having a higher ranking does not guarantee victory it just means that there is a higher probability of winning. We could see that in the last plot as the non-overlapping region.
+
+Speaking of probability, now that we have some real data we should check some of the stats to make sure this really works. We can do this by looking at the probability of winning. If some score difference says that this should result in a win some percentage of the time, does that actually happen?
+
+
+```{r validate_1}
+head(chess_stat_wl)
+
+validate <- function(df, new = F) {
+  eval <- data.frame(mid = numeric(), mean = numeric(), 
+                     var = numeric(), cnt = numeric())
+  
+  for (i in 10:90) {
+    up <- i / 100 + .02
+    low <- i / 100 - .02
+    if (new) {
+      obs <- df[df$prob > low & df$prob < up & !df$new, ]$score
+    } else {
+      obs <- df[df$prob > low & df$prob < up, ]$score
+    }
+    
+    eval <- rbind(eval, data.frame(mid = i/100, mean = mean(obs), 
+                                   var = var(obs), cnt = length(obs)))
+  }
+  eval
+}
+
+eval_chess <- validate(chess_stat)
+
+plot(eval_chess$mid, eval_chess$mean, ylim = c(0, 1), ylab = 'Proportion', xlab = 'Probability')
+ggplot(eval_chess, aes(x = mid, y = mean)) + 
+  geom_errorbar(aes(ymin = mean-var, ymax = mean+var), colour = "black", 
+                width = .01, position = position_dodge(0.1)) +
+  geom_point(size = 3, shape = 21, fill = "white") + 
+  scale_y_continuous(limits = c(0, 1))
+```
+
+
+This looks pretty good in the region of .4 to .6 but falls apart outside of that. Things get a little chaotic as we get further from the .5. Does this have anything to do with new players who have no rating yet?
+
+```{r no_rookie}
+eval_no_rookie <- validate(chess_stat, T)
+
+plot(eval_no_rookie$mid, eval_no_rookie$mean, ylim = c(0, 1), ylab = 'Proportion', xlab = 'Probability')
+ggplot(eval_no_rookie, aes(x = mid, y = mean)) + 
+  geom_errorbar(aes(ymin = mean-var, ymax = mean+var), colour = "black", 
+                width = .01, position = position_dodge(0.1)) +
+  geom_point(size = 3, shape = 21, fill = "white") + 
+  scale_y_continuous(limits = c(0, 1))
+```
+
+That does not seem to be the cause. It had some impact but hard to tell how much. If we look closer at this data set we can see that we have very few observations in those areas.
+ 
+
+```{r}
+eval_chess[eval_chess$mid %in% c(seq(.1, .2, .01), seq(.45, .55, .01), 
+                                 seq(.8, .9, .01)), c(1, 4) ]
+```
+
+Does this mean that it is just a matter of having to few observations? There is another data set that has more matches. It does not have a set of initial rankings so I am going to use an educated guess, but we can see if it is related to the size.
+
+```{r big_set}
+load('data/big_chess.RData')
+
+big_c <- elo_loop(big_chess, verbose = F, mx = 2100)
+
+c_stat <- big_c$stat
+
+ggplot(c_stat[c_stat$score != .5, ], aes(prob, fill = factor(score))) + 
+  geom_density(alpha = 0.2) + xlab('Win Probability') + 
+  ylab('Density') + labs(colour = "Result")
+
+big_c_wl <- c_stat[c_stat$score != .5, ]
+big_c_wl$p <- ifelse(big_c_wl$score == 1, big_c_wl$prob, 
+                           1 - big_c_wl$prob)
+
+ggplot(big_c_wl, aes(p, fill = factor(1))) + geom_density(alpha = 0.2) + 
+  xlab('Win Probability') + ylab('Density') + labs(colour = "Result")
+
+big_val <- validate(big_c_wl, T)
+
+ggplot(big_val, aes(x = mid, y = mean)) + 
+  geom_errorbar(aes(ymin = mean-var, ymax = mean+var), colour = "black", 
+                width = .01, position = position_dodge(0.1)) +
+  geom_point(size = 3, shape = 21, fill = "white") + 
+  scale_y_continuous(limits = c(0, 1)) + xlab('Win Probability') + 
+  ylab('Mean') + labs(colour = "Result")
+```
+
+Having more data seems to clear up the chaos. There still seems to be something interesting happening as it is not a straight line. Coming from an engineering background this looks very familiar. It reminds me of all of the places where we had nonlinear effects that we would linearize
+
+
+```{r small_reg}
+lin <- big_val[big_val$mid <= .6 & big_val$mid >= .4, ]
+
+plot(lin$mid, lin$mean, ylim = c(0, 1), ylab = 'Proportion', xlab = 'Probability')
+reg <- lm(lin$mean ~ lin$mid)
+abline(a = reg$coefficients[1], b = reg$coefficients[2])
+```
+
+
+Once we go out of this region it becomes a bit more nonlinear.
+
+```{r large_reg}
+lin <- big_val[big_val$mid <= .8 & big_val$mid >= .2, ]
+
+plot(lin$mid, lin$mean, ylim = c(0, 1), ylab = 'Proportion', xlab = 'Probability')
+reg <- lm(lin$mean ~ lin$mid)
+abline(a = reg$coefficients[1], b = reg$coefficients[2])
+```
+
+I have [read](https://en.wikipedia.org/wiki/First-move_advantage_in_chess) that there is an advantage to going first. We saw some hints of this above. It seems as though it is equivalent to white getting [35 points](http://www.robweir.com/blog/2014/01/first-move-advantage-in-chess.html) to added to their Elo. We should be able to validate this, even though neither source tells the exact method.
+
+
+
+```{r hist_rating}
+# This should be .5 if there is not white advantage
+mean(c_stat$score)
+table(c_stat$score)
+
+
+# That also assumes the Elo differential is 0.
+mean(c_stat$d)
+# It is not zero but is fairly close, closer than the reference.
+
+mean(c_stat[c_stat$score == 1, ]$prob) - mean(c_stat[c_stat$score == 0, ]$prob)
+t.test(c_stat[c_stat$score == 1, ]$prob, c_stat[c_stat$score == 0, ]$prob)
+
+# There is a valid difference.
+
+# This is the advantage that white has in moving first.
+head(c_stat[c_stat$prob < mean(c_stat[c_stat$score == 1, ]$prob), ], 1)$d
+
+# But we also need to remove the average white advantage 
+
+head(c_stat[c_stat$prob < mean(c_stat[c_stat$score == 1, ]$prob), ], 1)$d - 2 * mean(c_stat$d)
+
+x <- data.frame(d = numeric(), p = numeric(), r = numeric())
+for (i in -400:400) {
+  tmp <- c_stat[c_stat$d == i, ]
+  tmp2 <- c(sum(tmp$score == 1), sum(tmp$score == 0), sum(tmp$score == .5))
+  x <- rbind(x, data.frame(d = i, p = tmp2 / nrow(tmp), r = c(1, 0, .5)))
+}
+
+
+qplot(d, p, data = x, color = factor(r)) +
+  ylab('Proportion') + xlab('Elo Difference') + labs(colour = "Result")
+
+# Intersection is around 16 to 18, twice this is the advantage.
+qplot(d, p, data = x[x$d > -30 & x$d < 10, ], color = factor(r)) +
+  ylab('Proportion') + xlab('Elo Difference') + labs(colour = "Result")
+
+```
+
+This seems to line up with other sources.
+
+
+```{r eval}
+c_stat$pr <- round(c_stat$prob)
+table(c_stat$pr, c_stat$score)
+
+c_stat$pr2 <- as.numeric(cut(c_stat$prob, seq(0, 1, .1))) / 10 - .05
+table(c_stat$pr2, c_stat$score)
+```
+
+There are plenty of other interesting aspects of what is happening here as well.
+```{r}
+rate <- big_c$rate
+
+final <- rate[rev(!duplicated(rev(rate$id))), ]
+final <- final[order(-final$rating), ]
+hist(final$rating, main = "Distribution of Final Elo Rating", 
+     xlab = "Elo Rating")
+```
+
+This does a great job of showing the current standings of all players.
+
+```{r stream_rating}
+x <- rate[rate$id %in% c(22144, 26816, 58624, 19532, 94825), ]
+
+qplot(per, rating, data = x, color = factor(id)) + ylab('Elo Rating') + 
+  xlab('Time Period') + labs(colour = "Player ID")
+```
+
+We should try this on some data other than chess. How about the MLB 2014 season.
+
+
+
+```{r baseball}
+load('data/mlb.RData')
+
+mlb <- mlb_scores[mlb_scores$p == 'home', ]
+
+mlb_stat <- elo_loop(mlb, verbose = F,  mx = 2100)$stat
+
+ggplot(mlb_stat[mlb_stat$score != .5, ], aes(prob, fill = factor(score))) + 
+  geom_density(alpha = 0.2) + xlab('Win Probability') + 
+  ylab('Density') + labs(colour = "Result")
+
+baseball <- validate(mlb_stat)
+
+plot(baseball$mid, baseball$mean, ylim = c(0, 1), ylab = 'Proportion', xlab = 'Probability')
+reg <- lm(baseball$mean ~ baseball$mid)
+abline(a = reg$coefficients[1], b = reg$coefficients[2])
+
+ggplot(baseball, aes(x = mid, y = mean)) + 
+  geom_errorbar(aes(ymin = mean - var, ymax = mean + var)) +
+  geom_point(size = 3, shape = 21, fill = "white") + 
+  scale_y_continuous(limits = c(0, 1)) + xlab('Win Probability') + 
+  ylab('Mean') + labs(colour = "Result")
+```
+
+
+This does not seem to work so well for baseball games. What about MMA fights. One thing to note there is a bit of code here that randomly shuffles the result. This set of data always has the winner as white. So there is no variance in the score. I am sure there is a way to get the information out without doing this but it has not yet come to me.
+
+```{r ufc}
+load('data/ufc.RData')
+
+stat <- elo_loop(fights, verbose = F,  mx = 2100)$stat
+
+stat$score <- sample(c(0, 1), nrow(stat), T)
+stat$prob <- ifelse(stat$score == 0, 1 - stat$prob, stat$prob)
+stat$d <- ifelse(stat$score == 0, -stat$d, stat$d)
+
+ggplot(stat, aes(prob, fill = factor(score))) + 
+  geom_density(alpha = 0.2) + 
+  geom_density(alpha = 0.2) + xlab('Win Probability') + 
+  ylab('Density') + labs(colour = "Result")
+
+ufc <- validate(stat)
+
+plot(ufc$mid, ufc$mean, ylim = c(0, 1), ylab = 'Proportion', xlab = 'Probability')
+reg <- lm(ufc$mean ~ ufc$mid)
+abline(a = reg$coefficients[1], b = reg$coefficients[2])
+
+ggplot(ufc, aes(x = mid, y = mean)) + 
+  geom_errorbar(aes(ymin = mean - var, ymax = mean + var)) +
+  geom_point(size = 3, shape = 21, fill = "white") + 
+  scale_y_continuous(limits = c(0, 1)) + xlab('Win Probability') + 
+  ylab('Mean') + labs(colour = "Result")
+```
+
+
+It seems to work better in this case. One thing that I started wondering about is that baseball has lots more things happening, you have different pitchers, you are the road for various amounts of time meaning you might be worn out while playing a team you would normally beat, etc. There is also some element to getting into the playoffs, some teams may rest people where a lose may be strategic. I am just thinking through these and not making any accusations though. Nobody in baseball has ever one most of there games. It is also interesting that baseball has points. There is still a win and a lose but you can win by 1 or 10 which are two very different things. There is a distribution which maps to baseball pretty well, it is known as the [Skellam Distribution](https://en.wikipedia.org/wiki/Skellam_distribution). It makes a prediction of what the difference will be in the score, which is also a way of predicting the outcome, just use the sign. I am interested in trying this on baseball. There are things in MMA which are more than just win/lose but they are more related to how you one, submission vs knockout. There is also a time component and it can even get down to voting if the time runs out. Not really sure how to quantify these into how much you won by, unless it is just votes, but that seems quasi-subjective. Is there a such thing in chess of how large was your victory.
+
+
+
+
+
+
+
+
