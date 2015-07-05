@@ -5,7 +5,7 @@
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
 <meta http-equiv="x-ua-compatible" content="IE=9" >
 
-<title>Neo4j Soc Bal</title>
+<title>Elo</title>
 
 
 
@@ -33,7 +33,7 @@
         <h2></h2>
 
 <h4 class="author"><em>Kenny Darrell</em></h4>
-<h4 class="date"><em>July 4, 2014</em></h4>
+<h4 class="date"><em>June 28, 2015</em></h4>
         </section>
       </div>
     </header>
@@ -43,10 +43,10 @@
 
 
 
-<p><a href="https://en.wikipedia.org/wiki/Elo_rating_system">Elo</a> is a method used to rank players in head to head competitions. It gives a sense of the difference in skill level between two players.</p>
+<p><a href="https://en.wikipedia.org/wiki/Elo_rating_system">Elo</a> is a method used to rank players in head to head competitions. It can give a sense of the difference in skill level between two players.</p>
 <div id="background" class="section level3">
 <h3>Background</h3>
-<p>The questions that Elo answers are as follows; given some history of head to head competitions, what can we say about the skill level of competitors, who is likely to win or rather what is the probability that they will win. It allows us to answer all sorts of interesting questions, the most interesting though is given two opponents who have never faced off and even from different periods who would have won. For instance who would win in bout between <a href="https://en.wikipedia.org/?title=Mike_Tyson">Mike Tyson</a> vs <a href="https://en.wikipedia.org/wiki/Muhammad_Ali">Muhammad Ali</a>. People already try to determine the winner, example <a href="http://bleacherreport.com/articles/582929-mike-tyson-versus-muhammad-alian-in-depth-analysis-of-who-would-really-win">here</a>, but this seems rather subjective. It also has a lot of bias as both of there careers are over, we have some recency bias as well. Say we want both of them in there prime, this allows answers to even more interesting questions. Say a match did occur, were both players in there prime, would it be a different outcome at different points in each’s career? Elo is not perfect but it is far more objective than other methods. It allows us to see the competitor’s rise and fall. It handles issues like the cold start problem by defaulting to a base value.</p>
+<p>Given some history of head to head competition data Elo attempts to answer the following questions; what is the skill level of various competitors and what is the probability that a given competitor will win over another. It allows us to answer all sorts of interesting questions, the most interesting though is given two opponents who have never faced off and even from different periods who would have won. For instance who would win in bout between <a href="https://en.wikipedia.org/?title=Mike_Tyson">Mike Tyson</a> vs <a href="https://en.wikipedia.org/wiki/Muhammad_Ali">Muhammad Ali</a>. People already try to determine the winner, example <a href="http://bleacherreport.com/articles/582929-mike-tyson-versus-muhammad-alian-in-depth-analysis-of-who-would-really-win">here</a>, but this seems rather subjective. It also has a lot of bias as both of there careers are over, we have some recency bias as well. Say we want both of them in there prime, this allows answers to even more interesting questions. Say a match did occur, were both players in there prime, would it be a different outcome at different points in each’s career? Elo is not perfect but it is far more objective than other methods. It allows us to see the competitor’s rise and fall. It handles issues like the cold start problem by defaulting to a base value.</p>
 
 <p>There are a few packages, <a href="http://cran.r-project.org/web/packages/PlayerRatings/PlayerRatings.pdf">here</a> and <a href="http://cran.r-project.org/web/packages/EloRating/EloRating.pdf">here</a>, that provide the functionality to run Elo. To really understand Elo though I decided to implement it myself.</p>
 
@@ -57,18 +57,8 @@
 <h3>Implementation</h3>
 
 <p>The function I constructed takes a dataset as described above. It also takes a parameter called ratings, which is a data.frame that contains the id and rating for players. The id should be the fields in white/black for data, if there are id’s that have not been seen they will get a default value, some ratings may not be needed. The mx parameter is the initial value if the player id has never been seen, they are a rookie with no history. The k parameter, often called the K-factor, is a parameter used in Elo to determine the maximum adjustment per match. This code also comes from a bunch of attempts and details learned through odd bugs so I won’t discuss all of the details.</p>
-<pre class="r"><code>library(dplyr)</code></pre>
-<pre><code>## 
-## Attaching package: 'dplyr'
-## 
-## The following object is masked from 'package:stats':
-## 
-##     filter
-## 
-## The following objects are masked from 'package:base':
-## 
-##     intersect, setdiff, setequal, union</code></pre>
-<pre class="r"><code>library(ggplot2)
+<pre class="r"><code>library(dplyr)
+library(ggplot2)
 
 elo_int &lt;- function(data, ratings, k = 16, mx = 400) {
   # Function to initialize the rating for a new player.
@@ -611,7 +601,7 @@ abline(a = reg$coefficients[1], b = reg$coefficients[2])</code></pre>
 
 
 
-<p>It seems to work better in this case. One thing that I started wondering about is that baseball has lots more things happening, you have different pitchers, you are the road for various amounts of time meaning you might be worn out while playing a team you would normally beat, etc. There is also some element to getting into the playoffs, some teams may rest people where a lose may be strategic. I am just thinking through these and not making any accusations though. Nobody in baseball has ever one most of there games. It is also interesting that baseball has points. There is still a win and a lose but you can win by 1 or 10 which are two very different things. There is a distribution which maps to baseball pretty well, it is known as the <a href="https://en.wikipedia.org/wiki/Skellam_distribution">Skellam Distribution</a>. It makes a prediction of what the difference will be in the score, which is also a way of predicting the outcome, just use the sign. I am interested in trying this on baseball. There are things in MMA which are more than just win/lose but they are more related to how you one, submission vs knockout. There is also a time component and it can even get down to voting if the time runs out. Not really sure how to quantify these into how much you won by, unless it is just votes, but that seems quasi-subjective. Is there a such thing in chess of how large was your victory.</p>
+<p>It seems to work better in this case. One thing that I started wondering about is that baseball has lots more things happening, you have different pitchers, you are the road for various amounts of time meaning you might be worn out while playing a team you would normally beat, etc. There is also some element to getting into the playoffs, some teams may rest people where a lose may be strategic. I am just thinking through these and not making any accusations though. Nobody in baseball has ever one most of there games. It is also interesting that baseball has points. There is still a win and a lose but you can win by 1 or 10 which are two very different things. There is a distribution which maps to baseball pretty well, it is known as the <a href="https://en.wikipedia.org/wiki/Skellam_distribution">Skellam Distribution</a>. It makes a prediction of what the difference will be in the score, which is also a way of predicting the outcome, just use the sign. I am interested in trying this on baseball. There are things in MMA which are more than just win/lose but they are more related to how you one, submission vs knockout. There is also a time component and it can even get down to voting if the time runs out. Not really sure how to quantify these into how much you won by, unless it is just votes, but that seems quasi-subjective. Is there a such thing in chess of how large was your victory? These would be interesting to investigate further!</p>
 </div>
 
 
