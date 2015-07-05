@@ -29,7 +29,7 @@
     <header>
       <div class="container">
         <a href="http://darrkj.github.io/blogs" class="btn">Blogs</a>
-        <h1>Simplifying Things with Neo4j</h1>
+        <h1>Understanding Elo</h1>
         <h2></h2>
 
 <h4 class="author"><em>Kenny Darrell</em></h4>
@@ -220,7 +220,7 @@ ggplot(chess_stat[chess_stat$score != .5, ], aes(prob, fill = factor(score))) +
   ylab('Density') + labs(colour = &quot;Result&quot;)</code></pre>
   
 
-<div class="separator" style="clear: both; text-align: center;"><img src="img/.png" height="550" width="700"></a></div>
+<div class="separator" style="clear: both; text-align: center;"><img src="img/density_bad_init.png" height="550" width="700"></a></div>
 
 
 
@@ -234,7 +234,7 @@ ggplot(chess_stat[chess_stat$score != .5, ], aes(prob, fill = factor(score))) +
   
 
 
-<div class="separator" style="clear: both; text-align: center;"><img src="img/.png" height="550" width="700"></a></div>
+<div class="separator" style="clear: both; text-align: center;"><img src="img/density_better_init.png" height="550" width="700"></a></div>
 
 
 <p>This seems to have fixed that issue. Lets also make this plot more intuitive. We can flip the loses to the other side, making this always the view of the winner.</p>
@@ -248,7 +248,7 @@ ggplot(chess_stat_wl, aes(p, fill = factor(1))) + geom_density(alpha = 0.2) +
 
 
 
-<div class="separator" style="clear: both; text-align: center;"><img src="img/.png" height="550" width="700"></a></div>
+<div class="separator" style="clear: both; text-align: center;"><img src="img/density_one_side.png" height="550" width="700"></a></div>
 
 
 <p>This plot shows some of the probabilistic impacts of competitions. Having a higher ranking does not guarantee victory it just means that there is a higher probability of winning. We could see that in the last plot as the non-overlapping region.</p>
@@ -287,7 +287,7 @@ plot(eval_chess$mid, eval_chess$mean, ylim = c(0, 1), ylab = 'Proportion', xlab 
 
 
 
-<div class="separator" style="clear: both; text-align: center;"><img src="img/.png" height="550" width="700"></a></div>
+<div class="separator" style="clear: both; text-align: center;"><img src="img/chess_pob_prob_van.png" height="550" width="700"></a></div>
 
 
 <pre class="r"><code>ggplot(eval_chess, aes(x = mid, y = mean)) + 
@@ -299,7 +299,7 @@ plot(eval_chess$mid, eval_chess$mean, ylim = c(0, 1), ylab = 'Proportion', xlab 
 
 
 
-<div class="separator" style="clear: both; text-align: center;"><img src="img/.png" height="550" width="700"></a></div>
+<div class="separator" style="clear: both; text-align: center;"><img src="img/chess_pob_prob_gg.png" height="550" width="700"></a></div>
 
 
 <p>This looks pretty good in the region of .4 to .6 but falls apart outside of that. Things get a little chaotic as we get further from the .5. Does this have anything to do with new players who have no rating yet?</p>
@@ -309,7 +309,7 @@ plot(eval_no_rookie$mid, eval_no_rookie$mean, ylim = c(0, 1), ylab = 'Proportion
 
 
 
-<div class="separator" style="clear: both; text-align: center;"><img src="img/.png" height="550" width="700"></a></div>
+<div class="separator" style="clear: both; text-align: center;"><img src="img/chess_pob_prob_van_no_rook.png" height="550" width="700"></a></div>
 
 
 <pre class="r"><code>ggplot(eval_no_rookie, aes(x = mid, y = mean)) + 
@@ -320,7 +320,7 @@ plot(eval_no_rookie$mid, eval_no_rookie$mean, ylim = c(0, 1), ylab = 'Proportion
   
 
 
-<div class="separator" style="clear: both; text-align: center;"><img src="img/.png" height="550" width="700"></a></div>
+<div class="separator" style="clear: both; text-align: center;"><img src="img/chess_pob_prob_gg_no_rook.png" height="550" width="700"></a></div>
 
 
 <p>That does not seem to be the cause. It had some impact but hard to tell how much. If we look closer at this data set we can see that we have very few observations in those areas.</p>
