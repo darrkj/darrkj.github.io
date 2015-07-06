@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<rss version="2.0">
+<channel>
+<title>Randomly Distributed Thoughts</title>
+<link>http://darrkj.github.io/blogs</link>
+<description>Best blog ever</description>
+<item>
+<title>Understanding the Elo System</title>
+<link>http://darrkj.github.io/blog/2015/jun282015/</link>
+<guid>http://darrkj.github.io/blog/2015/jun282015/</guid>
+<pubDate>Sun, 28 Jun 2015 15:17:32 GMT</pubDate>
+<description>Description for your content.</description>
+</item>
+<item>
+<title>Markov Clustering and Voronoi</title>
+<link>http://darrkj.github.io/blog/2015/may252015/</link>
+<guid>http://darrkj.github.io/blog/2015/may252015/</guid>
+<pubDate>Mon, 25 May 2015 15:17:32 GMT</pubDate>
+<description>Description for your content.</description>
+</item>
+<item>
+<title>The Vocabulary of Data</title>
+<link>http://darrkj.github.io/blog/2015/apr282015/</link>
+<guid>http://darrkj.github.io/blog/2015/apr282015/</guid>
+<pubDate>Tue, 28 Apr 2015 15:17:32 GMT</pubDate>
+<description>Description for your content.</description>
+</item>
+</channel>
+</rss>
