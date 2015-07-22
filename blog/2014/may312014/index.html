@@ -178,7 +178,7 @@ f(unit(3))</code></pre>
 ## 
 ## [[2]]
 ## [1] &quot; sine was called .  .&quot;</code></pre>
-<p>This is the basic idea of the Writer Monad. It allows you to add context to by writing data to the computations and having machinery to extract and inject data and functions into this monadic container.</p>
+<p>This is the basic idea of the Writer Monad. It allows you to add context by writing data to the computations and having machinery to extract and inject data and functions into this monadic container.</p>
 <p>This can be super powerful if we tweak our functions just a bit.</p>
 <pre class="r"><code>arg &lt;- function(x) {
   gsub('()', '', x, fixed = T)
