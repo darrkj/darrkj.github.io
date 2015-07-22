@@ -46,7 +46,7 @@
 
 <p>I was somewhat mystified in finding a solution to the problem posed at the end of a <a href="http://darrkj.github.io/blog/2014/apr202014/">previous blog</a>. I was trying to find a way to attach meta data to pieces of data as they flowed through various analytic steps, a common task while constructing a dataset. I saw a <a href="https://blog.jcoglan.com/2011/03/05/translation-from-haskell-to-javascript-of-selected-portions-of-the-best-introduction-to-monads-ive-ever-read/">great</a> <a href="https://blog.jcoglan.com/2011/03/06/monad-syntax-for-javascript/">blog</a> that seems to provide the perfect solution. I should have known that the world of functional programming has already solved this problem, only everyone outside of functional programming is probably scared of the answer because it contains the <a href="http://en.wikipedia.org/wiki/Monad_(functional_programming)">M</a> word.</p>
 <p>I have recreated that example here to see how easy it is to implement and understand the writer monad concept.</p>
-<p>To restate the problem, it would be nice to know where the data you are working with came from, what steps were taken to create it and have that code to redo it yourself to validate concerns as to how it came to be.</p>
+<p>To restate the problem, it would be nice to know were the data you are working with came from, what steps were taken to create it and have that code to redo it yourself to validate concerns as to how it came to be.</p>
 <p>Lets create a few functions to display the problem, basically trying to recreate the code from the source above.</p>
 <p>Create a sine function.</p>
 <pre class="r"><code>sine &lt;- function(x) sin(x)</code></pre>
@@ -57,7 +57,7 @@
 <pre><code>## [1] 0.9093</code></pre>
 <pre class="r"><code>cube(2)</code></pre>
 <pre><code>## [1] 8</code></pre>
-<p>In a normal data flow though we need to create a process for the data to flow through. A simple example would be to string the fucntions together.</p>
+<p>In a normal data flow though we need to create a process for the data to flow through. A simple example would be to string the functions together.</p>
 <p>Compose the functions into a new function.</p>
 <pre class="r"><code>sineCubed &lt;- function(x) cube(sine(x))
 sineCubed(2)</code></pre>
@@ -165,7 +165,7 @@ unit(3)</code></pre>
 ## [[2]]
 ## [1] &quot; cube was called . sine was called .&quot;</code></pre>
 <p>We have just created two inverse operations, each counters what the other does. Paraphrasing Wikipedia <em>Formally, a monad consists of a type constructor M and two operations, bind and unit. The unit operation takes a value from a plain type and puts it into a monadic container using the constructor, creating a monadic value. The bind operation performs the reverse process, extracting the original value from the container and passing it to the associated next function in the pipeline.</em></p>
-<p>Now as we may want to add more functions to our pool we have to add the string construction to each function. We want to lift our functions up to be on par with our monadic container. R makes it very easy to fulfill the needs of lift by being very functional an allowing you to pass functions to functions as arguments and have functions return functions.</p>
+<p>Now as we may want to add more functions to our pool we have to add the string construction to each function. We want to lift our functions up to be on par with our monadic container. R makes it very easy to fulfill the needs of lift by being very functional and allowing you to pass functions to functions as arguments and have functions return functions.</p>
 <pre class="r"><code>lift &lt;- function(f) compose(unit, f)
 
 roundDebug &lt;- lift(round)
