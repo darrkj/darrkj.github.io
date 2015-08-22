@@ -29,7 +29,7 @@
     <header>
       <div class="container">
         <a href="http://darrkj.github.io/blogs" class="btn">Blogs</a>
-        <h1>Mapping the GTFS Data</h1>
+        <h1>Mapping GTFS Data</h1>
         <h2></h2>
 
 <h4 class="author"><em>Kenny Darrell</em></h4>
@@ -129,6 +129,9 @@ d</code></pre>
 ## 5         routes.txt    trips.txt   route_id
 ## 6     stop_times.txt    stops.txt    stop_id
 ## 7     stop_times.txt    trips.txt    trip_id</code></pre>
+
+<p>The next thing to check for is the actual overlap of these fields. Does one table contain everything and the other a subset or does neither contian every unique observation from a certain field.</p>
+
 <pre class="r"><code>d$a &lt;- NA
 d$b &lt;- NA
 d$c &lt;- NA
@@ -161,6 +164,9 @@ a &lt;- unique(gtfs_data[[x[1]]][, field])
 b &lt;- unique(gtfs_data[[x[2]]][, field])
 ab &lt;- length(intersect(a, b))</code></pre>
 
+<p>This looks good as everything is a subset of some other full set.</p>
+
+
 <pre class="r"><code>draw.pairwise.venn(length(a), length(b), length(intersect(a, b)), 
                    category = c(x[1], x[2]),
                    fill = c(&quot;goldenrod1&quot;, &quot;darkorange1&quot;),
@@ -169,7 +175,7 @@ ab &lt;- length(intersect(a, b))</code></pre>
 <div class="separator" style="clear: both; text-align: center;"><img src="venn.png" height="550" width="700"></a></div>
                    
                    
-<p>Here we can see that one is completely contained inside the other.</p>
+<p>Here we can see how one is completely contained inside the other. We can also use this info to figure out how to merge these sources together to get some set of data that is more insteresting.</p>
 <pre class="r"><code># Read the files into R.
 routes     &lt;- read.csv(&quot;gtfs_data/a-reich-gmbh-busbetrieb/routes.txt&quot;)
 stop_times &lt;- read.csv(&quot;gtfs_data/a-reich-gmbh-busbetrieb/stop_times.txt&quot;)
