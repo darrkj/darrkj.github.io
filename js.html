@@ -4,6 +4,16 @@
 
 <div onclick="clickHandler();">Random</div>
 
+<form method="post" action="demoform.asp">
+  <label for="points">Points:</label>
+  <input type="range" name="points" id="points" value="50" min="0" max="100">
+</form>
+
+<div class="range-slider" data-slider>
+  <span class="range-slider-handle" role="slider" tabindex="0"></span>
+  <span class="range-slider-active-segment"></span>
+  <input type="hidden">
+</div>
 
 <script>
 var mode = 0;
@@ -12,7 +22,7 @@ var destA = 7;
 var destB = 6;
 var startA = 1;
 var startB = 1;
-var SIZE = 20;
+var SIZE = 20 * range;
 var X = 30;
 var Y = 25;
 var CELLS = X * Y;
@@ -25,7 +35,7 @@ var colors = ['#000000', '#1A0000', '#330000', '#4C0000', '#660000', '#800000',
 function makeGrid(x, y) {
   var grid = [];
   for(var i = 0; i < x; i++) {
-    grid[i] = [];
+    //grid[i] = [];
     for(var j = 0; j < y; j++) {
       grid[i][j] = 0;
     }
