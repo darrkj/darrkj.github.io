@@ -43,45 +43,14 @@
 <p>A few months back I attended the <a href="http://dc.opendataday.org/">DC Ppen Data Day</a>. It was a pretty interesting event and hackathon. There were a lot of interesting problems. You can get an overview of some of the stuff we worked on <a href="https://opendatadaydc.hackpad.com/GTFS-Data-Group-HeQOJPb0nm3">here</a>.</p>
 <p>I want to walk through some of this to address a common problem in data science. Here are some of the initializations you will need to follow along.</p>
 <pre class="r"><code>library(rvest)
-library(dplyr)</code></pre>
-<pre><code>## 
-## Attaching package: 'dplyr'
-## 
-## The following objects are masked from 'package:stats':
-## 
-##     filter, lag
-## 
-## The following objects are masked from 'package:base':
-## 
-##     intersect, setdiff, setequal, union</code></pre>
-<pre class="r"><code>library(leaflet)
-library(igraph)</code></pre>
-<pre><code>## 
-## Attaching package: 'igraph'
-## 
-## The following object is masked from 'package:leaflet':
-## 
-##     %&gt;%
-## 
-## The following objects are masked from 'package:dplyr':
-## 
-##     %&gt;%, as_data_frame, groups, union
-## 
-## The following object is masked from 'package:rvest':
-## 
-##     %&gt;%
-## 
-## The following objects are masked from 'package:stats':
-## 
-##     decompose, spectrum
-## 
-## The following object is masked from 'package:base':
-## 
-##     union</code></pre>
-<pre class="r"><code>library(VennDiagram)</code></pre>
-<pre><code>## Loading required package: grid</code></pre>
-<pre class="r"><code># This makes reading data in from text files much more logical.
+library(dplyr)
+library(leaflet)
+library(igraph)
+library(VennDiagram)
+
+# This makes reading data in from text files much more logical.
 options(stringsAsFactors = FALSE)</code></pre>
+
 <p>To get the data you can go to the <a href="http://www.gtfs-data-exchange.com/">GTFS</a> website. There are many locations where this data is collected from. I have created a pretty simple way to get some of it.</p>
 <p>To do this we first create functions to crawl the site and find the locations of all of the sources zip files.</p>
 <pre class="r"><code># This function gets all of the URLs on the main page.
@@ -129,7 +98,7 @@ schema &lt;- Learn.Schema(gtfs_data)
 
 plot(schema[[2]])</code></pre>
 
-<div class="separator" style="clear: both; text-align: center;"><img src="schema.png" height="550" width="700"></a></div>
+<div class="separator" style="clear: both; text-align: center;"><img src="schema1.png" height="550" width="700"></a></div>
 
 <p>We have one file that is really not realted to the rest. We can confirm what we have seen and drop it using <code>Not.Connected</code> and <code>Drop.Extremes</code>.</p>
 <pre class="r"><code>Not.Connected(schema[[2]])</code></pre>
