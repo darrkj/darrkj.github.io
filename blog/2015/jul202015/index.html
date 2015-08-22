@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<!-- saved from url=(0014)about:internet -->
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+<meta http-equiv="x-ua-compatible" content="IE=9" >
+
+<title>Neo4j Soc Bal</title>
+
+
+
+    <link rel="stylesheet" type="text/css" href="../../../stylesheets/blog.css">
+<!-- Styles for R syntax highlighter -->
+    <link rel="stylesheet" type="text/css" href="../../../stylesheets/blog2.css">
+    <link rel="stylesheet" type="text/css" href="../../../stylesheets/stylesheet.css" media="screen" />
+    <link rel="stylesheet" type="text/css" href="../../../stylesheets/pygment_trac.css" media="screen" />
+    <link rel="stylesheet" type="text/css" href="../../../stylesheets/print.css" media="print" />
+<!-- R syntax highlighter -->
+    <script src="../../../javascripts/r.js"></script>
+
+
+</head>
+
+<body>
+
+<div class="container">
+
+
+    <header>
+      <div class="container">
+        <a href="http://darrkj.github.io/blogs" class="btn">Blogs</a>
+        <h1>Simplifying Things with Neo4j</h1>
+        <h2></h2>
+
+<h4 class="author"><em>Kenny Darrell</em></h4>
+<h4 class="date"><em>July 4, 2014</em></h4>
+        </section>
+      </div>
+    </header>
+
+
+
+<p>A few months back I attended the <a href="http://dc.opendataday.org/">DC Ppen Data Day</a>. It was a pretty interesting event and hackathon. There were a lot of interesting problems. You can get an overview of some of the stuff we worked on <a href="https://opendatadaydc.hackpad.com/GTFS-Data-Group-HeQOJPb0nm3">here</a>.</p>
+<p>I want to walk through some of this to address a common problem in data science. Here are some of the initializations you will need to follow along.</p>
+<pre class="r"><code>library(rvest)
+library(dplyr)</code></pre>
+<pre><code>## 
+## Attaching package: 'dplyr'
+## 
+## The following objects are masked from 'package:stats':
+## 
+##     filter, lag
+## 
+## The following objects are masked from 'package:base':
+## 
+##     intersect, setdiff, setequal, union</code></pre>
+<pre class="r"><code>library(leaflet)
+library(igraph)</code></pre>
+<pre><code>## 
+## Attaching package: 'igraph'
+## 
+## The following object is masked from 'package:leaflet':
+## 
+##     %&gt;%
+## 
+## The following objects are masked from 'package:dplyr':
+## 
+##     %&gt;%, as_data_frame, groups, union
+## 
+## The following object is masked from 'package:rvest':
+## 
+##     %&gt;%
+## 
+## The following objects are masked from 'package:stats':
+## 
+##     decompose, spectrum
+## 
+## The following object is masked from 'package:base':
+## 
+##     union</code></pre>
+<pre class="r"><code>library(VennDiagram)</code></pre>
+<pre><code>## Loading required package: grid</code></pre>
+<pre class="r"><code># This makes reading data in from text files much more logical.
+options(stringsAsFactors = FALSE)</code></pre>
+<p>To get the data you can go to the <a href="http://www.gtfs-data-exchange.com/">GTFS</a> website. There are many locations where this data is collected from. I have created a pretty simple way to get some of it.</p>
+<p>To do this we first create functions to crawl the site and find the locations of all of the sources zip files.</p>
+<pre class="r"><code># This function gets all of the URLs on the main page.
+# The link to each location where data is contained.
+get_all_urls &lt;- function() {
+  'http://www.gtfs-data-exchange.com/agencies' %&gt;% 
+    html() %&gt;% html_nodes('a') %&gt;% 
+    html_attr('href') %&gt;% 
+    grep('agency', ., value = T) %&gt;% 
+    paste0('http://www.gtfs-data-exchange.com', .) -&gt; locations
+  
+  # Last one is check
+  locations[-length(locations)]
+}
+
+# This function will get the url for the zip file.
+. %&gt;% html() %&gt;% 
+  html_nodes('a') %&gt;% 
+  html_attr('href') %&gt;%
+  grep('.zip', ., value = T) %&gt;% 
+  grep('agency', ., value = T) %&gt;%
+  paste0('http://www.gtfs-data-exchange.com', .) -&gt; get_zip_url</code></pre>
+<p>Now we can get a list of all of the cities. This will take a minute so we can just get a few of them. We also need a function to go to each site to download the the actual zip file.</p>
+<pre class="r"><code>all_zips &lt;- lapply(get_all_urls()[1:3], get_zip_url)
+
+# Function to download a zip file, unzip it and move text files around.
+download_gtfs &lt;- function(url, loc) {
+  download.file(url = url, destfile = paste(loc, basename(url), sep = '/'))
+  
+  name &lt;- gsub('http://www.gtfs-data-exchange.com/agency', loc, url)
+  name &lt;- gsub('/latest.zip', '', name)
+  # Unzip downloaded file
+  url %&gt;% basename %&gt;% paste(loc, ., sep = '/') %&gt;% unzip(., exdir = name)
+  unlink(paste(loc, basename(url), sep = '/'))
+}</code></pre>
+<p>To use this we need to create a folder to store the data. For speed and space reasons lets just grab one of the locations data.</p>
+<pre class="r"><code>dir.create('gtfs_data')
+download_gtfs(all_zips[[1]], 'gtfs_data/')</code></pre>
+<p>Once we have a folder of data from one location what do we do. This is often a problem whether you get acces to a database, and excel file with many worksheets or as we have here a folder with a collection of flat files. How do we figure out the structure of this data. This took some time each of us to understand how these tables were put together and how they were related. The issue I want to tackle here is the relations.</p>
+<p>We can run this <a href="https://github.com/darrkj/gtfs/blob/master/schema.R">code</a> to help with this.</p>
+<p>The first thing we do is use the <code>Get.Files</code> function pointed at the folder with text files. This actually reads the data into a list of data.frames. Then we can run the <code>Learn.Schema</code> function on the list of data.</p>
+<pre class="r"><code>gtfs_data &lt;- Get.Files('gtfs_data/a-reich-gmbh-busbetrieb/', delim = ',')
+
+schema &lt;- Learn.Schema(gtfs_data)
+
+plot(schema[[2]])</code></pre>
+
+<div class="separator" style="clear: both; text-align: center;"><img src="schema.png" height="550" width="700"></a></div>
+
+<p>We have one file that is really not realted to the rest. We can confirm what we have seen and drop it using <code>Not.Connected</code> and <code>Drop.Extremes</code>.</p>
+<pre class="r"><code>Not.Connected(schema[[2]])</code></pre>
+<pre><code>## [[1]]
+## IGRAPH DN-- 7 7 -- 
+## + attr: name (v/c), col (e/c)
+## + edges (vertex names):
+## [1] agency.txt        -&gt;routes.txt   calendar_dates.txt-&gt;calendar.txt
+## [3] calendar_dates.txt-&gt;trips.txt    calendar.txt      -&gt;trips.txt   
+## [5] routes.txt        -&gt;trips.txt    stop_times.txt    -&gt;stops.txt   
+## [7] stop_times.txt    -&gt;trips.txt   
+## 
+## [[2]]
+## [1] &quot;transfers.txt&quot;</code></pre>
+<pre class="r"><code>schema[[2]] &lt;- Drop.Extremes(schema[[2]])
+plot(schema[[2]])</code></pre>
+
+<div class="separator" style="clear: both; text-align: center;"><img src="schema2.png" height="550" width="700"></a></div>
+
+<p>This is now pretty useful, we can see the larger organization of this data, mainly how we could join one table onto another. We can see what fields we would join on by what they have in common.</p>
+<pre class="r"><code>d &lt;- schema[[1]]
+d</code></pre>
+<pre><code>##                    x            y          z
+## 1         agency.txt   routes.txt  agency_id
+## 2 calendar_dates.txt calendar.txt service_id
+## 3 calendar_dates.txt    trips.txt service_id
+## 4       calendar.txt    trips.txt service_id
+## 5         routes.txt    trips.txt   route_id
+## 6     stop_times.txt    stops.txt    stop_id
+## 7     stop_times.txt    trips.txt    trip_id</code></pre>
+<pre class="r"><code>d$a &lt;- NA
+d$b &lt;- NA
+d$c &lt;- NA
+ 
+ 
+for (i in 1:nrow(d)) {
+  a &lt;- gtfs_data[[d[i, 1]]][, d[i, 3]]
+  b &lt;- gtfs_data[[d[i, 2]]][, d[i, 3]]
+ 
+  d$a[i] &lt;- length(unique(a))
+  d$b[i] &lt;- length(unique(b))
+  d$c[i] &lt;- length(intersect(a, b))
+}
+
+d</code></pre>
+<pre><code>##                    x            y          z      a      b      c
+## 1         agency.txt   routes.txt  agency_id    142     54     54
+## 2 calendar_dates.txt calendar.txt service_id   1779   1778   1778
+## 3 calendar_dates.txt    trips.txt service_id   1779   1126   1126
+## 4       calendar.txt    trips.txt service_id   1778   1126   1126
+## 5         routes.txt    trips.txt   route_id   1336   1336   1336
+## 6     stop_times.txt    stops.txt    stop_id  12812  12812  12812
+## 7     stop_times.txt    trips.txt    trip_id 282754 282754 282754</code></pre>
+<pre class="r"><code>field &lt;- 'agency_id'
+x &lt;- d[d[, 'z'] == field, ]
+  
+x &lt;- unique(c(x$x, x$y))
+
+a &lt;- unique(gtfs_data[[x[1]]][, field])
+b &lt;- unique(gtfs_data[[x[2]]][, field])
+ab &lt;- length(intersect(a, b))</code></pre>
+
+<pre class="r"><code>draw.pairwise.venn(length(a), length(b), length(intersect(a, b)), 
+                   category = c(x[1], x[2]),
+                   fill = c(&quot;goldenrod1&quot;, &quot;darkorange1&quot;),
+                   cat.col = c(&quot;goldenrod1&quot;, &quot;darkorange1&quot;), cat.cex = 2)</code></pre>
+                   
+<div class="separator" style="clear: both; text-align: center;"><img src="venn.png" height="550" width="700"></a></div>
+                   
+                   
+<p>Here we can see that one is completely contained inside the other.</p>
+<pre class="r"><code># Read the files into R.
+routes     &lt;- read.csv(&quot;gtfs_data/a-reich-gmbh-busbetrieb/routes.txt&quot;)
+stop_times &lt;- read.csv(&quot;gtfs_data/a-reich-gmbh-busbetrieb/stop_times.txt&quot;)
+stops      &lt;- read.csv(&quot;gtfs_data/a-reich-gmbh-busbetrieb/stops.txt&quot;)
+trips      &lt;- read.csv(&quot;gtfs_data/a-reich-gmbh-busbetrieb/trips.txt&quot;)
+
+
+# Join the data together.
+stops %&gt;% 
+  inner_join(stop_times, by = &quot;stop_id&quot;) %&gt;%
+  inner_join(trips, by = &quot;trip_id&quot;) %&gt;%
+  inner_join(routes, by = &quot;route_id&quot;) %&gt;%
+  select(stop_id, trip_id, route_id, stop_lon, stop_lat) -&gt; data
+
+
+data[data$trip_id == data$trip_id[1], ] %&gt;% arrange(route_id) -&gt; ro1
+
+
+(leaflet() %&gt;% addTiles() %&gt;%
+   setView(lng = ro1$stop_lon[1], lat = ro1$stop_lat[1], zoom = 10) %&gt;%
+   addCircles(color = 'black', lat = ro1$stop_lat, lng = ro1$stop_lon))</code></pre>
+
+<div style="text-align:center;"> <iframe src="http://darrkj.github.io/gtfs_map/map.html" width="730" height="600"></iframe></div>
+
+
+</div>
+
+
+
+
+
+
+<script>
+
+// add bootstrap table styles to pandoc tables
+$(document).ready(function () {
+  $('tr.header').parent('thead').parent('table').addClass('table table-condensed');
+});
+
+</script>
+
+<!-- dynamically load mathjax for compatibility with --self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://c328740.ssl.cf1.rackcdn.com/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>
+
