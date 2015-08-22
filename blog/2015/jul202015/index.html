@@ -5,7 +5,7 @@
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
 <meta http-equiv="x-ua-compatible" content="IE=9" >
 
-<title>Neo4j Soc Bal</title>
+<title>GTFS Mapping</title>
 
 
 
@@ -29,18 +29,18 @@
     <header>
       <div class="container">
         <a href="http://darrkj.github.io/blogs" class="btn">Blogs</a>
-        <h1>Simplifying Things with Neo4j</h1>
+        <h1>Mapping the GTFS Data</h1>
         <h2></h2>
 
 <h4 class="author"><em>Kenny Darrell</em></h4>
-<h4 class="date"><em>July 4, 2014</em></h4>
+<h4 class="date"><em>July 20, 2015</em></h4>
         </section>
       </div>
     </header>
 
 
 
-<p>A few months back I attended the <a href="http://dc.opendataday.org/">DC Ppen Data Day</a>. It was a pretty interesting event and hackathon. There were a lot of interesting problems. You can get an overview of some of the stuff we worked on <a href="https://opendatadaydc.hackpad.com/GTFS-Data-Group-HeQOJPb0nm3">here</a>.</p>
+<p>A few months back I attended the <a href="http://dc.opendataday.org/">DC Open Data Day</a>. It was a pretty interesting event and hackathon. There were a lot of interesting problems. You can get an overview of some of the stuff we worked on <a href="https://opendatadaydc.hackpad.com/GTFS-Data-Group-HeQOJPb0nm3">here</a>.</p>
 <p>I want to walk through some of this to address a common problem in data science. Here are some of the initializations you will need to follow along.</p>
 <pre class="r"><code>library(rvest)
 library(dplyr)
@@ -89,7 +89,7 @@ download_gtfs &lt;- function(url, loc) {
 <p>To use this we need to create a folder to store the data. For speed and space reasons lets just grab one of the locations data.</p>
 <pre class="r"><code>dir.create('gtfs_data')
 download_gtfs(all_zips[[1]], 'gtfs_data/')</code></pre>
-<p>Once we have a folder of data from one location what do we do. This is often a problem whether you get acces to a database, and excel file with many worksheets or as we have here a folder with a collection of flat files. How do we figure out the structure of this data. This took some time each of us to understand how these tables were put together and how they were related. The issue I want to tackle here is the relations.</p>
+<p>Once we have a folder of data from one location what do we do. This is often a problem whether you get access to a database, and excel file with many worksheets or as we have here a folder with a collection of flat files. How do we figure out the structure of this data. This took some time each of us to understand how these tables were put together and how they were related. The issue I want to tackle here is the relations.</p>
 <p>We can run this <a href="https://github.com/darrkj/gtfs/blob/master/schema.R">code</a> to help with this.</p>
 <p>The first thing we do is use the <code>Get.Files</code> function pointed at the folder with text files. This actually reads the data into a list of data.frames. Then we can run the <code>Learn.Schema</code> function on the list of data.</p>
 <pre class="r"><code>gtfs_data &lt;- Get.Files('gtfs_data/a-reich-gmbh-busbetrieb/', delim = ',')
@@ -100,7 +100,7 @@ plot(schema[[2]])</code></pre>
 
 <div class="separator" style="clear: both; text-align: center;"><img src="schema1.png" height="550" width="700"></a></div>
 
-<p>We have one file that is really not realted to the rest. We can confirm what we have seen and drop it using <code>Not.Connected</code> and <code>Drop.Extremes</code>.</p>
+<p>We have one file that is really not related to the rest. We can confirm what we have seen and drop it using <code>Not.Connected</code> and <code>Drop.Extremes</code>.</p>
 <pre class="r"><code>Not.Connected(schema[[2]])</code></pre>
 <pre><code>## [[1]]
 ## IGRAPH DN-- 7 7 -- 
