@@ -141,9 +141,12 @@ mtcars %&gt;% assert(not.empty.p, string) %&gt;% head</code></pre>
 
 <pre><code>## Error: Vector 'mpg' violates assertion 'within_n_sds' 2 times (e.g. [32.4] at index 18)</code></pre>
 <p>There are many other cool things build into this pacakge which can be see at the link above. This is not the only package that attempts to provide this type of functionality. There is some discussion of this <a href="http://www.r-bloggers.com/the-state-of-assertions-in-r/">here</a>.</p>
-<p>There are other packages that do are providing similar functionality through different means and some have different functionality altogether. The <a href="http://www.r-bloggers.com/be-assertive/">assertive</a> package has a large collection of <code>assert_all_are_?</code> and <code>is_in_?</code> types of functions that can be used in a manner seen below.</p>
+
 
 <h2>assertive</h2>
+
+<p>There are other packages that do are providing similar functionality through different means and some have different functionality altogether. The <a href="http://www.r-bloggers.com/be-assertive/">assertive</a> package has a large collection of <code>assert_all_are_?</code> and <code>is_in_?</code> types of functions that can be used in a manner seen below.</p>
+
 
 <pre class="r"><code>library(assertive)
 is_in_future(x = today() + days(10))</code></pre>
@@ -356,7 +359,7 @@ z$Species &lt;- NULL # remove a column
 patch &lt;- diff_data(y, z)
 render_diff(patch)</code></pre>
 
-<div style="text-align:center;"> <iframe src="http://darrkj.github.io/blog/2015/aug232015/daff.html" width="580" height="140" style="background-color: Snow"></iframe></div>
+<div style="text-align:center;"> <iframe src="http://darrkj.github.io/blog/2015/aug232015/daff.html" width="585" height="140" style="background-color: Snow"></iframe></div>
 
 <p>You can see how a data.frame is different from another. This allows you to do some cool things. You can patch once source with the difference so that it is up to date. It also lets you resolve issues of two sources sharing a common data set but have deviated in differnet ways. You can merge both copies with the parent to get all updates. There are some examples of this on the github site.</p>
 
