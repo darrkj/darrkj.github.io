@@ -120,11 +120,13 @@ mtcars$string[1] &lt;- ''
 mtcars %&gt;% assert(not.empty.p, string) %&gt;% head</code></pre>
 
 <pre><code>## Error: Vector 'string' violates assertion 'not.empty.p' 1 time (value [] at index 1)</code></pre>
-<p>The last thing I want to note here is the insist function. I is always the case that when you start to push some analysis out of exploratory mode you need to verify that the data looks similar to what it did originally. One thing you need to check for is outliers. The insist can help with this.</p>
+<p>The last thing I want to note here is the insist function. It is often the case that when you start to push some analysis out of the exploratory mode you need to verify that the data looks similar to what it did originally. One thing you need to check for is outliers. The insist can help with this.</p>
+
 <pre class="r"><code>mtcars %&gt;%
   insist(within_n_sds(3), mpg) %&gt;%
   group_by(cyl) %&gt;%
   summarise(avg.mpg=mean(mpg))</code></pre>
+
 <pre><code>## Source: local data frame [3 x 2]
 ## 
 ##     cyl  avg.mpg
@@ -139,7 +141,8 @@ mtcars %&gt;% assert(not.empty.p, string) %&gt;% head</code></pre>
 
 <pre><code>## Error: Vector 'mpg' violates assertion 'within_n_sds' 2 times (e.g. [32.4] at index 18)</code></pre>
 <p>There are many other cool things build into this pacakge which can be see at the link above. This is not the only package that attempts to provide this type of functionality. There is some discussion of this <a href="http://www.r-bloggers.com/the-state-of-assertions-in-r/">here</a>.</p>
-<p>The <a href="http://www.r-bloggers.com/be-assertive/">assertive</a> package has a large collection of assert_all_are_? and is_in_? types of functions that can be used in a manner seen below.</p>
+<p>There are other packages that do are providing similar functionality through different means and some have different functionality altogether. The <a href="http://www.r-bloggers.com/be-assertive/">assertive</a> package has a large collection of <code>assert_all_are_?</code> and <code>is_in_?</code> types of functions that can be used in a manner seen below.</p>
+
 <pre class="r"><code>library(assertive)
 is_in_future(x = today() + days(10))</code></pre>
 <pre><code>## 2015-09-08 20:00:00 
@@ -149,21 +152,10 @@ is_in_future(x = today() + days(10))</code></pre>
 <pre><code>## There was 1 failure:
 ##   Position               Value   Cause
 ## 1        1 2015-08-19 20:00:00 in past</code></pre>
-<p>The <a href="https://github.com/smbache/ensurer">ensurer</a> package.</p>
-<pre class="r"><code>library(ensurer)
-matrix(runif(16), 4, 4) %&gt;%
-  ensure_that(ncol(.) == nrow(.), all(. &lt;= 1))</code></pre>
-<pre><code>##           [,1]        [,2]      [,3]      [,4]
-## [1,] 0.7939310 0.101298372 0.6966813 0.4942526
-## [2,] 0.5289590 0.935170193 0.6730220 0.4995462
-## [3,] 0.3428521 0.003302559 0.4415779 0.3875924
-## [4,] 0.8808607 0.054348952 0.4190798 0.3552488</code></pre>
-<pre class="r"><code>matrix(runif(20), 5, 4) %&gt;%
-  ensure_that(ncol(.) == nrow(.), all(. &lt;= 1))</code></pre>
 
-<pre><code>## Error: conditions failed for call 'matrix(runif(20), 5 ..  nrow(.), 
-##   all(. &lt;= ': * ncol(.) == nrow(.)</code></pre>
-<p>There is also <a href="https://github.com/hadley/assertthat">assertthat</a> which seems to be more for functions that data.</p>
+<p>The first think to note here is that this does not cause error. It says that there was one failure instead.</p>
+
+<p>There is also <a href="https://github.com/hadley/assertthat">assertthat</a> which seems to be more for functions than data.</p>
 <pre class="r"><code>library(assertthat)
 
 is_odd &lt;- function(x) {
@@ -181,8 +173,47 @@ assert_that(is_odd(1))</code></pre>
 <pre class="r"><code>assert_that(is_odd(2))</code></pre>
 
 <pre><code>## Error: 2 is even</code></pre>
-<p>The guy behind magrittr has made some pretty interesting work as well.</p>
-<p>Most of this gives us some fo the useful features I like in Scala and Python.</p>
+
+
+
+<p>A package that provides some assertions on the arguemnts of functions <a href="https://github.com/gaborcsardi/argufy">argufy</a> is an interesting idea as well.</p>
+<pre class="r"><code>library(argufy)
+prefix &lt;- argufy(function(
+ str =     ? is.character,
+ len =     ? is.numeric(len) &amp;&amp; len &gt; 0) {
+  substring(str, 1, len)
+})
+
+substring('This works', 1, 5)</code></pre>
+<pre><code>## [1] &quot;This &quot;</code></pre>
+<pre class="r"><code>prefix('This works', 5)</code></pre>
+<pre><code>## [1] &quot;This &quot;</code></pre>
+<pre class="r"><code>substring('This works', 1, -1)</code></pre>
+<pre><code>## [1] &quot;&quot;</code></pre>
+<pre class="r"><code>prefix('This dos not work', -1)
+# Error in is.numeric &amp;&amp; len &gt; 0 : invalid 'x' type in 'x &amp;&amp; y'</code></pre>
+
+
+<p>The <a href="https://github.com/smbache/ensurer">ensurer</a> package.</p>
+<pre class="r"><code>library(ensurer)
+matrix(runif(16), 4, 4) %&gt;%
+  ensure_that(ncol(.) == nrow(.), all(. &lt;= 1))</code></pre>
+<pre><code>##           [,1]        [,2]      [,3]      [,4]
+## [1,] 0.7939310 0.101298372 0.6966813 0.4942526
+## [2,] 0.5289590 0.935170193 0.6730220 0.4995462
+## [3,] 0.3428521 0.003302559 0.4415779 0.3875924
+## [4,] 0.8808607 0.054348952 0.4190798 0.3552488</code></pre>
+<pre class="r"><code>matrix(runif(20), 5, 4) %&gt;%
+  ensure_that(ncol(.) == nrow(.), all(. &lt;= 1))</code></pre>
+
+<pre><code>## Error: conditions failed for call 'matrix(runif(20), 5 ..  nrow(.), 
+##   all(. &lt;= ': * ncol(.) == nrow(.)</code></pre>
+
+<h2>Mishmash</h2>
+
+
+<p>While looking into the ensurer package above I noticed a few other packages on <a href="https://github.com/smbache">smbache's</a> github page. The provide some interesting capabilities ad even intresting restrictions.</p>
+
 <p><a href="https://github.com/smbache/immutequality">immutequality</a> It seems to work just like var and val in Scala.</p>
 <pre class="r"><code>library(immutequality)
 x = 10
@@ -227,16 +258,7 @@ import::from(lubridate, mdy, .into = &quot;datatools&quot;)
 
 import::into(&quot;operators&quot;, &quot;%&gt;%&quot;, &quot;%$%&quot;, .from = magrittr)
 import::into(&quot;datatools&quot;, arrange, .from = dplyr)
-
-
-#python style modules
-#import::from(some_module.R, a, b, p, plot_it)</code></pre>
-
-
-
-<p><a href="https://github.com/klmr/modules">modules</a> which does a great job of <a href="https://github.com/klmr/modules/wiki/Feature-comparison">comparison</a> and <a href="https://github.com/klmr/modules/wiki/Design-rationale">reasoning</a></p>
-
-<p>I have done somethng similar to this before in some of my posts and it looked like this. This had some advantages over just including all of the code but has the same disadvantages talked about in the reasoning link.</p>
+</code></pre>
 
 <pre class="r"><code>source_url('https://raw.githubusercontent.com/darrkj/home/gh-pages/rcode/import.R')
 import('igraph_2_d3')
@@ -245,22 +267,25 @@ import('d3plot')</code></pre>
 
 
 
-<p><a href="https://github.com/gaborcsardi/argufy">argufy</a></p>
-<pre class="r"><code>library(argufy)
-prefix &lt;- argufy(function(
- str =     ? is.character,
- len =     ? is.numeric(len) &amp;&amp; len &gt; 0) {
-  substring(str, 1, len)
-})
 
-substring('This works', 1, 5)</code></pre>
-<pre><code>## [1] &quot;This &quot;</code></pre>
-<pre class="r"><code>prefix('This works', 5)</code></pre>
-<pre><code>## [1] &quot;This &quot;</code></pre>
-<pre class="r"><code>substring('This works', 1, -1)</code></pre>
-<pre><code>## [1] &quot;&quot;</code></pre>
-<pre class="r"><code>prefix('This dos not work', -1)
-# Error in is.numeric &amp;&amp; len &gt; 0 : invalid 'x' type in 'x &amp;&amp; y'</code></pre>
+<p>I have done somethng similar to this before in some of my posts and it looked like this. This had some advantages over just including all of the code but has the same disadvantages talked about in the reasoning link.</p>
+
+<p>This package also provides something similar to python style modules.</p>
+</code></pre>import::from(some_module.R, a, b, p, plot_it)</code></pre>
+
+
+<p>Instead of digging into this though I want to talk about a package the documentation referred to.</p>
+
+<p>The<a href="https://github.com/klmr/modules">modules</a> package replicates the python module methodolgy. The is great documentation about the reasoning behind this <a href="https://github.com/klmr/modules/wiki/Design-rationale">here</a> and a comparison <a href="https://github.com/klmr/modules/wiki/Feature-comparison">here</a>.</p>
+
+
+
+
+
+
+<p>Most of this gives us some fo the useful features I like in Scala and Python.</p>
+
+
 <p>Another really cool is <a href="https://trinkerrstuff.wordpress.com/2015/04/30/wakefield-random-data-set-part-ii/">wakefield</a></p>
 <pre class="r"><code>#if (!require(&quot;pacman&quot;)) install.packages(&quot;pacman&quot;); library(pacman)
 #p_install_gh(&quot;trinker/wakefield&quot;)
