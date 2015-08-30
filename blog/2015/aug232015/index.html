@@ -103,20 +103,13 @@ mtcars$string &lt;- sample(LETTERS, nrow(mtcars), replace = T)
 not.empty.p &lt;- function(x) if (x == &quot;&quot;) FALSE
 # Check it
 mtcars %&gt;% assert(not.empty.p, string) %&gt;% head</code></pre>
-<pre><code>##                    mpg cyl disp  hp drat    wt  qsec vs am gear carb
-## Mazda RX4         21.0   6  160 110 3.90 2.620 16.46  0  1    4    4
-## Mazda RX4 Wag     21.0   6  160 110 3.90 2.875 17.02  0  1    4    4
-## Datsun 710        22.8   4  108  93 3.85 2.320 18.61  1  1    4    1
-## Hornet 4 Drive    21.4   6  258 110 3.08 3.215 19.44  1  0    3    1
-## Hornet Sportabout 18.7   8  360 175 3.15 3.440 17.02  0  0    3    2
-## Valiant           18.1   6  225 105 2.76 3.460 20.22  1  0    3    1
-##                   string
-## Mazda RX4              P
-## Mazda RX4 Wag          D
-## Datsun 710             V
-## Hornet 4 Drive         F
-## Hornet Sportabout      U
-## Valiant                W</code></pre>
+<pre><code>##                    mpg cyl disp  hp drat    wt  qsec vs am gear carb  string
+## Mazda RX4         21.0   6  160 110 3.90 2.620 16.46  0  1    4    4   P
+## Mazda RX4 Wag     21.0   6  160 110 3.90 2.875 17.02  0  1    4    4   D
+## Datsun 710        22.8   4  108  93 3.85 2.320 18.61  1  1    4    1   V
+## Hornet 4 Drive    21.4   6  258 110 3.08 3.215 19.44  1  0    3    1   F
+## Hornet Sportabout 18.7   8  360 175 3.15 3.440 17.02  0  0    3    2   U
+## Valiant           18.1   6  225 105 2.76 3.460 20.22  1  0    3    1   W</code></pre>
 <pre class="r"><code># Make one of them empty
 mtcars$string[1] &lt;- ''
 mtcars %&gt;% assert(not.empty.p, string) %&gt;% head</code></pre>
