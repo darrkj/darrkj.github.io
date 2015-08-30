@@ -103,17 +103,17 @@ mtcars$string &lt;- sample(LETTERS, nrow(mtcars), replace = T)
 not.empty.p &lt;- function(x) if (x == &quot;&quot;) FALSE
 # Check it
 mtcars %&gt;% assert(not.empty.p, string) %&gt;% head</code></pre>
-<pre><code>##                    mpg cyl disp  hp drat    wt  qsec vs am gear carb  string
-## Mazda RX4         21.0   6  160 110 3.90 2.620 16.46  0  1    4    4   P
-## Mazda RX4 Wag     21.0   6  160 110 3.90 2.875 17.02  0  1    4    4   D
-## Datsun 710        22.8   4  108  93 3.85 2.320 18.61  1  1    4    1   V
-## Hornet 4 Drive    21.4   6  258 110 3.08 3.215 19.44  1  0    3    1   F
-## Hornet Sportabout 18.7   8  360 175 3.15 3.440 17.02  0  0    3    2   U
-## Valiant           18.1   6  225 105 2.76 3.460 20.22  1  0    3    1   W</code></pre>
+<pre><code>##                    mpg cyl disp  hp drat    wt  qsec vs am gear carb string
+## Mazda RX4         21.0   6  160 110 3.90 2.620 16.46  0  1    4    4      P
+## Mazda RX4 Wag     21.0   6  160 110 3.90 2.875 17.02  0  1    4    4      D
+## Datsun 710        22.8   4  108  93 3.85 2.320 18.61  1  1    4    1      V
+## Hornet 4 Drive    21.4   6  258 110 3.08 3.215 19.44  1  0    3    1      F
+## Hornet Sportabout 18.7   8  360 175 3.15 3.440 17.02  0  0    3    2      U
+## Valiant           18.1   6  225 105 2.76 3.460 20.22  1  0    3    1      W</code></pre>
 <pre class="r"><code># Make one of them empty
 mtcars$string[1] &lt;- ''
 mtcars %&gt;% assert(not.empty.p, string) %&gt;% head</code></pre>
-<pre class="r"><code>message(&quot;Error: Vector 'string' violates assertion 'not.empty.p' 1 time (value [] at index 1)&quot;)</code></pre>
+
 <pre><code>## Error: Vector 'string' violates assertion 'not.empty.p' 1 time (value [] at index 1)</code></pre>
 <p>The last thing I want to note here is the insist function. I is always the case that when you start to push some analysis out of exploratory mode you need to verify that the data looks similar to what it did originally. One thing you need to check for is outliers. The insist can help with this.</p>
 <pre class="r"><code>mtcars %&gt;%
@@ -131,18 +131,16 @@ mtcars %&gt;% assert(not.empty.p, string) %&gt;% head</code></pre>
   insist(within_n_sds(2), mpg) %&gt;%
   group_by(cyl) %&gt;%
   summarise(avg.mpg=mean(mpg))</code></pre>
-<pre class="r"><code>message(&quot;Error: Vector 'mpg' violates assertion 'within_n_sds' 2 times (e.g. [32.4] at index 18)&quot;)</code></pre>
+
 <pre><code>## Error: Vector 'mpg' violates assertion 'within_n_sds' 2 times (e.g. [32.4] at index 18)</code></pre>
 <p>There are many other cool things build into this pacakge which can be see at the link above. This is not the only package that attempts to provide this type of functionality. There is some discussion of this <a href="http://www.r-bloggers.com/the-state-of-assertions-in-r/">here</a>.</p>
 <p>The <a href="http://www.r-bloggers.com/be-assertive/">assertive</a> package has a large collection of assert_all_are_? and is_in_? types of functions that can be used in a manner seen below.</p>
-<pre class="r"><code>library(assertive)</code></pre>
-<pre><code>## assertive has some important changes.  Read ?changes for details.</code></pre>
-<pre class="r"><code>is_in_future(x = today() + days(10))</code></pre>
-<pre><code>## Warning: Coercing x to class 'POSIXct'.</code></pre>
+<pre class="r"><code>library(assertive)
+is_in_future(x = today() + days(10))</code></pre>
 <pre><code>## 2015-09-08 20:00:00 
 ##                TRUE</code></pre>
 <pre class="r"><code>is_in_future(x = today() - days(10))</code></pre>
-<pre><code>## Warning: Coercing x to class 'POSIXct'.</code></pre>
+
 <pre><code>## There was 1 failure:
 ##   Position               Value   Cause
 ## 1        1 2015-08-19 20:00:00 in past</code></pre>
@@ -157,10 +155,9 @@ matrix(runif(16), 4, 4) %&gt;%
 ## [4,] 0.8808607 0.054348952 0.4190798 0.3552488</code></pre>
 <pre class="r"><code>matrix(runif(20), 5, 4) %&gt;%
   ensure_that(ncol(.) == nrow(.), all(. &lt;= 1))</code></pre>
-<pre class="r"><code>message(&quot;Error: conditions failed for call 'matrix(runif(20), 5 ..  nrow(.), all(. &lt;= ':
-     * ncol(.) == nrow(.)&quot;)</code></pre>
-<pre><code>## Error: conditions failed for call 'matrix(runif(20), 5 ..  nrow(.), all(. &lt;= ':
-##   * ncol(.) == nrow(.)</code></pre>
+
+<pre><code>## Error: conditions failed for call 'matrix(runif(20), 5 ..  nrow(.), 
+##   all(. &lt;= ': * ncol(.) == nrow(.)</code></pre>
 <p>There is also <a href="https://github.com/hadley/assertthat">assertthat</a> which seems to be more for functions that data.</p>
 <pre class="r"><code>library(assertthat)
 
@@ -169,7 +166,7 @@ is_odd &lt;- function(x) {
   x %% 2 == 1
 }</code></pre>
 <pre class="r"><code>assert_that(is_odd(2))</code></pre>
-<pre class="r"><code>message(&quot;Error: is_odd(x = 2) is not TRUE&quot;)</code></pre>
+
 <pre><code>## Error: is_odd(x = 2) is not TRUE</code></pre>
 <pre class="r"><code>on_failure(is_odd) &lt;- function(call, env) {
   paste0(deparse(call$x), &quot; is even&quot;)
@@ -177,33 +174,24 @@ is_odd &lt;- function(x) {
 assert_that(is_odd(1))</code></pre>
 <pre><code>## [1] TRUE</code></pre>
 <pre class="r"><code>assert_that(is_odd(2))</code></pre>
-<pre class="r"><code>message(&quot;Error: 2 is even&quot;)</code></pre>
+
 <pre><code>## Error: 2 is even</code></pre>
 <p>The guy behind magrittr has made some pretty interesting work as well.</p>
 <p>Most of this gives us some fo the useful features I like in Scala and Python.</p>
 <p><a href="https://github.com/smbache/immutequality">immutequality</a> It seems to work just like var and val in Scala.</p>
-<pre class="r"><code>library(immutequality)</code></pre>
-<pre><code>## 
-## Attaching package: 'immutequality'
-## 
-## The following object is masked from 'package:base':
-## 
-##     =</code></pre>
-<pre class="r"><code>x = 10
+<pre class="r"><code>library(immutequality)
+x = 10
 
 print(x)</code></pre>
 <pre><code>## [1] 10</code></pre>
 <pre class="r"><code># Will raise an error!
 x &lt;- x*2</code></pre>
-<pre class="r"><code>message('Error: Cannot reuse the symbol x!')</code></pre>
 <pre><code>## Error: Cannot reuse the symbol x!</code></pre>
 <pre class="r"><code># This also
 assign(&quot;x&quot;, 20)</code></pre>
-<pre class="r"><code>message('Error: Cannot reuse the symbol x!')</code></pre>
 <pre><code>## Error: Cannot reuse the symbol x!</code></pre>
 <pre class="r"><code># .. and this too
 x = 20</code></pre>
-<pre class="r"><code>message('Error: Cannot reuse the symbol x!')</code></pre>
 <pre><code>## Error: Cannot reuse the symbol x!</code></pre>
 <pre class="r"><code># But this works.
 
@@ -226,11 +214,10 @@ library(import)</code></pre>
 ## The following object is masked from 'package:lubridate':
 ## 
 ##     here</code></pre>
-<pre class="r"><code>detach(&quot;package:import&quot;, unload=TRUE)
 
+<p>Instead we should use it like this.</p>
 
-# Instead use it like this.
-import::from(magrittr, &quot;%&gt;%&quot;, &quot;%$%&quot;, .into = &quot;operators&quot;) 
+<pre class="r"><code>import::from(magrittr, &quot;%&gt;%&quot;, &quot;%$%&quot;, .into = &quot;operators&quot;) 
 import::from(lubridate, mdy, .into = &quot;datatools&quot;)
 
 import::into(&quot;operators&quot;, &quot;%&gt;%&quot;, &quot;%$%&quot;, .from = magrittr)
@@ -240,14 +227,8 @@ import::into(&quot;datatools&quot;, arrange, .from = dplyr)
 #python style modules
 #import::from(some_module.R, a, b, p, plot_it)</code></pre>
 <p><a href="https://github.com/gaborcsardi/argufy">argufy</a></p>
-<pre class="r"><code>library(argufy)</code></pre>
-<pre><code>## 
-## Attaching package: 'argufy'
-## 
-## The following object is masked from 'package:utils':
-## 
-##     ?</code></pre>
-<pre class="r"><code>prefix &lt;- argufy(function(
+<pre class="r"><code>library(argufy)
+prefix &lt;- argufy(function(
  str =     ? is.character,
  len =     ? is.numeric(len) &amp;&amp; len &gt; 0) {
   substring(str, 1, len)
@@ -266,18 +247,8 @@ substring('This works', 1, 5)</code></pre>
 #p_install_gh(&quot;trinker/wakefield&quot;)
 #p_load(dplyr, wakefield)
 
-library(wakefield)</code></pre>
-<pre><code>## 
-## Attaching package: 'wakefield'
-## 
-## The following object is masked from 'package:dplyr':
-## 
-##     id
-## 
-## The following objects are masked from 'package:lubridate':
-## 
-##     hour, interval, minute, month, second, year</code></pre>
-<pre class="r"><code>#set.seed(10)
+library(wakefield)
+#set.seed(10)
  
 r_data_frame(n = 30,
     id,
