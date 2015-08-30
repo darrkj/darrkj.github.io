@@ -51,12 +51,16 @@
 <p>A few years back this seemed like what happened to SAS and SPSS, they became less relavent because they could not keep up with reading from new data sources, and having all the newer algorithms. They were not easy to use in production, sure you could use things to make them write to a database but that seems like bolting onto an older way of doing things. So a lot of our work as shifted to using R in a client domain. Was this one step with the next to be into something like spark/scala?</p>
 <p>As data science becomes more central to organizations places require more from the tools in this area. From what I saw the R community is very much interested in this area. There were a few talks about testing. a few about using R in production, a few about new R engines and many more about reproducibility. These are the things it needs to be more competitive with alternatives. This was a sign that it is at least aware of its gaps and people are trying to make fixes.</p>
 <p>Another thing that was really interesting. In the past there have usually been around 200 to 300 participants. This year was just over 700. Historically there were a large number of open source contributor/hobbyists and mostly academics. Most of the new surge was from industry and a fair amount of government. Many of these are companies that are very similar to ours, one for instance called Data Robot, which is about two years old. Given the very tech savvy nature of the audience I could get anybody to talk about there business strategy, how they work, etc. Learned a lot here, main interest point was from DataRobot. There approach to to creating software and incorporating lessons learned into that ecosystem from every new project was really interesting. They value similar things like target shuffling but the first time they get bit by this they add it into there product. There product is not a product in the sense of something like SAS but more like a collection of code that has lots of wrappers and APIs. Almost like aardvark but with more modeling code and wrappers around things like scikit learn and random forests in R. There were also a lot of companies that that worked in smaller industries, like advertise</p>
+
+<h2>Assertions</h2>
+
 <p>I wanted to talk about some tools that I think are really cool and will help R become more capable. The first is the <a href="https://cran.r-project.org/web/packages/assertr/vignettes/assertr.html">assertr</a> package. It is useful for doing assertions on data, checking that your data is what you think it is.</p>
+
 <pre class="r"><code>library(lubridate)
 library(dplyr)
 library(assertr)</code></pre>
 
-<p>We can start by using the verify package. For the mtcars dataset, I know mpg should be positive, which it is.</p>
+<p>We can start by using the verify function. For the mtcars dataset, I know that the mpg field should be positive, which it is.</p>
 <pre class="r"><code>mtcars %&gt;% verify(mpg &gt;= 0) %&gt;% head</code></pre>
 <pre><code>##                    mpg cyl disp  hp drat    wt  qsec vs am gear carb
 ## Mazda RX4         21.0   6  160 110 3.90 2.620 16.46  0  1    4    4
@@ -65,7 +69,7 @@ library(assertr)</code></pre>
 ## Hornet 4 Drive    21.4   6  258 110 3.08 3.215 19.44  1  0    3    1
 ## Hornet Sportabout 18.7   8  360 175 3.15 3.440 17.02  0  0    3    2
 ## Valiant           18.1   6  225 105 2.76 3.460 20.22  1  0    3    1</code></pre>
-<p>What if this was not true</p>
+<p>What if this was not true. We can modify the data demonstarte what would happen.</p>
 <pre class="r"><code>mtcars_bad &lt;- mtcars
 mtcars_bad$mpg[1] &lt;- -1
 
@@ -83,6 +87,7 @@ mtcars_bad %&gt;% verify(mpg &gt;= 0)</code></pre>
 ## Hornet 4 Drive    21.4   6  258 110 3.08 3.215 19.44  1  0    3    1
 ## Hornet Sportabout 18.7   8  360 175 3.15 3.440 17.02  0  0    3    2
 ## Valiant           18.1   6  225 105 2.76 3.460 20.22  1  0    3    1</code></pre>
+
 <pre class="r"><code>mtcars_bad %&gt;% assert(within_bounds(0, Inf), mpg) %&gt;% head</code></pre>
 
 <pre><code>## Error: Vector 'mpg' violates assertion 'within_bounds' 1 time (value [-1] at index 1)</code></pre>
@@ -311,7 +316,7 @@ z$Species &lt;- NULL # remove a column
 patch &lt;- diff_data(y, z)
 render_diff(patch)</code></pre>
 
-<div style="text-align:center;"> <iframe src="daff" width="590" height="150" style="background-color: Snow"></iframe></div>
+<div style="text-align:center;"> <iframe src="daff" width="580" height="130" style="background-color: Snow"></iframe></div>
 
 <p>You can see how a data.frame is different from another. This allows you to do some cool things. You can patch once source with the difference so that it is up to date. It also lets you resolve issues of two sources sharing a common data set but have deviated in differnet ways. You can merge both copies with the parent to get all updates. There are some examples of this on the github site.</p>
 
