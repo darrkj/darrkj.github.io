@@ -1,0 +1,327 @@
+---
+title: "Tools"
+author: "Kenny Darrell"
+date: "August 19, 2015"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Background
+
+I have noticed a few thing lately. There are now [tons](http://www.r-bloggers.com/milestone-7000-packages-on-cran/) of packages on CRAN, and many more on github. After attending the use R! conference I also noticed that R is growing from a user sense as well. There seems to be a growing group of computer scientists and software engineers adding to and making new versions of R. A similar thing happened to Javascript about ten years ago. Google and Mozilla had a [battle](https://en.wikipedia.org/wiki/JavaScript_engine#The_JavaScript_engine_race:_2008_and_2009) for who’s browser was faster, which really meant who had a faster javascript implementation. In the end Javascript was the winner as it is now lightning fast. R is in a similar position. [Microsoft purchased Revolution Analytics](http://blogs.technet.com/b/machinelearning/archive/2015/04/06/microsoft-closes-acquisition-of-revolution-analytics.aspx) so that they can put R inside of things like [SQL Server](http://blog.revolutionanalytics.com/2015/05/r-in-sql-server.html), Azure and Excel. Oracle is [using one version](http://www.oracle.com/technetwork/database/database-technologies/r/r-distribution/overview/index.html) to plug into Oracle databases so you can run analytics from sql code while also [creating another implementation](https://labs.oracle.com/pls/apex/f?p=labs:49:::::P49_PROJECT_ID:131) that compiles to jvm bytecode. [There](http://blog.revolutionanalytics.com/2014/07/dsc-2014.html) [is](http://4dpiecharts.com/2013/07/16/how-r-will-turn-into-sql/) [also](http://4dpiecharts.com/2013/09/07/fearsome-engines-part-1/) [a](http://4dpiecharts.com/2013/10/13/fearsome-engines-part-2-innovations-and-new-features/) [whole](http://4dpiecharts.com/2013/10/13/fearsome-engines-part-3-which-one-should-you-use/) [slew](https://dynamicecology.wordpress.com/2014/01/14/r-isnt-just-r-anymore/) [of](https://radfordneal.wordpress.com/) [various](http://www.mango-solutions.com/wp/products-services/products/validr/) [other](http://www.renjin.org/) [implemetnations](http://www.cs.kent.ac.uk/projects/cxxr/) [and](https://github.com/jtalbot/riposte) [work](http://spotfire.tibco.com/discover-spotfire/what-does-spotfire-do/predictive-analytics/tibco-enterprise-runtime-for-r-terr) [happening](https://github.com/allr/purdue-fastr). This should raise the bar for all of R as they each start to compete. It may also give rise to a [formal specification](https://en.wikipedia.org/wiki/Programming_language_specification) which it [lacks](http://r.cs.purdue.edu/pub/ecoop12.pdf) now as the GNU implementation is the spec.
+
+
+
+I think in general that when a bunch of people complain that something is slow or that it is not really high-qulity enough that it is likely to become so. This rings even more true when you consider quotes like, ["There are only two kinds of languages: the ones people complain about and the ones nobody uses"](http://www.goodreads.com/quotes/226225-there-are-only-two-kinds-of-languages-the-ones-people), Bjarne Stroustrup. A long time ago people complained that [assembly was to high level](https://www.cs.utah.edu/~elb/folklore/mel.html) and you should use machine code. Then the debate moved to c and fortran being toys and that [real programmers](http://www.urbandictionary.com/define.php?term=real+programmer&defid=1734951) used assembly language to get work done. Now most people see these two languages as basically being assembly. Later many people poked fun a [Java by being to slow](http://programmers.stackexchange.com/questions/368/why-do-people-still-say-java-is-slow) to do anything real. That has changed quite a bit, say what you will about the Java language but the jvm and the hotspot compiler are probably two of the most well tuned peices of software in existence, and they are lighting fast. Javascript was supposedly once only used to add random stuff to your myspace page, but it got its drastic makeover. Thus maybe its good that so many people say that R can't be used in production, it can only work on small data, it is slow, or it is single core. The part about small data is interesting as well, people often claim that it can only work on data in RAM, I am curious to what tools these people use that are capable of doing work to data on disk that is not in RAM. I know what they mean but the statement is misleading, and they are not really correct either. You can pull data into RAM and and stream through it. Lisp did not have an object system but most real users of list did not care, you could build your own, in fact I have [heard](https://twitter.com/p_balduino/status/527885335544754178) that it was a homework assignment in some sopmore MIT course while to do that in C took a really smart guy a few years. If you want this in R and are competant you could put together a solution for your case with not much worry.
+
+I wanted to talk about some tools that I think are really cool and will help R become more capable. The first is the [assertr](https://cran.r-project.org/web/packages/assertr/vignettes/assertr.html) package. It is useful for doing assertions on data, checking that your data is what you think it is. 
+
+```{r assertr}
+library(lubridate)
+library(dplyr)
+library(assertr)
+```
+
+We can start by using the verify package. For the mtcars dataset, I know mpg should be positive, which it is.
+```{r}
+mtcars %>% verify(mpg >= 0) %>% head
+```
+
+What if this was not true
+```{r eval = FALSE}
+mtcars_bad <- mtcars
+mtcars_bad$mpg[1] <- -1
+
+mtcars_bad %>% verify(mpg >= 0)
+
+```
+```{r}
+message('Error in verify(., mpg >= 0) : verification failed! (1 failure)')
+```
+
+There is another function called assert. To use this we give a function, that is really a predicate function, and data instead of an expression.
+```{r}
+mtcars %>% assert(within_bounds(0, Inf), mpg) %>% head
+```
+
+```{r eval = FALSE}
+mtcars_bad %>% assert(within_bounds(0, Inf), mpg) %>% head
+```
+```{r}
+message("Error: Vector 'mpg' violates assertion 'within_bounds' 1 time (value [-1] at index 1)")
+```
+
+One cool thing to note here is that this shows the actual row that caused this issue, verufy just said that there was an issue.
+
+We can also look at things from a macro level, the whole data set instead of each specific value.
+```{r}
+mtcars %>% verify(nrow(.) > 10)
+```
+
+Another cool feature is the ability to create custom predicate functions.
+
+```{r}
+# Add a character field.
+mtcars$string <- sample(LETTERS, nrow(mtcars), replace = T)
+# Create predicate function.
+not.empty.p <- function(x) if (x == "") FALSE
+# Check it
+mtcars %>% assert(not.empty.p, string) %>% head
+```
+
+```{r eval = FALSE}
+# Make one of them empty
+mtcars$string[1] <- ''
+mtcars %>% assert(not.empty.p, string) %>% head
+
+```
+```{r}
+message("Error: Vector 'string' violates assertion 'not.empty.p' 1 time (value [] at index 1)")
+```
+
+The last thing I want to note here is the insist function. I is always the case that when you start to push some analysis out of exploratory mode you need to verify that the data looks similar to what it did originally. One thing you need to check for is outliers. The insist can help with this.
+
+```{r}
+mtcars %>%
+  insist(within_n_sds(3), mpg) %>%
+  group_by(cyl) %>%
+  summarise(avg.mpg=mean(mpg))
+```
+
+
+```{r eval = FALSE}
+mtcars %>%
+  insist(within_n_sds(2), mpg) %>%
+  group_by(cyl) %>%
+  summarise(avg.mpg=mean(mpg))
+
+```
+```{r}
+message("Error: Vector 'mpg' violates assertion 'within_n_sds' 2 times (e.g. [32.4] at index 18)")
+```
+
+There are many other cool things build into this pacakge which can be see at the link above. This is not the only package that attempts to provide this type of functionality. There is some discussion of this [here](http://www.r-bloggers.com/the-state-of-assertions-in-r/).
+
+
+The [assertive](http://www.r-bloggers.com/be-assertive/) package has a large collection of assert_all_are_? and is_in_? types of functions that can be used in a manner seen below.
+```{r}
+library(assertive)
+is_in_future(x = today() + days(10))
+is_in_future(x = today() - days(10))
+```
+
+
+The [ensurer](https://github.com/smbache/ensurer) package.
+
+```{r}
+library(ensurer)
+matrix(runif(16), 4, 4) %>%
+  ensure_that(ncol(.) == nrow(.), all(. <= 1))
+```
+
+```{r eval = FALSE}
+matrix(runif(20), 5, 4) %>%
+  ensure_that(ncol(.) == nrow(.), all(. <= 1))
+```
+```{r}
+message("Error: conditions failed for call 'matrix(runif(20), 5 ..  nrow(.), all(. <= ':
+	 * ncol(.) == nrow(.)")
+```
+
+There is also [assertthat](https://github.com/hadley/assertthat) which seems to be more for functions that data.
+```{r}
+library(assertthat)
+
+is_odd <- function(x) {
+  assert_that(is.numeric(x), length(x) == 1)
+  x %% 2 == 1
+}
+```
+```{r eval = F}
+assert_that(is_odd(2))
+```{r}
+message("Error: is_odd(x = 2) is not TRUE")
+```
+```{r}
+on_failure(is_odd) <- function(call, env) {
+  paste0(deparse(call$x), " is even")
+}
+assert_that(is_odd(1))
+```
+```{r eval = F}
+assert_that(is_odd(2))
+```
+```{r}
+message("Error: 2 is even")
+```
+
+
+
+
+
+The guy behind magrittr has made some pretty interesting work as well.
+
+Most of this gives us some fo the useful features I like in Scala and Python.
+
+[immutequality](https://github.com/smbache/immutequality)
+It seems to work just like var and val in Scala.
+
+
+```{r}
+library(immutequality)
+
+x = 10
+
+print(x)
+```
+```{r, eval = F}
+# Will raise an error!
+x <- x*2
+```
+```{r}
+message('Error: Cannot reuse the symbol x!')
+```
+
+```{r, eval = F}
+# This also
+assign("x", 20)
+```
+```{r}
+message('Error: Cannot reuse the symbol x!')
+```
+```{r, eval = F}
+# .. and this too
+x = 20
+```
+```{r}
+message('Error: Cannot reuse the symbol x!')
+```
+```{r}
+# But this works.
+
+y <- 5
+
+y <- y + 1
+
+
+```
+
+[import](https://github.com/smbache/import)
+Say I needed to use the mdy function from lubridate. In order to have access to it I need to load the the lubridate library. THis pulls a lot of other stuff into the workspace. If I need one function from a large number of packages I can very quickly add a lot of bloat, I can also hide things that I want. There are some issues with plyr and dplyr doing this. Sometimes I need somthing like the ddply type of function but I almost always have dplyr loaded. One solution is to know the correct order to load them, which may not always have a valid answer. THe other option is to use something like lubridate::mdy. An even more precise solution is to use the import package.
+```{r}
+
+head(objects("package:lubridate"))
+
+length(objects("package:lubridate"))
+
+# Notice how the package follows wants you to follow its own advice. 
+library(import)
+detach("package:import", unload=TRUE)
+
+
+# Instead use it like this.
+import::from(magrittr, "%>%", "%$%", .into = "operators") 
+import::from(lubridate, mdy, .into = "datatools")
+
+import::into("operators", "%>%", "%$%", .from = magrittr)
+import::into("datatools", arrange, .from = dplyr)
+
+
+#python style modules
+#import::from(some_module.R, a, b, p, plot_it)
+```
+
+
+
+
+[argufy](https://github.com/gaborcsardi/argufy)
+
+```{r}
+library(argufy)
+prefix <- argufy(function(
+ str =     ? is.character,
+ len =     ? is.numeric(len) && len > 0) {
+  substring(str, 1, len)
+})
+
+substring('This works', 1, 5)
+prefix('This works', 5)
+
+substring('This works', 1, -1)
+
+
+
+```
+
+```{r, eval = F}
+prefix('This dos not work', -1)
+# Error in is.numeric && len > 0 : invalid 'x' type in 'x && y'
+```
+
+
+
+
+
+
+Another really cool is [wakefield](https://trinkerrstuff.wordpress.com/2015/04/30/wakefield-random-data-set-part-ii/)
+
+```{r}
+
+#if (!require("pacman")) install.packages("pacman"); library(pacman)
+#p_install_gh("trinker/wakefield")
+#p_load(dplyr, wakefield)
+
+library(wakefield)
+#set.seed(10)
+ 
+r_data_frame(n = 30,
+    id,
+    race,
+    age(x = 8:14),
+    Gender = sex,
+    Time = hour,
+    iq,
+    grade, 
+    height(mean=50, sd = 10),
+    died,
+    Scoring = rnorm,
+    Smoker = valid
+)
+```
+
+
+[modules](https://github.com/klmr/modules)
+which does a great job of [comparison](https://github.com/klmr/modules/wiki/Feature-comparison)
+ and [reasoning](https://github.com/klmr/modules/wiki/Design-rationale)
+
+I have done somthng similar to this before in some of my posts and it looked like this. This had some advantages over just including all of the code but has the same disadvantages talked about in the reasoning link.
+```{r, eval = F}
+source_url('https://raw.githubusercontent.com/darrkj/home/gh-pages/rcode/import.R')
+import('igraph_2_d3')
+import('d3plot')
+```
+
+
+
+
+
+[daff](https://github.com/edwindj/daff)
+
+```{r}
+library(daff)
+y <- iris[1:3,]
+z <- y
+
+z <- head(z, 2) # remove a row
+z[1,1] <- 10 # change a value
+z$hello <- "world"  # add a column
+z$Species <- NULL # remove a column
+
+patch <- diff_data(y, z)
+render_diff(patch)
+```
+
+
