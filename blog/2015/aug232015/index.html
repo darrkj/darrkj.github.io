@@ -226,6 +226,20 @@ import::into(&quot;datatools&quot;, arrange, .from = dplyr)
 
 #python style modules
 #import::from(some_module.R, a, b, p, plot_it)</code></pre>
+
+
+
+<p><a href="https://github.com/klmr/modules">modules</a> which does a great job of <a href="https://github.com/klmr/modules/wiki/Feature-comparison">comparison</a> and <a href="https://github.com/klmr/modules/wiki/Design-rationale">reasoning</a></p>
+
+<p>I have done somethng similar to this before in some of my posts and it looked like this. This had some advantages over just including all of the code but has the same disadvantages talked about in the reasoning link.</p>
+
+<pre class="r"><code>source_url('https://raw.githubusercontent.com/darrkj/home/gh-pages/rcode/import.R')
+import('igraph_2_d3')
+import('d3plot')</code></pre>
+
+
+
+
 <p><a href="https://github.com/gaborcsardi/argufy">argufy</a></p>
 <pre class="r"><code>library(argufy)
 prefix &lt;- argufy(function(
@@ -279,12 +293,12 @@ r_data_frame(n = 30,
 ## 10    10     White    11   Male 05:00:00    84  88.1     55 FALSE
 ## ..   ...       ...   ...    ...      ...   ...   ...    ...   ...
 ## Variables not shown: Scoring (dbl), Smoker (lgl)</code></pre>
-<p><a href="https://github.com/klmr/modules">modules</a> which does a great job of <a href="https://github.com/klmr/modules/wiki/Feature-comparison">comparison</a> and <a href="https://github.com/klmr/modules/wiki/Design-rationale">reasoning</a></p>
-<p>I have done somthng similar to this before in some of my posts and it looked like this. This had some advantages over just including all of the code but has the same disadvantages talked about in the reasoning link.</p>
-<pre class="r"><code>source_url('https://raw.githubusercontent.com/darrkj/home/gh-pages/rcode/import.R')
-import('igraph_2_d3')
-import('d3plot')</code></pre>
-<p><a href="https://github.com/edwindj/daff">daff</a></p>
+
+
+
+
+<p>A very hard problem is the versioning of data. It would be great if things like git could handle data, they can handle smaller data sets. The <a href="https://github.com/edwindj/daff">daff</a> package, which is a wrapper around a<a href="https://github.com/paulfitz/daff">Java library</a> provides some functionality in this area.</p>
+
 <pre class="r"><code>library(daff)
 y &lt;- iris[1:3,]
 z &lt;- y
@@ -298,6 +312,9 @@ patch &lt;- diff_data(y, z)
 render_diff(patch)</code></pre>
 
 <div style="text-align:center;"> <iframe src="daff" width="590" height="150" style="background-color: Snow"></iframe></div>
+
+<p>You can see how a data.frame is different from another. This allows you to do some cool things. You can patch once source with the difference so that it is up to date. It also lets you resolve issues of two sources sharing a common data set but have deviated in differnet ways. You can merge both copies with the parent to get all updates. There are some examples of this on the github site.</p>
+
 
 
 </div>
