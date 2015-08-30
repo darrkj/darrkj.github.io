@@ -44,10 +44,10 @@
 
 <div id="background" class="section level2">
 <h2>Background</h2>
-<p>There are now <a href="http://www.r-bloggers.com/milestone-7000-packages-on-cran/">tons</a> of packages on CRAN, and many more on github. After attending the <a href='http://user2015.math.aau.dk/'>useR! Conference</a> I noticed that a lot of this growth is in width instead of depth, they are doing more than should statistical analysis. There seems to be a growing number of computer scientists and software engineers adding packages and even making new versions of R. A similar thing happened to Javascript about ten years ago. Google and Mozilla had a <a href="https://en.wikipedia.org/wiki/JavaScript_engine#The_JavaScript_engine_race:_2008_and_2009">battle</a> over which browser was faster, which really meant who had a faster Javascript implementation. In the end Javascript was the winner as it became really fast. R seems to be in a similar position. <a href="http://blogs.technet.com/b/machinelearning/archive/2015/04/06/microsoft-closes-acquisition-of-revolution-analytics.aspx">Microsoft purchased Revolution Analytics</a> so that they can put R inside of things like <a href="http://blog.revolutionanalytics.com/2015/05/r-in-sql-server.html">SQL Server</a>, Azure and Excel. Oracle is pushing <a href="http://www.oracle.com/technetwork/database/database-technologies/r/r-distribution/overview/index.html">one version</a> into the Oracle database so you can run analytics from SQL code while also <a href="https://labs.oracle.com/pls/apex/f?p=labs:49:::::P49_PROJECT_ID:131">creating another implementation</a> that compiles to jvm bytecode. <a href="http://blog.revolutionanalytics.com/2014/07/dsc-2014.html">There</a> <a href="http://4dpiecharts.com/2013/07/16/how-r-will-turn-into-sql/">is</a> <a href="http://4dpiecharts.com/2013/09/07/fearsome-engines-part-1/">also</a> <a href="http://4dpiecharts.com/2013/10/13/fearsome-engines-part-2-innovations-and-new-features/">a</a> <a href="http://4dpiecharts.com/2013/10/13/fearsome-engines-part-3-which-one-should-you-use/">whole</a> <a href="https://dynamicecology.wordpress.com/2014/01/14/r-isnt-just-r-anymore/">slew</a> <a href="https://radfordneal.wordpress.com/">of</a> <a href="http://www.mango-solutions.com/wp/products-services/products/validr/">various</a> <a href="http://www.renjin.org/">other</a> <a href="http://www.cs.kent.ac.uk/projects/cxxr/">implemetnations</a> <a href="https://github.com/jtalbot/riposte">and</a> <a href="http://spotfire.tibco.com/discover-spotfire/what-does-spotfire-do/predictive-analytics/tibco-enterprise-runtime-for-r-terr">work</a> <a href="https://github.com/allr/purdue-fastr">happening</a>. This could raise the bar for all of R as they each start to compete. It may also give rise to a <a href="https://en.wikipedia.org/wiki/Programming_language_specification">formal specification</a> which it <a href="http://r.cs.purdue.edu/pub/ecoop12.pdf">lacks</a> now as the GNU implementation is the spec.</p>
+<p>There are now <a href="http://www.r-bloggers.com/milestone-7000-packages-on-cran/">tons</a> of packages on CRAN, and many more on GitHub. After attending the <a href='http://user2015.math.aau.dk/'>useR! Conference</a> I noticed that a lot of this growth is in width instead of depth, they are doing more than should statistical analysis. There seems to be a growing number of computer scientists and software engineers adding packages and even making new versions of R. A similar thing happened to Javascript about ten years ago. Google and Mozilla had a <a href="https://en.wikipedia.org/wiki/JavaScript_engine#The_JavaScript_engine_race:_2008_and_2009">battle</a> over which browser was faster, which really meant who had a faster Javascript implementation. In the end Javascript was the winner as it became really fast. R seems to be in a similar position. <a href="http://blogs.technet.com/b/machinelearning/archive/2015/04/06/microsoft-closes-acquisition-of-revolution-analytics.aspx">Microsoft purchased Revolution Analytics</a> so that they can put R inside of things like <a href="http://blog.revolutionanalytics.com/2015/05/r-in-sql-server.html">SQL Server</a>, Azure and Excel. Oracle is pushing <a href="http://www.oracle.com/technetwork/database/database-technologies/r/r-distribution/overview/index.html">one version</a> into the Oracle database so you can run analytics from SQL code while also <a href="https://labs.oracle.com/pls/apex/f?p=labs:49:::::P49_PROJECT_ID:131">creating another implementation</a> that compiles to JVM bytecode. <a href="http://blog.revolutionanalytics.com/2014/07/dsc-2014.html">There</a> <a href="http://4dpiecharts.com/2013/07/16/how-r-will-turn-into-sql/">is</a> <a href="http://4dpiecharts.com/2013/09/07/fearsome-engines-part-1/">also</a> <a href="http://4dpiecharts.com/2013/10/13/fearsome-engines-part-2-innovations-and-new-features/">a</a> <a href="http://4dpiecharts.com/2013/10/13/fearsome-engines-part-3-which-one-should-you-use/">whole</a> <a href="https://dynamicecology.wordpress.com/2014/01/14/r-isnt-just-r-anymore/">slew</a> <a href="https://radfordneal.wordpress.com/">of</a> <a href="http://www.mango-solutions.com/wp/products-services/products/validr/">various</a> <a href="http://www.renjin.org/">other</a> <a href="http://www.cs.kent.ac.uk/projects/cxxr/">implemetnations</a> <a href="https://github.com/jtalbot/riposte">and</a> <a href="http://spotfire.tibco.com/discover-spotfire/what-does-spotfire-do/predictive-analytics/tibco-enterprise-runtime-for-r-terr">work</a> <a href="https://github.com/allr/purdue-fastr">happening</a>. This could raise the bar for all of R as they each start to compete. It may also give rise to a <a href="https://en.wikipedia.org/wiki/Programming_language_specification">formal specification</a> which it <a href="http://r.cs.purdue.edu/pub/ecoop12.pdf">lacks</a> now as the GNU implementation is the spec.</p>
 
 
-<p>I think in general that when a bunch of people complain that something is slow or that it is not really high-quality enough that it is likely to become so. This rings even more true when you consider quotes like, <a href="http://www.goodreads.com/quotes/226225-there-are-only-two-kinds-of-languages-the-ones-people">"There are only two kinds of languages: the ones people complain about and the ones nobody uses"</a>, Bjarne Stroustrup. A long time ago people complained that <a href="https://www.cs.utah.edu/~elb/folklore/mel.html">assembly was to high level</a> and you should use machine code. Then the debate moved to c and fortran being toys and that <a href="http://www.urbandictionary.com/define.php?term=real+programmer&amp;defid=1734951">real programmers</a> used assembly language to get work done. Now most people see these two languages as basically being a cleaner assembly. Later many people poked fun at <a href="http://programmers.stackexchange.com/questions/368/why-do-people-still-say-java-is-slow">Java for being to slow</a> to do anything real. That has changed quite a bit, the jvm and the hotspot compiler are probably two of the most well tuned peices of software in existence, and they are lighting fast. Javascript was supposedly once only used to add random stuff to your Myspace page, but it got its drastic makeover. Thus maybe its good that so many people say that R can’t be used in production, it can only work on small data, it is slow, or it is single core. 
+<p>I think in general that when a bunch of people complain that something is slow or that it is not really high-quality enough that it is likely to become so. This rings even more true when you consider quotes like, <a href="http://www.goodreads.com/quotes/226225-there-are-only-two-kinds-of-languages-the-ones-people">"There are only two kinds of languages: the ones people complain about and the ones nobody uses"</a>, Bjarne Stroustrup. A long time ago people complained that <a href="https://www.cs.utah.edu/~elb/folklore/mel.html">assembly was to high level</a> and you should use machine code. Then the debate moved to c and fortran being toys and that <a href="http://www.urbandictionary.com/define.php?term=real+programmer&amp;defid=1734951">real programmers</a> used assembly language to get work done. Now most people see these two languages as basically being a cleaner assembly. Later many people poked fun at <a href="http://programmers.stackexchange.com/questions/368/why-do-people-still-say-java-is-slow">Java for being to slow</a> to do anything real. That has changed quite a bit, the JVM and the hotspot compiler are probably two of the most well tuned pieces of software in existence, and they are lighting fast. Javascript was supposedly once only used to add random stuff to your Myspace page, but it got its drastic makeover. Thus maybe its good that so many people say that R can’t be used in production, it can only work on small data, it is slow, or it is single core. 
 
 
 
@@ -81,6 +81,7 @@ mtcars_bad %&gt;% verify(mpg &gt;= 0)</code></pre>
 
 
 <p>There is another function called assert. To use this we give a function, that is really a predicate function, and data instead of an expression.</p>
+
 <pre class="r"><code>mtcars %&gt;% assert(within_bounds(0, Inf), mpg) %&gt;% head</code></pre>
 <pre><code>##                    mpg cyl disp  hp drat    wt  qsec vs am gear carb
 ## Mazda RX4         21.0   6  160 110 3.90 2.620 16.46  0  1    4    4
@@ -93,8 +94,10 @@ mtcars_bad %&gt;% verify(mpg &gt;= 0)</code></pre>
 <pre class="r"><code>mtcars_bad %&gt;% assert(within_bounds(0, Inf), mpg) %&gt;% head</code></pre>
 
 <pre><code>## Error: Vector 'mpg' violates assertion 'within_bounds' 1 time (value [-1] at index 1)</code></pre>
-<p>One cool thing to note here is that this shows the actual row that caused this issue, verufy just said that there was an issue.</p>
+
+<p>One cool thing to note here is that this shows the actual row that caused this issue, verify just said that there was an issue.</p>
 <p>We can also look at things from a macro level, the whole data set instead of each specific value.</p>
+
 <pre class="r"><code>mtcars %&gt;% verify(nrow(.) &gt; 10) %&gt;% head</code></pre>
 <pre><code>##                      mpg cyl  disp  hp drat    wt  qsec vs am gear carb
 ## Mazda RX4           21.0   6 160.0 110 3.90 2.620 16.46  0  1    4    4
@@ -142,7 +145,7 @@ mtcars %&gt;% assert(not.empty.p, string) %&gt;% head</code></pre>
   summarise(avg.mpg=mean(mpg))</code></pre>
 
 <pre><code>## Error: Vector 'mpg' violates assertion 'within_n_sds' 2 times (e.g. [32.4] at index 18)</code></pre>
-<p>There are many other cool things build into this pacakge which can be see at the link above. This is not the only package that attempts to provide this type of functionality. There is some discussion of this <a href="http://www.r-bloggers.com/the-state-of-assertions-in-r/">here</a>.</p>
+<p>There are many other cool things build into this package which can be see at the link above. This is not the only package that attempts to provide this type of functionality. There is some discussion of this <a href="http://www.r-bloggers.com/the-state-of-assertions-in-r/">here</a>.</p>
 
 
 <h2>assertive</h2>
@@ -224,9 +227,8 @@ matrix(runif(16), 4, 4) %&gt;%
 <h2>immutequality</h2>
 
 
-<p>While looking into the ensurer package above I noticed a few other packages on <a href="https://github.com/smbache">smbache's</a> github page. The provide some interesting capabilities ad even intresting restrictions.</p>
+<p>While looking into the ensurer package above I noticed a few other packages on <a href="https://github.com/smbache">smbache's</a> GitHub page. They provide some interesting capabilities and even some interesting restrictions.</p> The <a href="https://github.com/smbache/immutequality">immutequality</a> seems to work just like var and val in Scala.</p>
 
-<p><a href="https://github.com/smbache/immutequality">immutequality</a> It seems to work just like var and val in Scala.</p>
 <pre class="r"><code>library(immutequality)
 x = 10
 
@@ -250,7 +252,7 @@ y &lt;- y + 1</code></pre>
 <h2>import</h2>
 
 
-<p><a href="https://github.com/smbache/import">import</a> Say I needed to use the mdy function from lubridate. In order to have access to it I need to load the the lubridate library. THis pulls a lot of other stuff into the workspace. If I need one function from a large number of packages I can very quickly add a lot of bloat, I can also hide things that I want. There are some issues with plyr and dplyr doing this. Sometimes I need somthing like the ddply type of function but I almost always have dplyr loaded. One solution is to know the correct order to load them, which may not always have a valid answer. THe other option is to use something like lubridate::mdy. An even more precise solution is to use the import package.</p>
+<p>The same auther also has the <a href="https://github.com/smbache/import">import</a> package. Say I needed to use the <code>mdy</code> function from the lubridate package. In order to have access to it I need to load everything from this package. This pulls a lot of other stuff into the workspace that I don't need. If I need one function from a bunch of packages I can very quickly add a lot of bloat. It can also hide things that I want when collisions exsits. There are some issues with plyr and dplyr doing this. Sometimes I need something like the ddply type of function but I almost always have dplyr loaded. One solution is to know the correct order to load them, which may not always have a valid answer. The other option is to use something like <code>lubridate::mdy</code>. An even more precise solution is to use the import package.</p>
 
 <pre class="r"><code>head(objects(&quot;package:lubridate&quot;))</code></pre>
 <pre><code>## [1] &quot;%--%&quot;        &quot;%m-%&quot;        &quot;%m+%&quot;        &quot;%within%&quot;    &quot;am&quot;         
@@ -277,36 +279,29 @@ import::into(&quot;operators&quot;, &quot;%&gt;%&quot;, &quot;%$%&quot;, .from =
 import::into(&quot;datatools&quot;, arrange, .from = dplyr)
 </code></pre>
 
-<pre class="r"><code>source_url('https://raw.githubusercontent.com/darrkj/home/gh-pages/rcode/import.R')
-import('igraph_2_d3')
-import('d3plot')</code></pre>
 
 
-
-
-
-<p>I have done somethng similar to this before in some of my posts and it looked like this. This had some advantages over just including all of the code but has the same disadvantages talked about in the reasoning link.</p>
 
 <p>This package also provides something similar to python style modules.</p>
-</code></pre>import::from(some_module.R, a, b, p, plot_it)</code></pre>
 
-<h2>modules</h2>
+<code><pre>import::from(some_module.R, a, b, p, plot_it)</code></pre>
+
 
 <p>Instead of digging into this though I want to talk about a package the documentation referred to.</p>
 
-<p>The<a href="https://github.com/klmr/modules">modules</a> package replicates the python module methodolgy. The is great documentation about the reasoning behind this <a href="https://github.com/klmr/modules/wiki/Design-rationale">here</a> and a comparison <a href="https://github.com/klmr/modules/wiki/Feature-comparison">here</a>.</p>
+<h2>modules</h2>
+
+<p>The<a href="https://github.com/klmr/modules">modules</a> package replicates the python module methodology. There is great documentation about the reasoning behind this <a href="https://github.com/klmr/modules/wiki/Design-rationale">here</a> and a comparison <a href="https://github.com/klmr/modules/wiki/Feature-comparison">here</a>.</p>
 
 
 
-
-
-
-<p>Most of this gives us some of the useful features I like in Scala and Python.</p>
+<p>These packages give us some powerful features that I like in Scala and Python.</p>
 
 
 <h2>wakefield</h2>
 
-<p>Another really cool is <a href="https://trinkerrstuff.wordpress.com/2015/04/30/wakefield-random-data-set-part-ii/">wakefield</a></p>
+<p>Another useful tool is the <a href="https://trinkerrstuff.wordpress.com/2015/04/30/wakefield-random-data-set-part-ii/">wakefield</a> pacakge. This package lets you create random or fake data very easily. This is super useful when you need to try something out or see how soemthing scales, or for setting up demos.</p>
+
 <pre class="r"><code>#if (!require(&quot;pacman&quot;)) install.packages(&quot;pacman&quot;); library(pacman)
 #p_install_gh(&quot;trinker/wakefield&quot;)
 #p_load(dplyr, wakefield)
@@ -347,7 +342,7 @@ r_data_frame(n = 30,
 
 <h2>daff</h2>
 
-<p>A very hard problem is the versioning of data. It would be great if things like git could handle data, they can handle smaller data sets. The <a href="https://github.com/edwindj/daff">daff</a> package, which is a wrapper around a<a href="https://github.com/paulfitz/daff">Java library</a> provides some functionality in this area.</p>
+<p>A very hard problem is the versioning of data. It would be great if things like git could handle data. While they can handle smaller data sets it starts to fall apart as the size increases. The <a href="https://github.com/edwindj/daff">daff</a> package, which is a wrapper around a <a href="https://github.com/paulfitz/daff">Java library</a>, provides some functionality in this area.</p>
 
 <pre class="r"><code>library(daff)
 y &lt;- iris[1:3,]
