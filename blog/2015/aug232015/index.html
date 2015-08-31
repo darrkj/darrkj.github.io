@@ -51,7 +51,7 @@
 
 
 
-<p>As data science becomes more central to organizations places require more from the tools in this area. From what I saw the R community is very much interested in this area. There were a few talks about testing. a few about using R in production, a few about new R engines and many more about reproducibility. These are the things it needs to be more competitive with alternatives. This was a sign that it is at least aware of its gaps and people are trying to make fixes.</p>
+<p>As data science expands it reach, more will be required from the tools. It seems the R community is interested in expanding the tools as well. There are plenty of new packages that do nothing in regaurds to statistical models or visualizations, but instead how to verify assumptions of data or keeping the workspace clean. These are the things it needs to be more generally capable. This is showing that the community is at least aware of its gaps and people are trying to make fixes.</p>
 
 
 <h2>assertr</h2>
@@ -71,7 +71,9 @@ library(assertr)</code></pre>
 ## Hornet 4 Drive    21.4   6  258 110 3.08 3.215 19.44  1  0    3    1
 ## Hornet Sportabout 18.7   8  360 175 3.15 3.440 17.02  0  0    3    2
 ## Valiant           18.1   6  225 105 2.76 3.460 20.22  1  0    3    1</code></pre>
-<p>What if this was not true. We can modify the data demonstarte what would happen.</p>
+
+<p>What if this was not true. We can modify the data to demonstrate what would happen.</p>
+
 <pre class="r"><code>mtcars_bad &lt;- mtcars
 mtcars_bad$mpg[1] &lt;- -1
 
@@ -95,8 +97,7 @@ mtcars_bad %&gt;% verify(mpg &gt;= 0)</code></pre>
 
 <pre><code>## Error: Vector 'mpg' violates assertion 'within_bounds' 1 time (value [-1] at index 1)</code></pre>
 
-<p>One cool thing to note here is that this shows the actual row that caused this issue, verify just said that there was an issue.</p>
-<p>We can also look at things from a macro level, the whole data set instead of each specific value.</p>
+<p>One cool thing to note here is that this shows the actual row that caused this issue, verify just said that there was an issue. We can also look at things from a macro level, the whole data set instead of each specific value.</p>
 
 <pre class="r"><code>mtcars %&gt;% verify(nrow(.) &gt; 10) %&gt;% head</code></pre>
 <pre><code>##                      mpg cyl  disp  hp drat    wt  qsec vs am gear carb
@@ -106,8 +107,9 @@ mtcars_bad %&gt;% verify(mpg &gt;= 0)</code></pre>
 ## Hornet 4 Drive      21.4   6 258.0 110 3.08 3.215 19.44  1  0    3    1
 ## Hornet Sportabout   18.7   8 360.0 175 3.15 3.440 17.02  0  0    3    2
 ## Valiant             18.1   6 225.0 105 2.76 3.460 20.22  1  0    3    1</code></pre>
-<p>Another cool feature is the ability to create custom predicate functions.</p>
-<pre class="r"><code># Add a character field.
+<p>Another cool feature is the ability to create custom predicate functions. Thus we can create checks for every type of assumption we could make of the data.  We can add a character field and then make sure it is not empty.</p>
+
+<pre class="r"><code>
 mtcars$string &lt;- sample(LETTERS, nrow(mtcars), replace = T)
 # Create predicate function.
 not.empty.p &lt;- function(x) if (x == &quot;&quot;) FALSE
@@ -125,7 +127,9 @@ mtcars$string[1] &lt;- ''
 mtcars %&gt;% assert(not.empty.p, string) %&gt;% head</code></pre>
 
 <pre><code>## Error: Vector 'string' violates assertion 'not.empty.p' 1 time (value [] at index 1)</code></pre>
-<p>The last thing I want to note here is the insist function. It is often the case that when you start to push some analysis out of the exploratory mode you need to verify that the data looks similar to what it did originally. One thing you need to check for is outliers. The insist can help with this.</p>
+
+
+<p>The last thing I want to note here is the insist function. It is often the case that when you start to push some analysis out of the exploratory mode you need to verify that the data looks similar to how it did originally. One thing you need to check for is outliers. The insist function can help with this.</p>
 
 <pre class="r"><code>mtcars %&gt;%
   insist(within_n_sds(3), mpg) %&gt;%
@@ -139,18 +143,20 @@ mtcars %&gt;% assert(not.empty.p, string) %&gt;% head</code></pre>
 ## 1     4 26.66364
 ## 2     6 19.74286
 ## 3     8 15.10000</code></pre>
+
 <pre class="r"><code>mtcars %&gt;%
   insist(within_n_sds(2), mpg) %&gt;%
   group_by(cyl) %&gt;%
   summarise(avg.mpg=mean(mpg))</code></pre>
 
 <pre><code>## Error: Vector 'mpg' violates assertion 'within_n_sds' 2 times (e.g. [32.4] at index 18)</code></pre>
-<p>There are many other cool things build into this package which can be see at the link above. This is not the only package that attempts to provide this type of functionality. There is some discussion of this <a href="http://www.r-bloggers.com/the-state-of-assertions-in-r/">here</a>.</p>
+
+<p>There are many other cool things built into this package which can be see at the link above. This is also not the only package that attempts to provide this type of functionality. There is some discussion of these options <a href="http://www.r-bloggers.com/the-state-of-assertions-in-r/">here</a>.</p>
 
 
 <h2>assertive</h2>
 
-<p>There are other packages that do are providing similar functionality through different means and some have different functionality altogether. The <a href="http://www.r-bloggers.com/be-assertive/">assertive</a> package has a large collection of <code>assert_all_are_?</code> and <code>is_in_?</code> types of functions that can be used in a manner seen below.</p>
+<p>There are other packages that provide similar functionality through different means and some that have different functionality altogether. The <a href="http://www.r-bloggers.com/be-assertive/">assertive</a> package has a large collection of <code>assert_all_are_?</code> and <code>is_in_?</code> types of functions that can be used in a manner seen below.</p>
 
 
 <pre class="r"><code>library(assertive)
@@ -163,19 +169,21 @@ is_in_future(x = today() + days(10))</code></pre>
 ##   Position               Value   Cause
 ## 1        1 2015-08-19 20:00:00 in past</code></pre>
 
-<p>The first think to note here is that this does not cause error. It says that there was one failure instead.</p>
+<p>The biggest difference to note here is that this does not cause an error. It says that there was one failure instead.</p>
 
 
 <h2>assertthat</h2>
 
 
-<p>There is also <a href="https://github.com/hadley/assertthat">assertthat</a> which seems to be more for functions than data.</p>
+<p>There is also the <a href="https://github.com/hadley/assertthat">assertthat</a> package which seems to be more for functions than data. Really it seems to be for making checks on data that go into and come out of functions.</p>
+
 <pre class="r"><code>library(assertthat)
 
 is_odd &lt;- function(x) {
   assert_that(is.numeric(x), length(x) == 1)
   x %% 2 == 1
 }</code></pre>
+
 <pre class="r"><code>assert_that(is_odd(2))</code></pre>
 
 <pre><code>## Error: is_odd(x = 2) is not TRUE</code></pre>
@@ -190,7 +198,8 @@ assert_that(is_odd(1))</code></pre>
 
 <h2>argufy</h2>
 
-<p>A package that provides some assertions on the arguemnts of functions <a href="https://github.com/gaborcsardi/argufy">argufy</a> is an interesting idea as well.</p>
+<p>Another package that provides assertions on function arguments is <a href="https://github.com/gaborcsardi/argufy">argufy</a>, which does this in a pretty interesting way. We wrap the function definition in a set of checks.</p>
+
 <pre class="r"><code>library(argufy)
 prefix &lt;- argufy(function(
  str =     ? is.character,
@@ -199,6 +208,7 @@ prefix &lt;- argufy(function(
 })
 
 substring('This works', 1, 5)</code></pre>
+
 <pre><code>## [1] &quot;This &quot;</code></pre>
 <pre class="r"><code>prefix('This works', 5)</code></pre>
 <pre><code>## [1] &quot;This &quot;</code></pre>
@@ -209,7 +219,8 @@ substring('This works', 1, 5)</code></pre>
 
 <h2>ensurer</h2>
 
-<p>The <a href="https://github.com/smbache/ensurer">ensurer</a> package.</p>
+<p>The <a href="https://github.com/smbache/ensurer">ensurer</a> package comes from a different perspective. It does assertions but it views them from the perspective of ensuring properties via contracts. This this starts to push towards having type safty in R.</p>
+
 <pre class="r"><code>library(ensurer)
 matrix(runif(16), 4, 4) %&gt;%
   ensure_that(ncol(.) == nrow(.), all(. &lt;= 1))</code></pre>
@@ -227,7 +238,7 @@ matrix(runif(16), 4, 4) %&gt;%
 <h2>immutequality</h2>
 
 
-<p>While looking into the ensurer package above I noticed a few other packages on <a href="https://github.com/smbache">smbache's</a> GitHub page. They provide some interesting capabilities and even some interesting restrictions.</p> The <a href="https://github.com/smbache/immutequality">immutequality</a> seems to work just like var and val in Scala.</p>
+<p>While looking into the ensurer package I noticed a few other packages on <a href="https://github.com/smbache">smbache's</a> GitHub page. They provide some interesting capabilities and even some interesting restrictions.</p> The <a href="https://github.com/smbache/immutequality">immutequality</a> seems to work just like var and val in Scala.</p>
 
 <pre class="r"><code>library(immutequality)
 x = 10
@@ -287,15 +298,7 @@ import::into(&quot;datatools&quot;, arrange, .from = dplyr)
 <code><pre>import::from(some_module.R, a, b, p, plot_it)</code></pre>
 
 
-<p>Instead of digging into this though I want to talk about a package the documentation referred to.</p>
-
-<h2>modules</h2>
-
-<p>The<a href="https://github.com/klmr/modules">modules</a> package replicates the python module methodology. There is great documentation about the reasoning behind this <a href="https://github.com/klmr/modules/wiki/Design-rationale">here</a> and a comparison <a href="https://github.com/klmr/modules/wiki/Feature-comparison">here</a>.</p>
-
-
-
-<p>These packages give us some powerful features that I like in Scala and Python.</p>
+<p>Instead of digging into this impementation though I wanted to mention a package the documentation referred to. The<a href="https://github.com/klmr/modules">modules</a> package replicates the python module methodology. Instead showong some code that showcases how these work I will point to the great documentation about the reasoning behind the package <a href="https://github.com/klmr/modules/wiki/Design-rationale">here</a> and a comparison to python <a href="https://github.com/klmr/modules/wiki/Feature-comparison">here</a>. These packages give us some powerful features that I like in Scala and Python.</p>
 
 
 <h2>wakefield</h2>
