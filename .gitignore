@@ -12,3 +12,8 @@ info.RData
 ig.RData
 all_bump.csv
 gtfs_data/
+
+indiv12.txt
+ccl_header_file.csv
+fec_data/
+jun282015/data/*.RData
