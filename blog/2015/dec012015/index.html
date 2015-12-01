@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<!-- saved from url=(0014)about:internet -->
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+<meta http-equiv="x-ua-compatible" content="IE=9" >
+
+<title>RSel Marathon</title>
+
+
+
+    <link rel="stylesheet" type="text/css" href="../../../stylesheets/blog.css">
+<!-- Styles for R syntax highlighter -->
+    <link rel="stylesheet" type="text/css" href="../../../stylesheets/blog2.css">
+    <link rel="stylesheet" type="text/css" href="../../../stylesheets/stylesheet.css" media="screen" />
+    <link rel="stylesheet" type="text/css" href="../../../stylesheets/pygment_trac.css" media="screen" />
+    <link rel="stylesheet" type="text/css" href="../../../stylesheets/print.css" media="print" />
+<!-- R syntax highlighter -->
+    <script src="../../../javascripts/r.js"></script>
+
+
+</head>
+
+<body>
+
+<div class="container">
+
+
+    <header>
+      <div class="container">
+        <a href="http://darrkj.github.io/blogs" class="btn">Blogs</a>
+        <h1>Marathon Data Via RSelenium</h1>
+        <h2></h2>
+
+<h4 class="author"><em>Kenny Darrell</em></h4>
+<h4 class="date"><em>December 2, 2015</em></h4>
+        </section>
+      </div>
+    </header>
+
+
+
+<p>A while back I showed how to use a <a href="http://darrkj.github.io/blog/2014/aug302014/">cell phone as an activity tracker</a>. Part of the reason behind this was that I thought it would make me run more. If you look on my <a href="http://darrkj.github.io/projects">projects</a> page I mentioned how this was going to help me train for a 5k.</p>
+<p>I am not sure how much I actually used this to train, very little I would guess, but I did end up running the <a href="http://www.race4respect.com/">DC Race4Respect 5k</a>. After the race I wanted to look at the results, and more than just the table they give you on the webpage. Getting the data for this race was a little strange though as can be seen <a href="http://results.chronotrack.com/event/results/event/event-14387">here</a>. It could not be collected with the normal use of httr, XML and rvest. It required the RSelenium package to automate the clicks, this is due to tha data being hid behind javasctipt. I have used this a few times, but every time it seems I need to re-read what I have done before or Google around a bit to find the correct setup.</p>
+<p>Here I want to document some of the setup and process for using RSelenium, it may save me some time on the next go around. I have had issues with this before where everything I could find on RSelenium failed becuase it was written for Windows. To get around this on Mac I have to use <a href="http://phantomjs.org/">phantomjs</a>, a headless browser as none of the browsers I have installed seem to work.</p>
+
+<pre class="r"><code>options(stringsAsFactors = FALSE)
+library(RSelenium)
+library(ggplot2)
+require(beanplot)
+library(dplyr)
+library(lubridate)
+library(XML)
+
+info &lt;- list()
+
+get_cur_data &lt;- function() {
+  readHTMLTable(remDr$findElement(using = 'id', 
+                                  value = &quot;bazu-full-results-grid&quot;
+  )$getElementAttribute(&quot;outerHTML&quot;)[[1]])[[1]]
+}
+
+goto_page &lt;- function(val) {
+  remDr$findElements(using = 'class name', 
+                   value = &quot;fg-button&quot;)[[val]]$sendKeysToElement(list(key = &quot;enter&quot;))
+}
+
+# Setup the selenium and phantom.js
+startServer()
+phanDir &lt;- &quot;/Users/kdarrell/node_modules/phantomjs/lib/phantom/bin/phantomjs&quot;
+  
+# Create phantomjs driver, needs location of exe
+remDr &lt;- remoteDriver(browserName = &quot;phantomjs&quot;, 
+                      extraCapabilities = list(phantomjs.binary.path = phanDir))</code></pre>
+<p>Once this is all setup with the headless browser it does not deviate very much from the tutorials. You can see how impertive the code is. With a few helper functions it actually reads as though you are describing how you clicked around on the page.</p>
+<pre class="r"><code># Open a connection to the remote driver, open browser
+remDr$open()
+  
+race_url &lt;- 'http://results.chronotrack.com/event/results/event/event-14387'
+# Start at the race results page.
+remDr$navigate(race_url)
+ 
+#remDr$screenshot(display = TRUE, useViewer = TRUE) 
+
+# Locate the element that links to results.
+webElem &lt;- remDr$findElement(using = 'id', value = &quot;resultsResultsTab&quot;)
+
+# Click button on this 
+webElem$sendKeysToElement(list(key = &quot;enter&quot;))
+  
+# Collect info on first page
+info[[length(info) + 1]] &lt;- get_cur_data()
+
+goto_page(4)    # Go to page 2
+info[[length(info) + 1]] &lt;- get_cur_data()
+
+goto_page(5)    # Go to page 3
+info[[length(info) + 1]] &lt;- get_cur_data()
+
+goto_page(6)    # Go to page 4
+info[[length(info) + 1]] &lt;- get_cur_data()
+
+# Loop through the rest
+for (i in 5:46) {
+  goto_page(6)
+  info[[length(info) + 1]] &lt;- get_cur_data()
+}
+
+goto_page(7)   # Go to the last page
+info[[length(info) + 1]] &lt;- get_cur_data()
+
+# Turn list into data.frame
+r4r5k &lt;- as.data.frame(bind_rows(info))</code></pre>
+<p>A few things to note, it may appear that there is a bug and that I should use goto_page at the increment variable. This is however the item that will jump to the next page, not actually the page I am jumping to.</p>
+<p>This would all be rather dull without some use of this data. The following code will take a subset of the fields from a race and create a beanplot. This is a collection of back to back histograms, using a binary indicatory, over another cataegorical variable. In this case we can see the distribution of minutes it took to finish the race for sex and age.</p>
+<pre class="r"><code>raceplot &lt;- function(data, t = 'Race') {
+  beanplot(data$min ~ data$sex * data$group, ll = 0.04, side = &quot;both&quot;,   
+           col = list(&quot;purple&quot;, c(&quot;lightblue&quot;, &quot;black&quot;)),         
+           main = paste0(t, &quot; Minutes by Age/Sex&quot;), 
+           axes = F, log = '')
+  
+  axis(1, at = c(1:8), labels = c(&quot;10s&quot;, &quot;20s&quot;, &quot;30s&quot;, &quot;40s&quot;, 
+                                  &quot;50s&quot;, &quot;60s&quot;, &quot;70s&quot;, &quot;80s&quot;))
+  
+  axis(2)
+  legend(&quot;bottomleft&quot;, fill = c(&quot;purple&quot;, &quot;lightblue&quot;),       
+         legend = c(&quot;Female&quot;, &quot;Male&quot;), box.lty = 0)
+}
+
+# Turn tace times into minutes as numeric.
+time_2_min &lt;- function(x) {
+  x &lt;- strsplit(x, ':')
+  sec &lt;- as.numeric(sapply(x, `[`, 1)) * 60 * 60 +
+    as.numeric(sapply(x, `[`, 2)) * 60 + as.numeric(sapply(x, `[`, 3))
+  sec / 60
+}</code></pre>
+<p>Now the only step is to contort the data into the desired format.</p>
+<pre class="r"><code>r4r5k %&gt;%
+  mutate(min = time_2_min(Time),
+         age = as.numeric(Age)) %&gt;%
+  select(age, min, sex = Gender) %&gt;%
+  filter(age &gt; 9, age &lt; 90) %&gt;%
+  mutate(group = as.factor(floor(age/10))) %&gt;%
+  raceplot('5K')</code></pre>
+  
+  
+<div class="separator" style="clear: both; text-align: center;"><img src="r4r.jpeg" height="550" width="700"></a></div>
+
+<p>I also ran the <a href="http://www.richmondmarathon.com/">Anthem Richmon Half-Marathon</a>. The <a href="http://www.richmond.com/data-center/marathon/2015">data</a> was sitting behind the same type of javascript code, so collectling it required the same mechanism. This was much easier to put in a loop so it does not read as a sequence of clicks. This is becuase it had number indicating what page to start on. It was also much much harder becuase I could never get it to work on a Mac. I tried it on a Windows machine and everything worked, no need for phantomjs.</p>
+<pre class="r"><code># This only worked on Windows.
+base &lt;- 'http://www.richmond.com/data-center/marathon/2015/'
+ext &lt;- '?PageID=2&amp;PrevPageID=&amp;cpipage='
+
+startServer()
+data &lt;- list()
+mybrowser &lt;- remoteDriver()
+
+mybrowser$open()
+
+for (i in 1:315) {
+  Sys.sleep(runif(1, 7, 12))
+  mybrowser$navigate(paste0(base, ext, i))
+  x &lt;- mybrowser$findElements(using = 'tag', &quot;tr&quot;)
+  
+  data[[i]] &lt;- sapply(x, function(i) i$getElementText()[[1]])
+  tail(data[[i]], 1)
+}
+save(data, file = 'anthem.RData')</code></pre>
+<p>Same thing for this data, contort it into the desired format and then plot.</p>
+<pre class="r"><code>data %&gt;% unlist %&gt;%
+  grep('Records ', ., value = T, invert = T)  %&gt;% 
+  grep('Last Name ', ., value = T, invert = T)  %&gt;%
+  grep('Page     of 315 ', ., value = T, invert = T) %&gt;%
+  { .[. != ''] } %&gt;%
+  strsplit(., ' ') %&gt;%
+  sapply(tail, 5) %&gt;% t %&gt;%
+  as.data.frame(stringsAsFactors = FALSE)  %&gt;%
+  select(sex = V1, age = V2, race = V3, min = V5) %&gt;%
+  mutate(min = time_2_min(min),
+         age = as.numeric(age)) %&gt;%
+  filter(age &gt; 9, age &lt; 90, race == 'HM') %&gt;%
+  mutate(group = as.factor(floor(age/10))) %&gt;%
+  raceplot('Half Marathon')</code></pre>
+
+
+<div class="separator" style="clear: both; text-align: center;"><img src="anthem.jpeg" height="550" width="700"></a></div>
+
+
+</div>
+
+
+
+
+
+<script>
+
+// add bootstrap table styles to pandoc tables
+$(document).ready(function () {
+  $('tr.header').parent('thead').parent('table').addClass('table table-condensed');
+});
+
+</script>
+
+<!-- dynamically load mathjax for compatibility with --self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://c328740.ssl.cf1.rackcdn.com/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>
+
