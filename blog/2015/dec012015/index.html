@@ -41,8 +41,8 @@
 
 
 <p>A while back I showed how to use a <a href="http://darrkj.github.io/blog/2014/aug302014/">cell phone as an activity tracker</a>. Part of the reason behind this was that I thought it would make me run more. If you look on my <a href="http://darrkj.github.io/projects">projects</a> page I mentioned how this was going to help me train for a 5k.</p>
-<p>I am not sure how much I actually used this to train, very little I would guess, but I did end up running the <a href="http://www.race4respect.com/">DC Race4Respect 5k</a>. After the race I wanted to look at the results, and more than just the table they give you on the webpage. Getting the data for this race was a little strange though as can be seen <a href="http://results.chronotrack.com/event/results/event/event-14387">here</a>. It could not be collected with the normal use of httr, XML and rvest. It required the RSelenium package to automate the clicks, this is due to tha data being hid behind javasctipt. I have used this a few times, but every time it seems I need to re-read what I have done before or Google around a bit to find the correct setup.</p>
-<p>Here I want to document some of the setup and process for using RSelenium, it may save me some time on the next go around. I have had issues with this before where everything I could find on RSelenium failed becuase it was written for Windows. To get around this on Mac I have to use <a href="http://phantomjs.org/">phantomjs</a>, a headless browser as none of the browsers I have installed seem to work.</p>
+<p>I am not sure how much I actually used this to train, very little I would guess, but I did end up running the <a href="http://www.race4respect.com/">DC Race4Respect 5k</a>. After the race I wanted to look at the results, and more than just the table they give you on the webpage. Getting the data for this race was a little strange though as can be seen <a href="http://results.chronotrack.com/event/results/event/event-14387">here</a>. It could not be collected with the normal use of httr, XML and rvest. It required the RSelenium package to automate the clicks, this is due to the data being hid behind javascript. I have used this a few times, but every time it seems I need to re-read what I have done before or Google around a bit to find the correct setup.</p>
+<p>Here I want to document some of the setup and process for using RSelenium, it may save me some time on the next go around. I have had issues with this before where everything I could find on RSelenium failed because it was written for Windows. To get around this on Mac I have to use <a href="http://phantomjs.org/">phantomjs</a>, a headless browser as none of the browsers I have installed seem to work.</p>
 
 <pre class="r"><code>options(stringsAsFactors = FALSE)
 library(RSelenium)
@@ -72,7 +72,7 @@ phanDir &lt;- &quot;/Users/kdarrell/node_modules/phantomjs/lib/phantom/bin/phant
 # Create phantomjs driver, needs location of exe
 remDr &lt;- remoteDriver(browserName = &quot;phantomjs&quot;, 
                       extraCapabilities = list(phantomjs.binary.path = phanDir))</code></pre>
-<p>Once this is all setup with the headless browser it does not deviate very much from the tutorials. You can see how impertive the code is. With a few helper functions it actually reads as though you are describing how you clicked around on the page.</p>
+<p>Once this is all setup with the headless browser it does not deviate very much from the tutorials. You can see how imperative the code is. With a few helper functions it actually reads as though you are describing how you clicked around on the page.</p>
 <pre class="r"><code># Open a connection to the remote driver, open browser
 remDr$open()
   
@@ -112,7 +112,7 @@ info[[length(info) + 1]] &lt;- get_cur_data()
 # Turn list into data.frame
 r4r5k &lt;- as.data.frame(bind_rows(info))</code></pre>
 <p>A few things to note, it may appear that there is a bug and that I should use goto_page at the increment variable. This is however the item that will jump to the next page, not actually the page I am jumping to.</p>
-<p>This would all be rather dull without some use of this data. The following code will take a subset of the fields from a race and create a beanplot. This is a collection of back to back histograms, using a binary indicatory, over another cataegorical variable. In this case we can see the distribution of minutes it took to finish the race for sex and age.</p>
+<p>This would all be rather dull without some use of this data. The following code will take a subset of the fields from a race and create a beanplot. This is a collection of back to back histograms, using a binary indicatory, over another categorical variable. In this case we can see the distribution of minutes it took to finish the race for sex and age.</p>
 <pre class="r"><code>raceplot &lt;- function(data, t = 'Race') {
   beanplot(data$min ~ data$sex * data$group, ll = 0.04, side = &quot;both&quot;,   
            col = list(&quot;purple&quot;, c(&quot;lightblue&quot;, &quot;black&quot;)),         
@@ -146,7 +146,7 @@ time_2_min &lt;- function(x) {
   
 <div class="separator" style="clear: both; text-align: center;"><img src="r4r.jpeg" height="550" width="700"></a></div>
 
-<p>I also ran the <a href="http://www.richmondmarathon.com/">Anthem Richmon Half-Marathon</a>. The <a href="http://www.richmond.com/data-center/marathon/2015">data</a> was sitting behind the same type of javascript code, so collectling it required the same mechanism. This was much easier to put in a loop so it does not read as a sequence of clicks. This is becuase it had number indicating what page to start on. It was also much much harder becuase I could never get it to work on a Mac. I tried it on a Windows machine and everything worked, no need for phantomjs.</p>
+<p>I also ran the <a href="http://www.richmondmarathon.com/">Anthem Richmon Half-Marathon</a>. The <a href="http://www.richmond.com/data-center/marathon/2015">data</a> was sitting behind the same type of javascript code, so collecting it required the same mechanism. This was much easier to put in a loop so it does not read as a sequence of clicks. This is because it had number indicating what page to start on. It was also much much harder because I could never get it to work on a Mac. I tried it on a Windows machine and everything worked, no need for phantomjs.</p>
 <pre class="r"><code># This only worked on Windows.
 base &lt;- 'http://www.richmond.com/data-center/marathon/2015/'
 ext &lt;- '?PageID=2&amp;PrevPageID=&amp;cpipage='
