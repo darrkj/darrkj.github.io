@@ -100,11 +100,11 @@
 
 
         <section data-transition="linear" data-transition-speed="default">
-          <h3>D - LA Lakers Law:</h3>
+          <h3>LA Lakers Law</h3>
           <div class="mediaInline slideContent" >
             <p>If LA reaches championship Republican wins</p>
             <p><img src="img/basket.png" alt="alt text" height="80%" width="70%"/></p>
-            <p>Worked since move to LA in 1960, but not 2008 (12-1)</p>
+            <p>Worked since move to LA in 1960, but not 2008 and 2012 (12-2)</p>
           </div>
         </section>
 
@@ -115,7 +115,7 @@
           <div class="slideContent" >
           <p>Alabama (D) vs LSU (R)</p>
             <img src="img/foot.png" alt="alt text"/>
-          <p>Worked since 1984 (7-0)</p>
+          <p>Worked since 1984 (8-0)</p>
 
           </div>
         </section>
@@ -126,7 +126,7 @@
           <div class="slideContent" >
             <p>Winning cookie recipe wins election</p>
             <p><img src="img/firstlady.png" alt="alt text" height="80%" width="70%"/></p>
-            <p>Worked since 1992, except 2008 (4-1)</p>
+            <p>Worked since 1992, except 2008 (5-1)</p>
           </div>
         </section>
 
@@ -218,13 +218,13 @@ head(train)</code></pre>
         <section data-transition="linear" data-transition-speed="default">
           <div class="mediaOnly slideContent" >
             <p>We need a goal by which to measure success</p>
-            <p>For Example: buy good used cars that don't need repairs (kick cars)</p>
+            <p>ex: Buy good used cars that don't need repairs (kick cars)</p>
           </div>
         </section>
 
 
         <section data-transition="linear" data-transition-speed="default">
-          <h3>First we need to get a feel of the data</h3>
+          <h3>First we need to get a feel for the data</h3>
             <div class="slideContent" >
               <pre><code class="r">summary(train)</code></pre>
 
@@ -243,7 +243,7 @@ head(train)</code></pre>
 
       <section data-transition="linear" data-transition-speed="default">
         <div class="slideContent" >
-          <p>We are interested in indentifying the lemons, then avoid them</p>
+          <p>We want to  indentify the lemons, then avoid them</p>
           <pre><code class="r">table(train$IsBadBuy)</code></pre>
 <pre><code>
     0     1 
@@ -261,7 +261,7 @@ head(train)</code></pre>
         <section data-transition="linear" data-transition-speed="default">
           <h3>Perhaps the odometer</h3>
           <div class="mediaOnly slideContent" >
-            <p>I don&#x27;t see a huge difference</p>
+            <p class="fragment">I don&#x27;t see a huge difference</p>
             <p><img src="img/odo.png" alt="alt text" height="80%" width="70%"/></p>
           </div>
         </section>
@@ -270,7 +270,7 @@ head(train)</code></pre>
         <section data-transition="linear" data-transition-speed="default">
           <h3>What about color?</h3>
           <div class="mediaInline slideContent">
-            <p>More interesting!</p>
+            <p class="fragment">More interesting!</p>
             <p><img src="img/color.png" alt="alt text" height="80%" width="70%"/></p>
           </div>
         </section>
@@ -281,7 +281,8 @@ head(train)</code></pre>
     <section data-transition="linear" data-transition-speed="default">
       <h3>Is it statistically significant?</h3>
       <div class="slideContent" >
-        <p>That is what we have statistics for, how likely could this occur at random?</p>
+        <p>We have statistics for this purpose!</p>
+        <p>How likely could this occur at random?</p>
         <pre><code class="r">pval(train, &#39;ORANGE&#39;)</code></pre>
         <pre><code>[1] 0.003342797</code></pre>
       </div>
@@ -429,24 +430,32 @@ res1 &lt;- res1[order(res1$p), ][1:80, ]</code></pre>
 </section>
 
 
+   
+
+
 <section data-transition="linear" data-transition-speed="default">
 <h3>Target Shuffling</h3>
 <div class="slideContent" >
-<p style="text-align:left" class="fragment">Analyze data, note its strength 
-
-(e.g., R-squared, lift, correlation, explanatory power)</p>
-<p style="text-align:left" class="fragment">Randomly shuffle the target to “break the relationship” between output and its inputs</p>
-<p style="text-align:left" class="fragment">Search for a new best model – or “most interesting result” - and save its strength</p>
-<p style="text-align:left" class="fragment">Repeat steps 2 and 3 and create a distribution of the strengths of the “Best Apparent Discoveries” (BADs)</p>
-<p style="text-align:left" class="fragment">Evaluate where your true results (from step 1) are on (or beyond) this BAD distribution.  This is its “significance”, or probability that a result as strong as it can occur by chance.</p>
-
+  <ol>
+    <li><p style="text-align:left" class="fragment">Analyze data, note its strength 
+    <br>
+    (e.g., R-squared, lift, correlation, explanatory power)</p></li>
+    
+    <li><p style="text-align:left" class="fragment">Randomly shuffle the target to “break the relationship” between output and its inputs</p></li>
+    
+    <li><p style="text-align:left" class="fragment">Search for a new best model – or “most interesting result” - and save its strength</p></li>
+    
+    <li><p style="text-align:left" class="fragment">Repeat steps 2 and 3 and create a distribution of the strengths of the “Best Apparent Discoveries” (BADs)</p></li>
+    
+    <li><p style="text-align:left" class="fragment">Evaluate where your true results (from step 1) are on (or beyond) this BAD distribution.  This is its “significance”, or probability that a result as strong as it can occur by chance.</p></li>
+  <ol>
 </div>
 
 </section>
 
 
 <section data-transition="linear" data-transition-speed="default">
-<h3>Our init result is an order of mag </h3>
+<h3>Not as significant as our initial result</h3>
 <div class="slideContent" >
 <pre><code class="r">m &lt;- c(pval(train, &#39;ORANGE&#39;))
 
@@ -471,9 +480,9 @@ min(which(sort(m) == m[1])) / length(m)
 
 
     <section data-transition="linear" data-transition-speed="default">
-      <h3>Our result is not as signifcant as we thought</h3>
+      <h3>So ...</h3>
       <div class="mediaOnly slideContent" >
-        <p>Target shuffling tells us our model is junk! When it does like a model that is a good sign</p>
+        <p class="fragment">Target shuffling tells us our model is junk! When it does like a model it is a very good sign that we have something real!</p>
       </div>
     </section>
 
@@ -510,7 +519,7 @@ min(which(sort(m) == m[1])) / length(m)</code></pre>
 
     <section data-transition="linear" data-transition-speed="default">
       <div class="mediaOnly slideContent" >
-        <p>The stat got worse but it still works much better than random!</p>
+        <p>This statistic also got worse, but it is still much better than random!</p>
       </div>
     </section>
 
@@ -641,8 +650,8 @@ res2 &lt;- res2[order(res2$p), ][1:80, ]</code></pre>
 <section data-transition="linear" data-transition-speed="default">
 <h3>Summary</h3>
 <div class="slideContent" >
-<p style="text-align:left" class="fragment">We can always find something interesting just by randomnes</p>
-<p style="text-align:left" class="fragment">We love stories and will believe anything, thus interpretability is no protection against error.</p>
+<p style="text-align:left" class="fragment">We can always find something interesting just by randomness</p>
+<p style="text-align:left" class="fragment">We love stories and will believe anything, thus interpretability is no protection against error</p>
 <p style="text-align:left" class="fragment">Science requires replication &amp; transparency
 65-95% “health discovery” papers are false, due to vast search effect (multiple comparison)</p>
 
