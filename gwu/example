@@ -1,0 +1,67 @@
+
+APEX is the payment dataset encompassing all payments made by the USPS. Each row is a line amount on an invoice paid by the USPS to a contractor. A single invoice can have line amounts for multiple contracts, and a single contract can have multiple invoices. 
+
+
+CAMS is the Contract Asset Management System. Each row contains information specific to one modification to a USPS contract. Each contract can have multiple modifications.
+
+The data went through an intensive cleaning process. The details of this process can be found in the appendix.
+
+The two tables were merged together to make a master list of all contracts and variables. CAMS is the master list of contracts we would like to include in our universe. Any contracts with data on APEX not found on CAMS are removed and not considered in the model.
+
+Appendix
+ 
+3. If  “PortFolioName” equals “Facilities Portfolio”, discard the record.
+4. If  “PortFolioName” equals “Transportation Portfolio” and “PONumberConformed”
+length is less than 12, discard the record. 
+5. If “Product_Desc” when made lowercase and stripped of spaces equals “contract postal unit” “retail distribution services”, discard the record.
+6. Change missing values denoted “?,? ?”, “?”, and “!” to a single space in fields “Buyer_Name”, “COR_Name”, “AwdModTypeDesc”, “ContactName”, “CO_Name”, “Requestor_Name”, “IssuingOfficeCode”, “ACOName”, “ProcurementTypeDesc”, and
+“PrimaryProductServiceCode”.
+7. If TIN equals “FOREIGN” or “9000000009”, use TIN imputation process. (There are potentially other obviously bogus TIN’s that could be found)
+8. Trim and make uppercase “EDW_Supplier” and “CAMS_TIN_Xref.CAMS_Supplier_NAME”.
+9. Filter out field “PrimaryProductServiceCode”.
+10. Merge “IT Purchase Records.xlsx” based on “PONumberConformed”. This provides
+a flag for whether a contract supplies IT services. 
+11. Replaces blanks on “CAMS_PO_with_IT_Ind.ITPurchaseFlag with “N”.
+12. If “HeaderStatusDesc” equals “Closed” and “PerformanceEndDate” is before January
+2008, discard the record.
+13. Rename field “CAMS_TIN_Xref.CAMS_Supplier_NAME” to “SupplierName”.
+(This is the supplier name field that gets used.)
+
+
+
+----------------------------------------------------------------------------------------
+  This line is most scary
+  
+10. Merge IT Purchase Records.xlsx based on PONumberConformed. This provides
+a flag for whether a contract supplies IT services. 
+
+Which one
+
+Raw CAMS inner join IT Purchase Records.xlsx
+Raw CAMS left join IT Purchase Records.xlsx
+Raw CAMS right join IT Purchase Records.xlsx
+Raw CAMS full outer join IT Purchase Records.xlsx
+Raw CAMS cartesian IT Purchase Records.xlsx
+
+
+
+--------------------------------------------------------------------------------------
+
+CAMS is really a flattend export from a database.
+
+We can see that CAMS is Tall if we are interested in Contracts. We do not have one contract per row.
+
+
+Raw CAMS 
+  select SupplierName toupper CAMS_TIN_Xref.CAMS_Supplier_NAME, toupper EDW_Supplier”
+  filter PortFolioName equals Facilities Portfolio
+  filter PortFolioName equals Transportation Portfolio and length PONumberConformed less than 12
+  filter HeaderStatusDesc equals Closed and PerformanceEndDate before January 2008
+  impute CAMS_PO_with_IT_Ind.ITPurchaseFlag '' with 'N'
+  impute Buyer_Name '?,? ?' or '?' or '!' with ' '
+  inner_join IT Purchase Records.xlsx
+  left_join RAW APEX 
+  			--> Some Analytically Ready Dataset
+  
+
+
