@@ -530,9 +530,7 @@ min(which(sort(m) == m[1])) / length(m)</code></pre>
   <section data-transition="linear" data-transition-speed="default">
     <h3>Model with confidence!</h3>
     <div class="slideContent" >
-    <pre><code class="r">mod2 &lt;- glm(IsBadBuy ~ VehOdo, 
-           data = train, family = &quot;binomial&quot;)
-
+    <pre><code class="r">mod2 &lt;- glm(IsBadBuy ~ VehOdo, data = train, family = &quot;binomial&quot;)
 summary(mod2)</code></pre>
 
     <pre><code>
