@@ -293,9 +293,9 @@ for (i in data) {
 <p>Sparkr Command line</p>
 <pre><code>./bin/sparkR</code></pre>
 <pre class="r"><code>sc &lt;- sparkR.init(&quot;local&quot;)
-lines &lt;- SparkR:::textFile(sc, '../README.md')
+lines &lt;- SparkR:::textFile(sc, 'index.html')
 length(lines)</code></pre>
-<p>Get spark <a href="http://www.r-bloggers.com/installing-and-starting-sparkr-locally-on-windows-os-and-rstudio/">running in rstudio</a>.</p>
+<p>One major thint to notice here is that you must use three semicolons. This is strange becuase you just loaded the package but many of its contents are not exported to the workspace. Hopefully this will go away in the future. Next to make things really useful you may want to work somewhere other than in the command line. We can get spark <a href="http://www.r-bloggers.com/installing-and-starting-sparkr-locally-on-windows-os-and-rstudio/">running in RStudio</a> by doing the following from with RStudio.</p>
 <pre class="r"><code>Sys.setenv(SPARK_HOME = '/Users/kdarrell/Desktop/Spark-1.5.1')
 
 .libPaths(c(file.path(Sys.getenv(&quot;SPARK_HOME&quot;), &quot;R&quot;, &quot;lib&quot;), .libPaths()))
@@ -317,8 +317,7 @@ length(lines)</code></pre>
 <p>You may see an aweful lot of output messages. You need to turn log options to a less verbose setting. To do this make a copy of the following file, just removing template from the name.</p>
 <pre><code>conf/log4j.properties.template</code></pre>
 <pre><code>conf/log4j.properties</code></pre>
-<p>And make the following change:</p>
-<p>Replace this line</p>
+<p>Inside of this new file you need to make one change. Locate the as seen below and replace INFO with WARN.</p>
 <pre><code>log4j.rootCategory=INFO, console</code></pre>
 <p>With this</p>
 <pre><code>log4j.rootCategory=WARN, console</code></pre>
