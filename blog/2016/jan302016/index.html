@@ -734,14 +734,11 @@ val ranks = graph.pageRank(0.0001).vertices
 val ranksAndAirports = ranks.join(airportVertices).sortBy(_._2._1, ascending=false).map(_._2._2)
 ranksAndAirports.take(10)
 </code></pre>
-<pre class="r"><code>fl &lt;- read.csv('../flight/1996.csv')
-library(igraph)</code></pre>
-</div>
-<div id="week-3" class="section level2">
-<h2>week 3</h2>
-</div>
-<div id="getting-setup" class="section level2">
-<h2>Getting setup</h2>
+
+
+<p>Start of third lecture!</p>
+
+
 <p><a href="http://sparktutorials.net/spark-clusters-on-aws-ec2---reading-and-writing-s3-data---predicting-flight-delays-with-spark-part-1">Overall tutorial</a></p>
 <p><a href="http://docs.aws.amazon.com/ElasticMapReduce/latest/DeveloperGuide/emr-plan-upload-s3.html?tag=vig-20">S3 tutorial</a></p>
 <p><a href="http://docs.aws.amazon.com/ElasticMapReduce/latest/DeveloperGuide/emr-plan-upload-s3.html#create-s3-bucket-input">create s3 bucket</a></p>
