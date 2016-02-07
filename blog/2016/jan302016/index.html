@@ -380,14 +380,13 @@ This looks a little different though!
 
 <pre><code>Error in df[1, ] : object of type 'S4' is not subsettable</code></pre>
 
-It is strange that this does work.
+It is strange that this does not work.
 
 
 <pre class="r"><code>lm(faithful$eruptions ~ faithful$waiting)</code></pre>
 
 
-<pre><code>
-Call:
+<pre><code>Call:
 lm(formula = faithful$eruptions ~ faithful$waiting)
 
 Coefficients:
@@ -400,8 +399,7 @@ Coefficients:
 
 <pre class="r"><code>lm(df$eruptions ~ df$waiting)</code></pre>
 
-<pre><code>
-Error in model.frame.default(formula = df$eruptions ~ df$waiting, drop.unused.levels = TRUE) : 
+<pre><code>Error in model.frame.default(formula = df$eruptions ~ df$waiting, drop.unused.levels = TRUE) : 
   object is not a matrix</code></pre>
   
 <p>So have we lost all of the great things we can do in R. In some ways yes, but not really. We can now use Spark where it makes sense, then for things that Spark can't do we use base R by pulling the data out of Spark. We also have to realize when Spark does soemthing different than R. First though, why so many differences? We are not really using R any more! We are using and api to spark inside of R The api is growing to act more like R and support more of its functionality though</p>
@@ -412,7 +410,7 @@ Error in model.frame.default(formula = df$eruptions ~ df$waiting, drop.unused.le
 # Create the DataFrame
 df &lt;- createDataFrame(sqlContext, iris)</code></pre>
 
-<pre class="r"><code>Warning messages:
+<pre><code>Warning messages:
 1: In FUN(X[[i]], ...) :
   Use Sepal_Length instead of Sepal.Length  as column name
 2: In FUN(X[[i]], ...) :
@@ -546,10 +544,10 @@ head(select(predictions, &quot;Sepal_Length&quot;, &quot;prediction&quot;))</cod
 5          5.0   5.144212
 6          5.4   5.385281</code></pre>
 
-<p>Back to the flight data</p>
-<p>Can we now read the csv in from earlier</p>
+<p>Back to the flight data. Can we now read the csv in from earlier?</p>
+
 <pre class="r"><code># First thought
-df &lt;- createDataFrame(sqlContext, read.csv('../flight/2008.csv'))
+df &lt;- createDataFrame(sqlContext, read.csv('2008.csv'))
 
 # Second thought
 df &lt;- read.df(sqlContext, '../flight/2008.csv', source = &quot;csv&quot;)
@@ -563,32 +561,22 @@ customSchema &lt;- structType(
     structField(&quot;blank&quot;, &quot;string&quot;))
 
 df &lt;- read.df(sqlContext, &quot;cars.csv&quot;, source = &quot;com.databricks.spark.csv&quot;, schema = customSchema)</code></pre>
-<p>The issue</p>
-<p>Need the <a href="https://github.com/databricks/spark-csv">csv pacakge</a></p>
-<p>How?</p>
+<p>Whats the deal. We can't even load a csv file. Well if we think more about this problem, is it a big concern if Spark can't do this. If your data exists in a csv file you could probably get away without needing Spark to being with. But it is useful for working in the local mode to get an understanding of Spark. This functionality is available, just not by defualt. We need the <a href="https://github.com/databricks/spark-csv">csv pacakge</a>. That right, Spark has packages just like R. How do we laod them?</p>
+
+<p>From the command line for Scala:</p>
 <pre><code>bin/spark-shell --packages com.databricks:spark-csv_2.10:1.0.3</code></pre>
-<pre><code>sparkR --packages com.databricks:spark-csv_2.10:1.0.3</code></pre>
-<p>Spark has packages too</p>
-<p>Until next time!</p>
+<p>From the command line for R:</p>
+<pre><code>bin/sparkR --packages com.databricks:spark-csv_2.10:1.0.3</code></pre>
+
 </div>
-</div>
-<div id="week-2" class="section level2">
-<h2>week 2</h2>
-</div>
-<div id="running-spark" class="section level2">
-<h2>Running Spark</h2>
-<p>Java issues?</p>
-<p>Thus we could run Spark on its own.</p>
-<p>In the location where we have spark</p>
-<p>On a Mac</p>
-<pre><code>./bin/spark-shell</code></pre>
-<p>On Windows (cross your fingers) Possible windows issues, may need to <a href="http://nishutayaltech.blogspot.com/2015/04/how-to-run-apache-spark-on-windows7-in.html">this</a>.</p>
-<pre><code>bin\spark-shell</code></pre>
-<p>We are now in the Scala repl. More on this later.</p>
-</div>
-<div id="review-from-last-week" class="section level2">
-<h2>Review from last week</h2>
-<p>Last week we got an intro to a few concepts that we should review.</p>
+
+
+<p>Everything I have done thus far is for a Mac, or maybe Linux. I did quite a bit of trouble shooting of studnets issues on Windows and ran into differnt types of issues. On Windows (cross your fingers) you may need <a href="http://nishutayaltech.blogspot.com/2015/04/how-to-run-apache-spark-on-windows7-in.html">this</a>, as it helped me.</p>
+
+
+<h2>Review</h2>
+<p>This was the start of the seconds lecture.</p>
+
 <ol style="list-style-type: decimal">
 <li>Limitations of systems like R and Python</li>
 <li>Distributed computing</li>
