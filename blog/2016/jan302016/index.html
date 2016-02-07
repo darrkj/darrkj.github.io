@@ -5,7 +5,7 @@
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
 <meta http-equiv="x-ua-compatible" content="IE=9" >
 
-<title>Neo4j Soc Bal</title>
+<title>Getting Setup With Spark</title>
 
 
 
@@ -29,11 +29,11 @@
     <header>
       <div class="container">
         <a href="http://darrkj.github.io/blogs" class="btn">Blogs</a>
-        <h1>Simplifying Things with Neo4j</h1>
+        <h1>Getting Setup With Spark</h1>
         <h2></h2>
 
 <h4 class="author"><em>Kenny Darrell</em></h4>
-<h4 class="date"><em>July 4, 2014</em></h4>
+<h4 class="date"><em>January 30, 2016</em></h4>
         </section>
       </div>
     </header>
@@ -48,16 +48,8 @@
 <h3>Motivating Example</h3>
 <p>To get started, a motivating example. <a href="http://stat-computing.org/dataexpo/2009/the-data.html">Flight data</a> from roughly 20 years.</p>
 <pre class="r"><code>options(stringsAsFactors = FALSE)
-library(dplyr)</code></pre>
-<pre><code>## 
-## Attaching package: 'dplyr'</code></pre>
-<pre><code>## The following objects are masked from 'package:stats':
-## 
-##     filter, lag</code></pre>
-<pre><code>## The following objects are masked from 'package:base':
-## 
-##     intersect, setdiff, setequal, union</code></pre>
-<pre class="r"><code>library(lubridate)
+library(dplyr)
+library(lubridate)
 
 system.time(f &lt;- read.csv('2008.csv', nrows = 100))</code></pre>
 <pre><code>##    user  system elapsed 
@@ -274,7 +266,7 @@ for (i in data) {
 </ol>
 
 
-<div class="separator" style="clear: both; text-align: center;"><img src="https://github.com/Math510/Spark-stuff/blob/master/download_screenshot.png" height="550" width="700"></a></div>
+<div class="separator" style="clear: both; text-align: center;"><img src="spark_install.png" height="550" width="700"></a></div>
 
 
 <p>Unzip the file</p>
