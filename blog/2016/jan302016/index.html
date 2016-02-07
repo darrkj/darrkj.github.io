@@ -300,7 +300,7 @@ length(lines)</code></pre>
 
 .libPaths(c(file.path(Sys.getenv(&quot;SPARK_HOME&quot;), &quot;R&quot;, &quot;lib&quot;), .libPaths()))
 
-# Make sure you don't have spark from cran!
+# Make sure you don't have spark from CRAN!
 library(SparkR)</code></pre>
 
 <pre><code>Launching java with spark-submit command /Users/kdarrell/Desktop/Spark-1.5.1/bin/spark-submit   sparkr-shell /var/folders/kc/668j7hpn135fvf8b96gctp5c0000gp/T//RtmpzqTVUG/backend_port6ee75eafa8e4 
@@ -327,40 +327,225 @@ length(lines)</code></pre>
 
 df &lt;- createDataFrame(sqlContext, faithful) </code></pre>
 <p>Is it really the same?</p>
-<pre class="r"><code># This works
-head(faithful)
-head(df)
-
-# And this
-faithful$eruptions
-df$eruptions
-
-# But not this
-faithful[1, ]
-df[1, ]
+<pre class="r"><code>head(faithful)</code></pre>
 
 
-lm(faithful$eruptions ~ faithful$waiting)
-lm(df$eruptions ~ df$waiting)</code></pre>
-<p>So many differences</p>
-<p>We are not really using R any more</p>
-<p>We are using and api to spark inside of R The api is growing to act more like R and support more of its functionality though</p>
-<p>Data Science</p>
-<p>So if we want to do machine learning stuff what do we do</p>
+
+
+<pre><code>  eruptions waiting
+1     3.600      79
+2     1.800      54
+3     3.333      74
+4     2.283      62
+5     4.533      85
+6     2.883      55</code></pre>
+
+
+<pre class="r"><code>head(df)</code></pre>
+
+<pre><code>  eruptions waiting
+1     3.600      79
+2     1.800      54
+3     3.333      74
+4     2.283      62
+5     4.533      85
+6     2.883      55</code></pre>
+
+Which looks the same.
+
+
+
+<pre class="r"><code>faithful$eruptions</code></pre>
+
+
+<pre><code>  [1] 3.600 1.800 3.333 2.283 4.533 2.883 4.700 3.600 1.950
+ [10] 4.350 1.833 3.917 4.200 1.750 4.700 2.167 1.750 4.800</code></pre>
+
+
+<pre class="r"><code>df$eruptions</code></pre>
+
+<pre><code>  Column eruptions</code></pre>
+
+This looks a little different though!
+
+
+<pre class="r"><code>faithful[1, ]</code></pre>
+
+<pre><code>  eruptions waiting
+1       3.6      79</code></pre>
+
+
+<pre class="r"><code>df[1, ]</code></pre>
+
+
+<pre><code>Error in df[1, ] : object of type 'S4' is not subsettable</code></pre>
+
+It is strange that this does work.
+
+
+<pre class="r"><code>lm(faithful$eruptions ~ faithful$waiting)</code></pre>
+
+
+<pre><code>
+Call:
+lm(formula = faithful$eruptions ~ faithful$waiting)
+
+Coefficients:
+     (Intercept)  faithful$waiting  
+        -1.87402           0.07563  </code></pre>
+
+
+
+
+
+<pre class="r"><code>lm(df$eruptions ~ df$waiting)</code></pre>
+
+<pre><code>
+Error in model.frame.default(formula = df$eruptions ~ df$waiting, drop.unused.levels = TRUE) : 
+  object is not a matrix</code></pre>
+  
+<p>So have we lost all of the great things we can do in R. In some ways yes, but not really. We can now use Spark where it makes sense, then for things that Spark can't do we use base R by pulling the data out of Spark. We also have to realize when Spark does soemthing different than R. First though, why so many differences? We are not really using R any more! We are using and api to spark inside of R The api is growing to act more like R and support more of its functionality though</p>
+
+
+<p>So if we want to do machine learning stuff what do we do? We need to use the methods supplied by Spark.</p>
 <pre class="r"><code># https://spark.apache.org/docs/latest/sparkr.html#creating-dataframes
 # Create the DataFrame
-df &lt;- createDataFrame(sqlContext, iris)
+df &lt;- createDataFrame(sqlContext, iris)</code></pre>
 
-SparkR::glm
-stats::glm
+<pre class="r"><code>Warning messages:
+1: In FUN(X[[i]], ...) :
+  Use Sepal_Length instead of Sepal.Length  as column name
+2: In FUN(X[[i]], ...) :
+  Use Sepal_Width instead of Sepal.Width  as column name
+3: In FUN(X[[i]], ...) :
+  Use Petal_Length instead of Petal.Length  as column name
+4: In FUN(X[[i]], ...) :
+  Use Petal_Width instead of Petal.Width  as column name</code></pre>
+  
+What happened here was that Spark does not like periods in variable names, so it changed them for us. We need to remember that when we work with two different sets of rules.
 
-# Fit a linear model over the dataset.
-model &lt;- glm(Sepal_Length ~ Sepal_Width + Species, data = df, family = &quot;gaussian&quot;)
 
-summary(model)
+<pre class="r"><code>SparkR::glm</code></pre>
+<pre><code>## standardGeneric for &quot;glm&quot; defined from package &quot;stats&quot;
+## 
+## function (formula, family = gaussian, data, weights, subset, 
+##     na.action, start = NULL, etastart, mustart, offset, control = list(...), 
+##     model = TRUE, method = &quot;glm.fit&quot;, x = FALSE, y = TRUE, contrasts = NULL, 
+##     ...) 
+## standardGeneric(&quot;glm&quot;)
+## &lt;environment: 0x7f9f8be20630&gt;
+## Methods may be defined for arguments: formula, family, data, weights, subset, na.action, start, etastart, mustart, offset, control, model, method, x, y, contrasts
+## Use  showMethods(&quot;glm&quot;)  for currently available ones.</code></pre>
+<pre class="r"><code>stats::glm</code></pre>
+<pre><code>## function (formula, family = gaussian, data, weights, subset, 
+##     na.action, start = NULL, etastart, mustart, offset, control = list(...), 
+##     model = TRUE, method = &quot;glm.fit&quot;, x = FALSE, y = TRUE, contrasts = NULL, 
+##     ...) 
+## {
+##     call &lt;- match.call()
+##     if (is.character(family)) 
+##         family &lt;- get(family, mode = &quot;function&quot;, envir = parent.frame())
+##     if (is.function(family)) 
+##         family &lt;- family()
+##     if (is.null(family$family)) {
+##         print(family)
+##         stop(&quot;'family' not recognized&quot;)
+##     }
+##     if (missing(data)) 
+##         data &lt;- environment(formula)
+##     mf &lt;- match.call(expand.dots = FALSE)
+##     m &lt;- match(c(&quot;formula&quot;, &quot;data&quot;, &quot;subset&quot;, &quot;weights&quot;, &quot;na.action&quot;, 
+##         &quot;etastart&quot;, &quot;mustart&quot;, &quot;offset&quot;), names(mf), 0L)
+##     mf &lt;- mf[c(1L, m)]
+##     mf$drop.unused.levels &lt;- TRUE
+##     mf[[1L]] &lt;- quote(stats::model.frame)
+##     mf &lt;- eval(mf, parent.frame())
+##     if (identical(method, &quot;model.frame&quot;)) 
+##         return(mf)
+##     if (!is.character(method) &amp;&amp; !is.function(method)) 
+##         stop(&quot;invalid 'method' argument&quot;)
+##     if (identical(method, &quot;glm.fit&quot;)) 
+##         control &lt;- do.call(&quot;glm.control&quot;, control)
+##     mt &lt;- attr(mf, &quot;terms&quot;)
+##     Y &lt;- model.response(mf, &quot;any&quot;)
+##     if (length(dim(Y)) == 1L) {
+##         nm &lt;- rownames(Y)
+##         dim(Y) &lt;- NULL
+##         if (!is.null(nm)) 
+##             names(Y) &lt;- nm
+##     }
+##     X &lt;- if (!is.empty.model(mt)) 
+##         model.matrix(mt, mf, contrasts)
+##     else matrix(, NROW(Y), 0L)
+##     weights &lt;- as.vector(model.weights(mf))
+##     if (!is.null(weights) &amp;&amp; !is.numeric(weights)) 
+##         stop(&quot;'weights' must be a numeric vector&quot;)
+##     if (!is.null(weights) &amp;&amp; any(weights &lt; 0)) 
+##         stop(&quot;negative weights not allowed&quot;)
+##     offset &lt;- as.vector(model.offset(mf))
+##     if (!is.null(offset)) {
+##         if (length(offset) != NROW(Y)) 
+##             stop(gettextf(&quot;number of offsets is %d should equal %d (number of observations)&quot;, 
+##                 length(offset), NROW(Y)), domain = NA)
+##     }
+##     mustart &lt;- model.extract(mf, &quot;mustart&quot;)
+##     etastart &lt;- model.extract(mf, &quot;etastart&quot;)
+##     fit &lt;- eval(call(if (is.function(method)) &quot;method&quot; else method, 
+##         x = X, y = Y, weights = weights, start = start, etastart = etastart, 
+##         mustart = mustart, offset = offset, family = family, 
+##         control = control, intercept = attr(mt, &quot;intercept&quot;) &gt; 
+##             0L))
+##     if (length(offset) &amp;&amp; attr(mt, &quot;intercept&quot;) &gt; 0L) {
+##         fit2 &lt;- eval(call(if (is.function(method)) &quot;method&quot; else method, 
+##             x = X[, &quot;(Intercept)&quot;, drop = FALSE], y = Y, weights = weights, 
+##             offset = offset, family = family, control = control, 
+##             intercept = TRUE))
+##         if (!fit2$converged) 
+##             warning(&quot;fitting to calculate the null deviance did not converge -- increase 'maxit'?&quot;)
+##         fit$null.deviance &lt;- fit2$deviance
+##     }
+##     if (model) 
+##         fit$model &lt;- mf
+##     fit$na.action &lt;- attr(mf, &quot;na.action&quot;)
+##     if (x) 
+##         fit$x &lt;- X
+##     if (!y) 
+##         fit$y &lt;- NULL
+##     fit &lt;- c(fit, list(call = call, formula = formula, terms = mt, 
+##         data = data, offset = offset, control = control, method = method, 
+##         contrasts = attr(X, &quot;contrasts&quot;), xlevels = .getXlevels(mt, 
+##             mf)))
+##     class(fit) &lt;- c(fit$class, c(&quot;glm&quot;, &quot;lm&quot;))
+##     fit
+## }
+## &lt;bytecode: 0x7f9f8bde02b0&gt;
+## &lt;environment: namespace:stats&gt;</code></pre>
 
-predictions &lt;- predict(model, newData = df)
+Use this to fit a linear model over the dataset.
+<pre class="r"><code>model &lt;- glm(Sepal_Length ~ Sepal_Width + Species, data = df, family = &quot;gaussian&quot;)
+
+summary(model)</code></pre>
+
+
+<pre class="r"><code>$coefficients
+                     Estimate
+(Intercept)         2.2513930
+Sepal_Width         0.8035609
+Species__versicolor 1.4587432
+Species__virginica  1.9468169</code></pre>
+
+<pre class="r"><code>predictions &lt;- predict(model, newData = df)
 head(select(predictions, &quot;Sepal_Length&quot;, &quot;prediction&quot;))</code></pre>
+
+
+<pre class="r"><code>  Sepal_Length prediction
+1          5.1   5.063856
+2          4.9   4.662076
+3          4.7   4.822788
+4          4.6   4.742432
+5          5.0   5.144212
+6          5.4   5.385281</code></pre>
+
 <p>Back to the flight data</p>
 <p>Can we now read the csv in from earlier</p>
 <pre class="r"><code># First thought
