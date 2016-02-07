@@ -51,18 +51,18 @@
 library(dplyr)
 library(lubridate)
 
-system.time(f &lt;- read.csv('2008.csv', nrows = 100))</code></pre>
+system.time(f &lt;- read.csv('2008.csv'))</code></pre>
 <pre><code>##    user  system elapsed 
-##   0.004   0.000   0.004</code></pre>
+##   112.552   2.115 114.649</code></pre>
 <pre class="r"><code># How big is this 
 format(object.size(f), units = &quot;auto&quot;)</code></pre>
-<pre><code>## [1] &quot;22.2 Kb&quot;</code></pre>
+<pre><code>## [1] &quot;909.4 Mb&quot;</code></pre>
 <p>This dataset is pretty large but we can still work with the data fairly quickly once it is loaded into RAM.</p>
 <pre class="r"><code>system.time(f %&gt;% group_by(Origin) %&gt;%
   summarize(incoming = n()) %&gt;%
   rename(airport = Origin) -&gt; inbound) </code></pre>
 <pre><code>##    user  system elapsed 
-##   0.008   0.001   0.009</code></pre>
+##   0.228   0.069   0.296</code></pre>
 <pre class="r"><code>system.time(f %&gt;% group_by(Dest) %&gt;%
   summarize(outgoing = n()) %&gt;%
   rename(airport = Dest) %&gt;%
@@ -71,7 +71,7 @@ format(object.size(f), units = &quot;auto&quot;)</code></pre>
   mutate(diff = abs(delta)) %&gt;%
   arrange(desc(diff)) -&gt; flights)</code></pre>
 <pre><code>##    user  system elapsed 
-##   0.004   0.000   0.005</code></pre>
+##   0.237   0.029   0.266</code></pre>
 <p>Once we get the data loaded into RAM working with it is not that bad, but the challange is getting into RAM.</p>
 <p>I have never been able to get this plot to run. It is just to many observations for my machine!</p>
 <pre class="r"><code>plot(f$DepTime, f$ArrTime)</code></pre>
@@ -93,24 +93,22 @@ for (i in data) {
 }</code></pre>
 <p>What are our options? Is this where sampling comes into play? What if our goal was to find the page rank of each airport? Sampling works well in some cases and it others it is not valid. We can’t just sample a network, we could sample and get the average flights for day but not the pagerank!</p>
 <ul>
-<li><p>Getting a bigger more powerful machine has been the historic approach</p></li>
-<li><p>Companies have bought bought bigger more powerful servers for years, but the are expensive.</p></li>
+<li>Getting a bigger more powerful machine has been the historic approach</li>
+<li>Companies have bought bought bigger more powerful servers for years, but the are expensive.</li>
 </ul>
+
 <p>Will this always work?</p>
+
 <ul>
-<li><p>What if data collection continues to grow and next year this server fails?</p></li>
-<li><p>I have to buy another one, then another. It does not scale.</p></li>
-<li><p>If this is too expensive to get a bigger more powerful machine are there other options?</p></li>
+<li>What if data collection continues to grow and next year this server fails?</li>
+<li>I have to buy another one, then another. It does not scale.</li>
+<li>If this is too expensive to get a bigger more powerful machine are there other options?</li>
 </ul>
 </div>
 <div id="advanced-computing" class="section level2">
 <h2>Advanced Computing</h2>
 <p>There are three different methods which I would consider advanced computing.</p>
-<ol style="list-style-type: decimal">
-<li>Parallel Computing</li>
-<li>Concurrent Computing</li>
-<li>Distributed Computing</li>
-</ol>
+
 <div id="parallel-computing" class="section level3">
 <h3>Parallel Computing</h3>
 <p>The focus here is on getting the answer as fast as possible using multiple processors, whether they are the same machine or not. These usually have shared memory.</p>
@@ -191,7 +189,7 @@ for (i in data) {
 <p>This is the equivalent code in Spark</p>
 
 
-<div class="separator" style="clear: both; text-align: center;"><img src="spark_word.png" height="550" width="700"></a></div>
+<div class="separator" style="clear: both; text-align: center;"><img src="spark_word.png" height="350" width="500"></a></div>
 
 
 
@@ -209,8 +207,8 @@ for (i in data) {
 
 <p>Today</p>
 <ul>
-<li><p>Spark came along and got rid of the need to be an expert Java programmer.</p></li>
-<li><p>Thus we may be able to say we have solved problem number 1.</p></li>
+<li>Spark came along and got rid of the need to be an expert Java programmer.</li>
+<li>Thus we may be able to say we have solved problem number 1.</li>
 </ul>
 <p>Spark Ecosystem</p>
 
@@ -233,8 +231,8 @@ for (i in data) {
 <div id="virtual-machine" class="section level3">
 <h3>Virtual Machine</h3>
 <ul>
-<li><p>There is a <a href="http://thegrimmscientist.com/2014/12/01/vagrant-tutorial-spark-in-a-vm/">vagrant</a> option</p></li>
-<li><p>Which requires <a href="https://courses.edx.org/courses/BerkeleyX/CS100.1x/1T2015/courseware/d1f293d0cb53466dbb5c0cd81f55b45b/920d3370060540c8b21d56f05c64bdda/">virtual box</a></p></li>
+<li>There is a <a href="http://thegrimmscientist.com/2014/12/01/vagrant-tutorial-spark-in-a-vm/">vagrant</a> option</li>
+<li>Which requires <a href="https://courses.edx.org/courses/BerkeleyX/CS100.1x/1T2015/courseware/d1f293d0cb53466dbb5c0cd81f55b45b/920d3370060540c8b21d56f05c64bdda/">virtual box</a></li>
 </ul>
 </div>
 <div id="docker" class="section level3">
@@ -246,23 +244,23 @@ for (i in data) {
 <div id="aws" class="section level3">
 <h3>AWS</h3>
 <ul>
-<li><p>Running Spark on <a href="https://aws.amazon.com/articles/Elastic-MapReduce/4926593393724923">aws</a></p></li>
-<li><p>Using <a href="http://www.slideshare.net/felixcss/sparkly-notebook-interactive-analysis-and-visualization-with-spark">spark and jupyter</a>, streaming means,</p></li>
+<li>Running Spark on <a href="https://aws.amazon.com/articles/Elastic-MapReduce/4926593393724923">aws</a></li>
+<li>Using <a href="http://www.slideshare.net/felixcss/sparkly-notebook-interactive-analysis-and-visualization-with-spark">Spark and Jupyter</a>, streaming means</li>
 <li>Spark is a giant tradeoff</li>
 <li>It is usable by data scientists</li>
 <li>It is also usable by software engineers and devops folks</li>
 <li>Non of the above options seem very appealing</li>
-<li><p>There has to be a better way</p></li>
+<li>There has to be a better way</li>
 </ul>
 <p>Using Spark</p>
 <p>We are going to use spark in standalone or local mode</p>
 <p>Instructions for Downloading Spark (versions will change)</p>
 <p>In any browser navigate to the download <a href="http://spark.apache.org/downloads.html">page</a></p>
 <ol style="list-style-type: decimal">
-<li><p>For the release type select ‘1.5.1 (Oct 02 2015)’</p></li>
-<li><p>For package type select ‘Pre-built for Hadoop 2.6 and later’</p></li>
-<li><p>For download type select ‘Direct Download’</p></li>
-<li><p>Click the link to download</p></li>
+<li>For the release type select ‘1.5.1 (Oct 02 2015)’</li>
+<li>For package type select ‘Pre-built for Hadoop 2.6 and later’</li>
+<li>For download type select ‘Direct Download’</li>
+<li>Click the link to download</li>
 </ol>
 
 
@@ -300,19 +298,23 @@ length(lines)</code></pre>
 <p>Get spark <a href="http://www.r-bloggers.com/installing-and-starting-sparkr-locally-on-windows-os-and-rstudio/">running in rstudio</a>.</p>
 <pre class="r"><code>Sys.setenv(SPARK_HOME = '/Users/kdarrell/Desktop/Spark-1.5.1')
 
-Sys.getenv(&quot;SPARK_HOME&quot;)
-
 .libPaths(c(file.path(Sys.getenv(&quot;SPARK_HOME&quot;), &quot;R&quot;, &quot;lib&quot;), .libPaths()))
 
 # Make sure you don't have spark from cran!
-library(SparkR)
+library(SparkR)</code></pre>
 
-sc &lt;- sparkR.init(&quot;local&quot;)
+<pre><code>Launching java with spark-submit command /Users/kdarrell/Desktop/Spark-1.5.1/bin/spark-submit   sparkr-shell /var/folders/kc/668j7hpn135fvf8b96gctp5c0000gp/T//RtmpzqTVUG/backend_port6ee75eafa8e4 
+16/02/07 10:43:02 WARN NativeCodeLoader: Unable to load native-hadoop library for your platform... using builtin-java classes where applicable
+16/02/07 10:43:03 WARN MetricsSystem: Using default name DAGScheduler for source because spark.app.id is not set.</code></pre>
 
-lines &lt;- SparkR:::textFile(sc, 'week 2.Rmd')
+<pre class="r"><code>sc &lt;- sparkR.init(&quot;local&quot;)
+
+lines &lt;- SparkR:::textFile(sc, 'index.html')
 length(lines)</code></pre>
-<p>Turn log options to less verbose!</p>
-<p>To get rid of this make a copy of this file:</p>
+
+<pre><code>##  [1] 781</code></pre>
+
+<p>You may see an aweful lot of output messages. You need to turn log options to a less verbose setting. To do this make a copy of the following file, just removing template from the name.</p>
 <pre><code>conf/log4j.properties.template</code></pre>
 <pre><code>conf/log4j.properties</code></pre>
 <p>And make the following change:</p>

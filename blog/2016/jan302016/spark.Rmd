@@ -350,7 +350,7 @@ length(lines)
 Get spark [running in rstudio](http://www.r-bloggers.com/installing-and-starting-sparkr-locally-on-windows-os-and-rstudio/).
 
 
-```{r, eval = F}
+```{r}
 Sys.setenv(SPARK_HOME = '/Users/kdarrell/Desktop/Spark-1.5.1')
 
 Sys.getenv("SPARK_HOME")
@@ -362,7 +362,7 @@ library(SparkR)
 
 sc <- sparkR.init("local")
 
-lines <- SparkR:::textFile(sc, 'week 2.Rmd')
+lines <- SparkR:::textFile(sc, 'index.html')
 length(lines)
 ```
 
