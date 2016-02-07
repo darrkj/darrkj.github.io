@@ -446,75 +446,9 @@ What happened here was that Spark does not like periods in variable names, so it
 ##     if (is.function(family)) 
 ##         family &lt;- family()
 ##     if (is.null(family$family)) {
-##         print(family)
-##         stop(&quot;'family' not recognized&quot;)
-##     }
-##     if (missing(data)) 
-##         data &lt;- environment(formula)
-##     mf &lt;- match.call(expand.dots = FALSE)
-##     m &lt;- match(c(&quot;formula&quot;, &quot;data&quot;, &quot;subset&quot;, &quot;weights&quot;, &quot;na.action&quot;, 
-##         &quot;etastart&quot;, &quot;mustart&quot;, &quot;offset&quot;), names(mf), 0L)
-##     mf &lt;- mf[c(1L, m)]
-##     mf$drop.unused.levels &lt;- TRUE
-##     mf[[1L]] &lt;- quote(stats::model.frame)
-##     mf &lt;- eval(mf, parent.frame())
-##     if (identical(method, &quot;model.frame&quot;)) 
-##         return(mf)
-##     if (!is.character(method) &amp;&amp; !is.function(method)) 
-##         stop(&quot;invalid 'method' argument&quot;)
-##     if (identical(method, &quot;glm.fit&quot;)) 
-##         control &lt;- do.call(&quot;glm.control&quot;, control)
-##     mt &lt;- attr(mf, &quot;terms&quot;)
-##     Y &lt;- model.response(mf, &quot;any&quot;)
-##     if (length(dim(Y)) == 1L) {
-##         nm &lt;- rownames(Y)
-##         dim(Y) &lt;- NULL
-##         if (!is.null(nm)) 
-##             names(Y) &lt;- nm
-##     }
-##     X &lt;- if (!is.empty.model(mt)) 
-##         model.matrix(mt, mf, contrasts)
-##     else matrix(, NROW(Y), 0L)
-##     weights &lt;- as.vector(model.weights(mf))
-##     if (!is.null(weights) &amp;&amp; !is.numeric(weights)) 
-##         stop(&quot;'weights' must be a numeric vector&quot;)
-##     if (!is.null(weights) &amp;&amp; any(weights &lt; 0)) 
-##         stop(&quot;negative weights not allowed&quot;)
-##     offset &lt;- as.vector(model.offset(mf))
-##     if (!is.null(offset)) {
-##         if (length(offset) != NROW(Y)) 
-##             stop(gettextf(&quot;number of offsets is %d should equal %d (number of observations)&quot;, 
-##                 length(offset), NROW(Y)), domain = NA)
-##     }
-##     mustart &lt;- model.extract(mf, &quot;mustart&quot;)
-##     etastart &lt;- model.extract(mf, &quot;etastart&quot;)
-##     fit &lt;- eval(call(if (is.function(method)) &quot;method&quot; else method, 
-##         x = X, y = Y, weights = weights, start = start, etastart = etastart, 
-##         mustart = mustart, offset = offset, family = family, 
-##         control = control, intercept = attr(mt, &quot;intercept&quot;) &gt; 
-##             0L))
-##     if (length(offset) &amp;&amp; attr(mt, &quot;intercept&quot;) &gt; 0L) {
-##         fit2 &lt;- eval(call(if (is.function(method)) &quot;method&quot; else method, 
-##             x = X[, &quot;(Intercept)&quot;, drop = FALSE], y = Y, weights = weights, 
-##             offset = offset, family = family, control = control, 
-##             intercept = TRUE))
-##         if (!fit2$converged) 
-##             warning(&quot;fitting to calculate the null deviance did not converge -- increase 'maxit'?&quot;)
-##         fit$null.deviance &lt;- fit2$deviance
-##     }
-##     if (model) 
-##         fit$model &lt;- mf
-##     fit$na.action &lt;- attr(mf, &quot;na.action&quot;)
-##     if (x) 
-##         fit$x &lt;- X
-##     if (!y) 
-##         fit$y &lt;- NULL
-##     fit &lt;- c(fit, list(call = call, formula = formula, terms = mt, 
-##         data = data, offset = offset, control = control, method = method, 
-##         contrasts = attr(X, &quot;contrasts&quot;), xlevels = .getXlevels(mt, 
-##             mf)))
-##     class(fit) &lt;- c(fit$class, c(&quot;glm&quot;, &quot;lm&quot;))
-##     fit
+## ...
+## ...
+## ...
 ## }
 ## &lt;bytecode: 0x7f9f8bde02b0&gt;
 ## &lt;environment: namespace:stats&gt;</code></pre>
