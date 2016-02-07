@@ -568,6 +568,37 @@ df &lt;- read.df(sqlContext, &quot;cars.csv&quot;, source = &quot;com.databricks
 <p>From the command line for R:</p>
 <pre><code>bin/sparkR --packages com.databricks:spark-csv_2.10:1.0.3</code></pre>
 
+
+<p>A few other itmes</p>
+
+<pre class="r"><code># Starting Spark as normal
+sc &lt;- sparkR.init(&quot;local&quot;)
+# Stopping our session.
+sparkR.stop()
+# You can start it with a reference to packages or any other arguments.
+Sys.setenv('SPARKR_SUBMIT_ARGS'='&quot;--packages&quot; &quot;com.databricks:spark-csv_2.10:1.2.0&quot; &quot;sparkr-shell&quot;')
+sc &lt;- sparkR.init(&quot;local&quot;)
+sparkR.stop()
+# You can start it give it more memory.
+sc &lt;- sparkR.init(&quot;local&quot;, sparkEnvir=list(spark.executor.memory=&quot;10g&quot;))</code></pre>
+<p>Running SQL</p>
+<pre class="r"><code>faith &lt;- createDataFrame(sqlContext, faithful)
+
+printSchema(faith)
+
+# Register this DataFrame as a table.
+registerTempTable(faith, &quot;faith&quot;)
+
+# SQL statements can be run by using the sql method
+long &lt;- sql(sqlContext, &quot;SELECT * FROM faith WHERE waiting &gt; 50&quot;)
+head(long)</code></pre>
+
+
+
+
+
+
+
 </div>
 
 
@@ -713,94 +744,9 @@ sqlContext.sql(&quot;SELECT Origin, in - out FROM res&quot;).show</code></pre>
 spark = log.filter(lambda line: &quot;Spark&quot; in line)
 
 </code></pre>
-<p>SparkR</p>
-<pre><code>./bin/sparkR</code></pre>
+
 </div>
-<div id="inside-of-rstudio" class="section level2">
-<h2>Inside of rstudio</h2>
-<pre class="r"><code># This is the location where spark exists
-Sys.setenv(SPARK_HOME = '/Users/kdarrell/Desktop/Spark-1.5.1')
 
-# Proof that the above code actually worked.
-Sys.getenv(&quot;SPARK_HOME&quot;)
-
-# Location of the valid SparkR package.
-.libPaths(c(file.path(Sys.getenv(&quot;SPARK_HOME&quot;), &quot;R&quot;, &quot;lib&quot;), .libPaths()))
-
-# Make sure you don't have SparkR from cran!
-library(SparkR)
-
-
-# Starting Spark
-sc &lt;- sparkR.init(&quot;local&quot;)
-sparkR.stop()
-# You can start it with a reference to packages.
-Sys.setenv('SPARKR_SUBMIT_ARGS'='&quot;--packages&quot; &quot;com.databricks:spark-csv_2.10:1.2.0&quot; &quot;sparkr-shell&quot;')
-sc &lt;- sparkR.init(&quot;local&quot;)
-sparkR.stop()
-# You can start it give it more memory.
-sc &lt;- sparkR.init(&quot;local&quot;, sparkEnvir=list(spark.executor.memory=&quot;10g&quot;))
-
-
-# Create a file.
-cat(state.name, file = 'states.txt', sep = '\n')
-
-# Read the file.
-lines &lt;- SparkR:::textFile(sc, 'states.txt')
-length(lines)
-
-#sparkR.stop()</code></pre>
-<p>using sql context for data frames</p>
-<pre class="r"><code>sqlContext &lt;- sparkRSQL.init(sc)
-
-df &lt;- createDataFrame(sqlContext, faithful) </code></pre>
-<p>Is it really the same?</p>
-<pre class="r"><code># This works
-head(faithful)
-head(df)
-
-# And this
-faithful$eruptions
-df$eruptions
-
-# But not this
-faithful[1, ]
-df[1, ]
-
-
-lm(faithful$eruptions ~ faithful$waiting)
-lm(df$eruptions ~ df$waiting)</code></pre>
-<p>So if we want to do machine learning stuff what do we do</p>
-<pre class="r"><code># https://spark.apache.org/docs/latest/sparkr.html#creating-dataframes
-# Create the DataFrame
-df &lt;- createDataFrame(sqlContext, iris)
-
-SparkR::glm
-stats::glm
-
-# Fit a linear model over the dataset.
-model &lt;- glm(Sepal_Length ~ Sepal_Width + Species, data = df, family = &quot;gaussian&quot;)
-
-summary(model)
-
-predictions &lt;- predict(model, newData = df)
-head(select(predictions, &quot;Sepal_Length&quot;, &quot;prediction&quot;))</code></pre>
-<p>Running SQL</p>
-<pre class="r"><code>faith &lt;- createDataFrame(sqlContext, faithful)
-
-# Register this DataFrame as a table.
-registerTempTable(faith, &quot;faith&quot;)
-
-# SQL statements can be run by using the sql method
-long &lt;- sql(sqlContext, &quot;SELECT * FROM faith WHERE waiting &gt; 50&quot;)
-head(long)</code></pre>
-<pre class="r"><code>printSchema(df)
-cache(df)
-head(df)
-columns(df)
-count(df)</code></pre>
-<p>should end this way</p>
-<pre class="r"><code>sparkR.stop()</code></pre>
 <p>Using the Spark Graphx API from Scala with the flight data.</p>
 <pre><code>
 ./bin/spark-shell --packages com.databricks:spark-csv_2.10:1.2.0
