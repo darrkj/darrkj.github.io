@@ -43,26 +43,35 @@
 
 
 
-<p>This material is from a month of lectures I used at Georgetown University for a graduate statistical programming course. I have read through plenty of tutorials and many have fallen out of date or been for setups that were quite different than mine. I am sure that since Spark has had a few new versions since most this was written that it will not work perfectly either. This will hopefully serve two purposes, point to sources that have some useful info on Spark and a place to store some of the useful commands I needed to get Spark to do real work. Spark and AWS are not the easyist peices of tech to work with. I have tried to work through many tutorials and most of them have an issue somewhere, this will not succeed where others have failed though.</p>
+<p>This material is from a month of lectures I used at Georgetown University for a graduate statistical programming course. I have read through plenty of tutorials and many have fallen out of date or been for setups that were quite different than mine. I am sure that since Spark has had a few new versions since most this was written that it will not work perfectly either. This will hopefully serve two purposes, point to sources that have some useful info on Spark and a place to store some of the useful commands I needed to get Spark to do real work. Spark and AWS are not the easiest pieces of tech to work with. I have tried to work through many tutorials and most of them have an issue somewhere, this will not succeed where others have failed though.</p>
+
 <div id="motivating-example" class="section level3">
 <h3>Motivating Example</h3>
+
 <p>To get started, a motivating example. <a href="http://stat-computing.org/dataexpo/2009/the-data.html">Flight data</a> from roughly 20 years.</p>
+
 <pre class="r"><code>options(stringsAsFactors = FALSE)
 library(dplyr)
 library(lubridate)
 
 system.time(f &lt;- read.csv('2008.csv'))</code></pre>
+
 <pre><code>##    user  system elapsed 
 ##   112.552   2.115 114.649</code></pre>
+
 <pre class="r"><code># How big is this 
 format(object.size(f), units = &quot;auto&quot;)</code></pre>
+
+
 <pre><code>## [1] &quot;909.4 Mb&quot;</code></pre>
+
 <p>This dataset is pretty large but we can still work with the data fairly quickly once it is loaded into RAM.</p>
 <pre class="r"><code>system.time(f %&gt;% group_by(Origin) %&gt;%
   summarize(incoming = n()) %&gt;%
   rename(airport = Origin) -&gt; inbound) </code></pre>
 <pre><code>##    user  system elapsed 
 ##   0.228   0.069   0.296</code></pre>
+
 <pre class="r"><code>system.time(f %&gt;% group_by(Dest) %&gt;%
   summarize(outgoing = n()) %&gt;%
   rename(airport = Dest) %&gt;%
@@ -72,8 +81,11 @@ format(object.size(f), units = &quot;auto&quot;)</code></pre>
   arrange(desc(diff)) -&gt; flights)</code></pre>
 <pre><code>##    user  system elapsed 
 ##   0.237   0.029   0.266</code></pre>
-<p>Once we get the data loaded into RAM working with it is not that bad, but the challange is getting into RAM.</p>
+
+<p>Once we get the data loaded into RAM working with it is not that bad, but the challenge is getting into RAM.</p>
+
 <p>I have never been able to get this plot to run. It is just to many observations for my machine!</p>
+
 <pre class="r"><code>plot(f$DepTime, f$ArrTime)</code></pre>
 <p>This plot will take forever and most likely crash!</p>
 <p>A few notes so far:</p>
@@ -82,8 +94,10 @@ format(object.size(f), units = &quot;auto&quot;)</code></pre>
 <li>We can do some analysis on this data</li>
 <li>It will be very slow to make plots</li>
 </ul>
+
 <p>So what if we wanted to scale this up to all 22 years or more? It may work on some machines, but they would need to be powerful! What about if we had 100 years of data? What if we have more info on every flight? Having a more powerful machine is not that compelling of an option!</p>
-<p>We could load all year like this. For most people this wont work, your machine will just bog down as it asypmtotically fills your RAM.</p>
+
+<p>We could load all year like this. For most people this wont work, your machine will just bog down as it asymptotically fills your RAM.</p>
 <pre class="r"><code>f &lt;- list()
 data &lt;- list.files(pattern = 'csv')[1:22]
 for (i in data) {
@@ -91,7 +105,8 @@ for (i in data) {
   print(i)
   print(format(object.size(f), units = &quot;auto&quot;))
 }</code></pre>
-<p>What are our options? Is this where sampling comes into play? What if our goal was to find the page rank of each airport? Sampling works well in some cases and it others it is not valid. We can’t just sample a network, we could sample and get the average flights for day but not the pagerank!</p>
+
+<p>What are our options? Is this where sampling comes into play? What if our goal was to find the page rank of each airport? Sampling works well in some cases and it others it is not valid. We can’t just sample a network, we could sample and get the average flights for day but not the Pagerank!</p>
 <ul>
 <li>Getting a bigger more powerful machine has been the historic approach</li>
 <li>Companies have bought bought bigger more powerful servers for years, but the are expensive.</li>
@@ -113,17 +128,19 @@ for (i in data) {
 <h3>Parallel Computing</h3>
 <p>The focus here is on getting the answer as fast as possible using multiple processors, whether they are the same machine or not. These usually have shared memory.</p>
 </div>
+
+
 <div id="concurrent-computing" class="section level3">
 <h3>Concurrent Computing</h3>
 <p>The focus here is working on differnt aspects of a problem at the same time using multiple threads. (not locking the user out while it performs some work) More a matter of architecture of software that architecture of hardware.</p>
 </div>
 <div id="distributed-computing" class="section level3">
 <h3>Distributed Computing</h3>
-<p>The focus here is on solving much bigger problems by using many machines. These machines are solving a peice of the larger problem by communicating across links via messages. They do not share memory like the above options and they are by defualt concurrent.</p>
+<p>The focus here is on solving much bigger problems by using many machines. These machines are solving a piece of the larger problem by communicating across links via messages. They do not share memory like the above options and they are by default concurrent.</p>
 <p>Which one is right for us?</p>
 <ul>
 <li>We were trying to scale up by bringing in the data across other years</li>
-<li>When we are trying to solve problems with bigger amounts of data we have a distrubuted computing problem - More cores or threads would not help</li>
+<li>When we are trying to solve problems with bigger amounts of data we have a distributed computing problem - More cores or threads would not help</li>
 <li>We need more machines!</li>
 </ul>
 </div>
@@ -144,13 +161,14 @@ for (i in data) {
 <li>They were not wrong, it did make all sorts of things possible</li>
 <li>But many didn’t quite understood what it was, and they still probably do not.</li>
 </ul>
-<p>To effectivly use Hadoop …</p>
+
+<p>To effectively use Hadoop …</p>
 <ul>
 <li>An expert in Linux</li>
 <li>Plenty of knowledge of ETL and data processing skills</li>
 <li>Expert in Java, which is object oriented, but mapreduce is functional,</li>
 <li>You need to understand hardware</li>
-<li>Knowledge of distrubted systems.</li>
+<li>Knowledge of distributed systems.</li>
 </ul>
 <p>Who understands this and knows how to use data? Nobody, well very few at least.</p>
 <p>The people who actually use data to solve problems have two large issues to overcome.</p>
@@ -193,13 +211,13 @@ for (i in data) {
 
 
 
-<p>It is also much faster</p>
+<p>It is also much faster!</p>
 
 
 <div class="separator" style="clear: both; text-align: center;"><img src="spark_v_hadoop.png" height="550" width="700"></a></div>
 
 
-<p>So Hadoop is old news. If that did not convince you maybe this will. This is a collection of job posting. Each blue line is a job that mentiones Hadoop while each red line mentions Spark.</p>
+<p>So Hadoop is old news. If that did not convince you maybe this will. This is a collection of job posting. Each blue line is a job that mentions Hadoop while each red line mentions Spark.</p>
 
 
 <div class="separator" style="clear: both; text-align: center;"><img src="spark_jobs.jpeg" height="550" width="700"></a></div>
@@ -244,7 +262,7 @@ for (i in data) {
 <div id="aws" class="section level3">
 <h3>AWS</h3>
 <ul>
-<li>Running Spark on <a href="https://aws.amazon.com/articles/Elastic-MapReduce/4926593393724923">aws</a></li>
+<li>Running Spark on <a href="https://aws.amazon.com/articles/Elastic-MapReduce/4926593393724923">AWS</a></li>
 <li>Using <a href="http://www.slideshare.net/felixcss/sparkly-notebook-interactive-analysis-and-visualization-with-spark">Spark and Jupyter</a>, streaming means</li>
 <li>Spark is a giant tradeoff</li>
 <li>It is usable by data scientists</li>
@@ -279,11 +297,16 @@ for (i in data) {
 <li>But it is much easier to get setup</li>
 <li>It’s also the exact same</li>
 </ul>
+
 <pre><code>sparkR.init(master=&quot;local&quot;)</code></pre>
+
 <p>vs</p>
+
 <pre><code>sparkR.init(master=&quot;spark://&lt;master&gt;:7077&quot;)</code></pre>
+
 <p>Spark API</p>
 <ul>
+
 <li>We can use sparkr or pyspark just like we would use r or python</li>
 <li><a href="https://districtdatalabs.silvrback.com/getting-started-with-spark-in-python">Python option</a></li>
 <li><a href="https://github.com/amplab-extras/SparkR-pkg/wiki/SparkR-Quick-Start">R option</a></li>
@@ -295,7 +318,11 @@ for (i in data) {
 <pre class="r"><code>sc &lt;- sparkR.init(&quot;local&quot;)
 lines &lt;- SparkR:::textFile(sc, 'index.html')
 length(lines)</code></pre>
-<p>One major thint to notice here is that you must use three semicolons. This is strange becuase you just loaded the package but many of its contents are not exported to the workspace. Hopefully this will go away in the future. Next to make things really useful you may want to work somewhere other than in the command line. We can get spark <a href="http://www.r-bloggers.com/installing-and-starting-sparkr-locally-on-windows-os-and-rstudio/">running in RStudio</a> by doing the following from with RStudio.</p>
+
+
+<p>One major thing to notice here is that you must use three semicolons. This is strange because you just loaded the package but many of its contents are not exported to the workspace. Hopefully this will go away in the future. Next to make things really useful you may want to work somewhere other than in the command line. We can get spark <a href="http://www.r-bloggers.com/installing-and-starting-sparkr-locally-on-windows-os-and-rstudio/">running in RStudio</a> by doing the following from with RStudio.</p>
+
+
 <pre class="r"><code>Sys.setenv(SPARK_HOME = '/Users/kdarrell/Desktop/Spark-1.5.1')
 
 .libPaths(c(file.path(Sys.getenv(&quot;SPARK_HOME&quot;), &quot;R&quot;, &quot;lib&quot;), .libPaths()))
@@ -314,7 +341,9 @@ length(lines)</code></pre>
 
 <pre><code>##  [1] 781</code></pre>
 
-<p>You may see an aweful lot of output messages. You need to turn log options to a less verbose setting. To do this make a copy of the following file, just removing template from the name.</p>
+<p>You may see an awful lot of output messages. You need to turn log options to a less verbose setting. To do this make a copy of the following file, just removing template from the name.</p>
+
+
 <pre><code>conf/log4j.properties.template</code></pre>
 <pre><code>conf/log4j.properties</code></pre>
 <p>Inside of this new file you need to make one change. Locate the as seen below and replace INFO with WARN.</p>
@@ -366,7 +395,7 @@ Which looks the same.
 
 <pre><code>  Column eruptions</code></pre>
 
-This looks a little different though!
+<p>This looks a little different though!</p>
 
 
 <pre class="r"><code>faithful[1, ]</code></pre>
@@ -380,7 +409,7 @@ This looks a little different though!
 
 <pre><code>Error in df[1, ] : object of type 'S4' is not subsettable</code></pre>
 
-It is strange that this does not work.
+<p>It is strange that this does not work.</p>
 
 
 <pre class="r"><code>lm(faithful$eruptions ~ faithful$waiting)</code></pre>
@@ -402,10 +431,11 @@ Coefficients:
 <pre><code>Error in model.frame.default(formula = df$eruptions ~ df$waiting, drop.unused.levels = TRUE) : 
   object is not a matrix</code></pre>
   
-<p>So have we lost all of the great things we can do in R. In some ways yes, but not really. We can now use Spark where it makes sense, then for things that Spark can't do we use base R by pulling the data out of Spark. We also have to realize when Spark does soemthing different than R. First though, why so many differences? We are not really using R any more! We are using and api to spark inside of R The api is growing to act more like R and support more of its functionality though</p>
+<p>So have we lost all of the great things we can do in R. In some ways yes, but not really. We can now use Spark where it makes sense, then for things that Spark can't do we use base R by pulling the data out of Spark. We also have to realize when Spark does something different than R. First though, why so many differences? We are not really using R any more! We are using and api to spark inside of R The api is growing to act more like R and support more of its functionality though</p>
 
 
 <p>So if we want to do machine learning stuff what do we do? We need to use the methods supplied by Spark.</p>
+
 <pre class="r"><code># https://spark.apache.org/docs/latest/sparkr.html#creating-dataframes
 # Create the DataFrame
 df &lt;- createDataFrame(sqlContext, iris)</code></pre>
@@ -420,7 +450,7 @@ df &lt;- createDataFrame(sqlContext, iris)</code></pre>
 4: In FUN(X[[i]], ...) :
   Use Petal_Width instead of Petal.Width  as column name</code></pre>
   
-What happened here was that Spark does not like periods in variable names, so it changed them for us. We need to remember that when we work with two different sets of rules.
+<p>What happened here was that Spark does not like periods in variable names, so it changed them for us. We need to remember that when we work with two different sets of rules.</p>
 
 
 <pre class="r"><code>SparkR::glm</code></pre>
@@ -453,7 +483,9 @@ What happened here was that Spark does not like periods in variable names, so it
 ## &lt;bytecode: 0x7f9f8bde02b0&gt;
 ## &lt;environment: namespace:stats&gt;</code></pre>
 
-Use this to fit a linear model over the dataset.
+<p>Use this to fit a linear model over the dataset.</p>
+
+
 <pre class="r"><code>model &lt;- glm(Sepal_Length ~ Sepal_Width + Species, data = df, family = &quot;gaussian&quot;)
 
 summary(model)</code></pre>
@@ -478,13 +510,13 @@ head(select(predictions, &quot;Sepal_Length&quot;, &quot;prediction&quot;))</cod
 5          5.0   5.144212
 6          5.4   5.385281</code></pre>
 
-<p>Back to the flight data. Can we now read the csv in from earlier?</p>
+<p>Back to the flight data. Can we now read the CSV in from earlier?</p>
 
 <pre class="r"><code># First thought
 df &lt;- createDataFrame(sqlContext, read.csv('2008.csv'))
 
 # Second thought
-df &lt;- read.df(sqlContext, '../flight/2008.csv', source = &quot;csv&quot;)
+df &lt;- read.df(sqlContext, '2008.csv', source = &quot;csv&quot;)
 
 # Third thought
 customSchema &lt;- structType(
@@ -495,7 +527,9 @@ customSchema &lt;- structType(
     structField(&quot;blank&quot;, &quot;string&quot;))
 
 df &lt;- read.df(sqlContext, &quot;cars.csv&quot;, source = &quot;com.databricks.spark.csv&quot;, schema = customSchema)</code></pre>
-<p>Whats the deal. We can't even load a csv file. Well if we think more about this problem, is it a big concern if Spark can't do this. If your data exists in a csv file you could probably get away without needing Spark to being with. But it is useful for working in the local mode to get an understanding of Spark. This functionality is available, just not by defualt. We need the <a href="https://github.com/databricks/spark-csv">csv pacakge</a>. That right, Spark has packages just like R. How do we laod them?</p>
+
+
+<p>Whats the deal. We can't even load a CSV file. Well if we think more about this problem, is it a big concern if Spark can't do this. If your data exists in a CSV file you could probably get away without needing Spark to being with. But it is useful for working in the local mode to get an understanding of Spark. This functionality is available, just not by default. We need the <a href="https://github.com/databricks/spark-csv">CSV package</a>. That right, Spark has packages just like R. How do we load them?</p>
 
 <p>From the command line for Scala:</p>
 <pre><code>bin/spark-shell --packages com.databricks:spark-csv_2.10:1.0.3</code></pre>
@@ -536,7 +570,7 @@ head(long)</code></pre>
 </div>
 
 
-<p>Everything I have done thus far is for a Mac, or maybe Linux. I did quite a bit of trouble shooting of studnets issues on Windows and ran into differnt types of issues. On Windows (cross your fingers) you may need <a href="http://nishutayaltech.blogspot.com/2015/04/how-to-run-apache-spark-on-windows7-in.html">this</a>, as it helped me.</p>
+<p>Everything I have done thus far is for a Mac, or maybe Linux. I did quite a bit of trouble shooting of students issues on Windows and ran into differnt types of issues. On Windows (cross your fingers) you may need <a href="http://nishutayaltech.blogspot.com/2015/04/how-to-run-apache-spark-on-windows7-in.html">this</a>, as it helped me.</p>
 
 
 <h2>Review</h2>
@@ -551,44 +585,77 @@ head(long)</code></pre>
 <li>API</li>
 </ol>
 </div>
+
 <div id="limitations-of-systems-like-r-and-python" class="section level2">
 <h2>Limitations of systems like R and Python</h2>
 <p>R and Python are great for small and medium sized</p>
-<p>There are many other (attempted) defintions of these, but for our purpose this one works pretty well. (Thanks to Hadley Wickham)</p>
+<p>There are many other (attempted) definitions of these, but for our purpose this one works pretty well. (Thanks to Hadley Wickham)</p>
 <p>Small Data - Fits in memory on a laptop: &lt; 10 GB Medium Data - Fits in memory on a server or disk on a laptop: 10 GB - 1 TB Big Data - Can’t fit in memory on any one machine: &gt; 1 TB</p>
 <p>R and Python are great for Small Data. They can be good for Medium data if you have a server or with some decent coding chops on a single laptop. They are both terrible at number Big Data, on there own that is.</p>
 </div>
+
+
 <div id="distributed-computing-1" class="section level2">
-<h2>Distributed computing</h2>
-<p>Distributed computing was made much easier (not easy just easier) via research by Google that eventually reached open source by the name Hadoop/HDFS.</p>
-<p>Distributed computing is the method of using the RAM of many computers to attack a problem, so it is best equipped for volume problems as opposed to variety problems (concurrent computing) and speed constraints (parallel computing).</p>
+
+  <h2>Distributed computing</h2>
+
+  <p>Distributed computing was made much easier (not easy just easier) via research by Google that eventually reached open source by the name Hadoop/HDFS.</p>
+
+  <p>Distributed computing is the method of using the RAM of many computers to attack a problem, so it is best equipped for volume problems as opposed to variety problems (concurrent computing) and speed constraints (parallel computing).</p>
+
 </div>
+
 <div id="hadoophdfs" class="section level2">
-<h2>Hadoop/HDFS</h2>
-<p>Hadoop and HDFS perform extremely poorly on Small Data. It can be okay on Medium Data. They often take much longer than the Python and R methods for very similar problems on small/medium data. For non-distrubted systems and software engineer folks they can be difficult to actaully get up and running.</p>
+
+  <h2>Hadoop/HDFS</h2>
+  
+  <p>Hadoop and HDFS perform extremely poorly on Small Data. It can be okay on Medium Data. They often take much longer than the Python and R methods for very similar problems on small/medium data. For non-distributed systems and software engineer folks they can be difficult to actually get up and running.</p>
+
 </div>
+
 <div id="spark" class="section level2">
-<h2>Spark</h2>
-<p>Spark was an improvement over Hadoop in almost every sense. It can perform better on Small and Medium Data than Hadoop/HDFS. Not a clear winner when it comes to comparison of R and Python on these sizes though. It is also much easier to get up and running sense it supports various backends and can run in a local mode.</p>
+ 
+  <h2>Spark</h2>
+
+  <p>Spark was an improvement over Hadoop in almost every sense. It can perform better on Small and Medium Data than Hadoop/HDFS. Not a clear winner when it comes to comparison of R and Python on these sizes though. It is also much easier to get up and running sense it supports various backends and can run in a local mode.</p>
+
 </div>
+
 <div id="sparkr" class="section level2">
-<h2>SparkR</h2>
-<p>This was made avalable first to Python users via pyspark and then to R users via SparkR.</p>
+
+  <h2>SparkR</h2>
+
+  <p>This was made available first to Python users via pyspark and then to R users via SparkR.</p>
+
 </div>
+
 <div id="api" class="section level2">
-<h2>API</h2>
-<p>This avalability is via an API.</p>
-<p>API - Application Programming Interface</p>
-<p>An API is an interface that provides access to some functionality. You don’t have to worry about the underlying implementation, you can use the interface as a set of building blocks to solve some problem or create something.</p>
+
+  <h2>API</h2>
+
+  <p>This availability is via an API.</p>
+
+  <p>API - Application Programming Interface</p>
+
+  <p>An API is an interface that provides access to some functionality. You don’t have to worry about the underlying implementation, you can use the interface as a set of building blocks to solve some problem or create something.</p>
+
 </div>
+
 <div id="back-to-spark-actaully-scala" class="section level2">
-<h2>Back to Spark, actaully Scala</h2>
-<p>Scala is programming language that compiles to Java Bytecode and can run on the jvm the same as Java. It is about 10 years old. Many have claimed that it will replace Java in terms of new development. It makes many things easier.</p>
-<p>Many people do not like it as they think it is hard to learn.</p>
-<p>Have no fear, this is not a uniformly distributed statement.</p>
-<p>If you have learned R you will have a pretty easy time picking up Scala.</p>
-<p>Java Fibonacci</p>
-<pre><code>public class Fibonacci {
+
+  <h2>Back to Spark, actually Scala</h2>
+
+  <p>Scala is programming language that compiles to Java Bytecode and can run on the JVM the same as Java. It is about 10 years old. Many have claimed that it will replace Java in terms of new development. It makes many things easier.</p>
+
+  <p>Many people do not like it as they think it is hard to learn.</p>
+
+  <p>Have no fear, this is not a uniformly distributed statement.</p>
+
+  <p>If you have learned R you will have a pretty easy time picking up Scala.</p>
+
+  <p>Java Fibonacci</p>
+
+  <pre><code>public class Fibonacci {
     public static int fib(int n) {
                 int prev1=0, prev2=1;
                 for(int i=0; i&lt;n; i++) {
@@ -599,23 +666,33 @@ head(long)</code></pre>
                 return prev1;
     }
 }</code></pre>
+
 <p>Scala Fibonacci</p>
+
 <pre><code>def fib( n : Int) : Int = n match {
    case 0 | 1 =&gt; n
    case _ =&gt; fib( n-1 ) + fib( n-2 )
 }</code></pre>
+
 <p>R Fibonacci</p>
+
 <pre class="r"><code>fib &lt;- function(n) {
   if (n %in% c(0, 2)) n
   else fib(n - 1) + fib(n - 2)
 }</code></pre>
+
 <p>The biggest thing to note is that in Scala you need to say either val or var before you create a variable.</p>
+
 <pre><code>val textFile = sc.textFile(&quot;README.md&quot;)
 textFile.count()
 textFile.first()</code></pre>
+
 <p>Some things to note about Spark</p>
+
 <p>It is lazy, in the computing sense. This means that it does not compute anything until it actually needs the result for something. This is good and bad.</p>
+
 <p>This is known as lazy evaluation.</p>
+
 <p>Pros</p>
 <ol style="list-style-type: decimal">
 <li>Performance increases by avoiding needless calculations</li>
@@ -628,7 +705,7 @@ textFile.first()</code></pre>
 <p>The opposite is known as eager evaluation.</p>
 <pre><code>val linesWithSpark = textFile.filter(line =&gt; line.contains(&quot;Spark&quot;))
 textFile.filter(line =&gt; line.contains(&quot;Spark&quot;)).count()</code></pre>
-<p>These hightlight the two types of operations that can happen to and RDD</p>
+<p>These highlight the two types of operations that can happen to and RDD</p>
 <ol style="list-style-type: decimal">
 <li>Transformations - build a new RDD<br />
 </li>
@@ -639,15 +716,23 @@ textFile.filter(line =&gt; line.contains(&quot;Spark&quot;)).count()</code></pre
 <p><a href="http://www.cs.berkeley.edu/~matei/papers/2012/nsdi_spark.pdf">RDD paper</a></p>
 </div>
 <div id="doing-math-with-spark" class="section level2">
-<h2>Doing math with spark</h2>
+<h2>Doing math with Spark</h2>
 <pre><code>val count = sc.parallelize(1 to 10000000).map{i =&gt;
   val x = Math.random()
   val y = Math.random()
   if (x*x + y*y &lt; 1) 1 else 0
 }
 count.collect</code></pre>
-<pre><code>./bin/spark-shell --packages com.databricks:spark-csv_2.10:1.2.0
 
+<h2>Working with Data in Spark</h2>
+
+<p>To be able to import a CSV file you need to start Spark with a the correct packages argument</p>
+
+<pre><code>./bin/spark-shell --packages com.databricks:spark-csv_2.10:1.2.0</code></pre>
+
+<p>Now we can try to replicate some of the flight analysis.</p>
+
+<pre><code>
 import org.apache.spark.sql.SQLContext
 
 val sqlContext = new SQLContext(sc)
@@ -671,13 +756,11 @@ res.registerTempTable(&quot;res&quot;)
 
 sqlContext.sql(&quot;SELECT Origin, in - out FROM res&quot;).show</code></pre>
 </div>
-<div id="using-the-apis" class="section level2">
-<h2>Using the APIs</h2>
-<p>Show pyspark here</p>
-<pre><code>log = sc.textFile(&quot;README.md&quot;).cache()
-spark = log.filter(lambda line: &quot;Spark&quot; in line)
 
-</code></pre>
+<div id="using-the-apis" class="section level2">
+<h2>A VERY simple Python example</h2>
+<pre><code>log = sc.textFile(&quot;README.md&quot;).cache()
+spark = log.filter(lambda line: &quot;Spark&quot; in line)</code></pre>
 
 </div>
 
@@ -712,7 +795,6 @@ graph.numVertices // 213
 graph.numEdges // 3189
 
 
-
 graph.triplets.sortBy(_.attr, ascending=false).map(triplet =&gt;
     &quot;There were &quot; + triplet.attr.toString + &quot; flights from &quot; + triplet.srcAttr + &quot; to &quot; + triplet.dstAttr + &quot;.&quot;).take(10)
 
@@ -720,12 +802,9 @@ graph.triplets.sortBy(_.attr).map(triplet =&gt;
     &quot;There were &quot; + triplet.attr.toString + &quot; flights from &quot; + triplet.srcAttr + &quot; to &quot; + triplet.dstAttr + &quot;.&quot;).take(10)
     
     
-    
-    
 graph.inDegrees.join(airportVertices).sortBy(_._2._1, ascending=false).take(1)
 
 graph.outDegrees.join(airportVertices).sortBy(_._2._1, ascending=false).take(1)
-
 
 
 val ranks = graph.pageRank(0.0001).vertices
@@ -736,39 +815,42 @@ ranksAndAirports.take(10)
 </code></pre>
 
 
-<p>Start of third lecture!</p>
+<p>Start of third lecture! This is where it gets more into distributed computing with the help of AWS.</p>
 
 
-<p><a href="http://sparktutorials.net/spark-clusters-on-aws-ec2---reading-and-writing-s3-data---predicting-flight-delays-with-spark-part-1">Overall tutorial</a></p>
-<p><a href="http://docs.aws.amazon.com/ElasticMapReduce/latest/DeveloperGuide/emr-plan-upload-s3.html?tag=vig-20">S3 tutorial</a></p>
-<p><a href="http://docs.aws.amazon.com/ElasticMapReduce/latest/DeveloperGuide/emr-plan-upload-s3.html#create-s3-bucket-input">create s3 bucket</a></p>
-<p><a href="http://docs.aws.amazon.com/AmazonS3/latest/gsg/PuttingAnObjectInABucket.html">putting stuff in a bucket</a></p>
+<p>This <a href="http://sparktutorials.net/spark-clusters-on-aws-ec2---reading-and-writing-s3-data---predicting-flight-delays-with-spark-part-1">tutorial</a> was used as the basis for this analysis. We have to put the data into an <a href="http://docs.aws.amazon.com/ElasticMapReduce/latest/DeveloperGuide/emr-plan-upload-s3.html?tag=vig-20">S3 bucket</a>. To do this you can follow this <a href="http://docs.aws.amazon.com/ElasticMapReduce/latest/DeveloperGuide/emr-plan-upload-s3.html#create-s3-bucket-input">tutorial</a> which should help you create a bucket and this<a href="http://docs.aws.amazon.com/AmazonS3/latest/gsg/PuttingAnObjectInABucket.html">tutorial</a> to actually put stuff in a bucket.</p>
 
 
 <h2>The second Hurdle</h2>
-<p>A few weeks back we two problems in taking advantage of distributed computing.</p>
+<p>We had two problems in taking advantage of distributed computing.</p>
 <p>You have to write mapreduce code. Spark solves this problem.</p>
 <p>You have to actually setup a cluster. AWS takes care of this problem.</p>
-<p>AWS removes the need to have a physichal cluster.</p>
+<p>AWS removes the need to have a physical cluster.</p>
 
 
-<h2>Creating Accounts</h2>
+<h2>Creating Accounts (getting started with AWS)</h2>
 <ol style="list-style-type: decimal">
-<li><p>Create an aws account - can create an EC2 instance, computer in the cloud</p></li>
-<li><p>Get data in S3 buckets - your data also now resides in the cloud</p></li>
-<li><p>Create the EMR cluster - multiple machines preconfigured for large data analysis (a collection of EC2 instances with Hadoop/Spark and other ‘big data’ stuff loaded)</p></li>
-<li><p>Use Spark ec2 scripts - customized for using Spark to analyze data</p></li>
+<li><p>Create an AWS account so that you can create an EC2 instance, a computer in the cloud</p></li>
+<li><p>Get data in S3 buckets, your data also now resides in the cloud</p></li>
+<li><p>Create the EMR cluster, multiple machines preconfigured for large data analysis (a collection of EC2 instances with Hadoop/Spark and other ‘big data’ stuff loaded)</p></li>
+<li><p>Use Spark EC2 scripts, customized for using Spark to analyze data</p></li>
 </ol>
-<p>From bash</p>
+
+<p>From bash on your machine:</p>
+
 <pre><code>export AWS_ACCESS_KEY_ID=&lt;YOURKEY&gt;
 export AWS_SECRET_ACCESS_KEY=&lt;YOURSECRETKEY&gt;</code></pre>
+
 <p>On Windows you need to add these as Environment Variables.</p>
-<p>Starting cluster</p>
+
+<p>Starting a cluster from your machine:</p>\
+
 <pre><code>./spark-ec2 --key-pair=ken_key --identity-file=ken_key.pem --region=us-west-2 -s 15 -v 1.5.1 --copy-aws-credentials launch airplane-cluster</code></pre>
-<p>Wait some amount of time for cluster to be constructed.</p>
-<p>In reality you may want to create one and pause it. If you did not need Hadoop/HDFS this would be faster. Companies like Cloudera and HortonWorks can help here as well.</p>
+
+<p>Wait some amount of time for cluster to be constructed. In reality you may want to create one and pause it. If you did not need Hadoop/HDFS this would be faster. Companies like Cloudera and HortonWorks can help here as well.</p>
+
 <p>Where my data <a href="https://console.aws.amazon.com/s3/home?region=us-west-2#&amp;bucket=flightsdata&amp;prefix=">exists</a></p>
-<p>Logging into the cluster</p>
+<p>Logging into the cluster:</p>
 <pre><code>./spark-ec2 -k ken_key -i ../ken_key.pem --region=us-west-2 login airplane-cluster</code></pre>
 <p>Moniter the <a href="http://ec2-52-33-202-77.us-west-2.compute.amazonaws.com:8080/">cluster</a></p>
 <p>Once again</p>
@@ -801,7 +883,7 @@ val res = ori.join(des, ori(&quot;Origin&quot;) === des(&quot;Dest&quot;))
 res.registerTempTable(&quot;res&quot;)</code></pre>
 <p>Destroy the cluster</p>
 <pre><code>./spark-ec2 -k ken_key -i ../ken_key.pem --region=us-west-2 destroy airplane-cluster</code></pre>
-<p>This cost almost nothing, what we really did was rent the the exact machine we needed. If we need a bigger one to scale with our data we just increment the number of machines.</p>
+<p>This cost almost nothing, what we really did was rent the the exact number of machines we needed. If we need a bigger one to scale with our data we just increment the number of machines.</p>
 </div>
 
 
