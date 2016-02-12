@@ -14,7 +14,7 @@ all_bump.csv
 gtfs_data/
 race4respect_results.RData
 anthem.RData
-
+ignore
 2008.csv
 indiv12.txt
 ccl_header_file.csv
