@@ -470,10 +470,10 @@ Can we now read the csv in from earlier
 
 ```{r eval = F}
 # First thought
-df <- createDataFrame(sqlContext, read.csv('../flight/2008.csv'))
+df <- createDataFrame(sqlContext, read.csv('2008.csv'))
 
 # Second thought
-df <- read.df(sqlContext, '../flight/2008.csv', source = "csv")
+df <- read.df(sqlContext, '2008.csv', source = "csv")
 
 # Third thought
 customSchema <- structType(
