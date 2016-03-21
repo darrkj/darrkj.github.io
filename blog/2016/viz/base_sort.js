@@ -4,7 +4,7 @@ var current = 0;
 var first = 0;
 
 function setup() {
-	createCanvas(1040, 680);
+	createCanvas(1040, 480);
   fill(0, 255, 0);
   noLoop();
 }

@@ -12,7 +12,7 @@ var avgy = [];
 var cnt = [];
 
 function setup() {
-	createCanvas(1040, 680);
+	createCanvas(740, 480);
 	df[0] = []; df[1] = []; df[2] = [];
 	//cycle through the table
   	for (var r = 0; r < table.getRowCount(); r++) {
