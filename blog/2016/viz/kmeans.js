@@ -43,6 +43,7 @@ function draw() {
 		plotPoints();
 		for (var i = 0; i < df[1].length; i++) {
 			if (owner[i] == 1) {
+			  // use oner[i] to index avgx instead of writing it out everytime
 				avgx[0] = avgx[0] + df[0][i];
 				avgy[0] = avgy[0] + df[1][i];
 				cnt[0] = cnt[0] + 1;

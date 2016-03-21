@@ -5,7 +5,7 @@ var first = 0;
 
 function setup() {
 	createCanvas(1040, 680);
-  fill(0);
+  fill(0, 255, 0);
   noLoop();
 }
 
