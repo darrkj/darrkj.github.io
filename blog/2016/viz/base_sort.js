@@ -11,6 +11,7 @@ function setup() {
 
 function draw() {
 	clear();
+	// This will be one sort alg
 	if (ord[current] > ord[current+1] & first == 1) {
     	tmp = ord[current]
     	ord[current] = ord[current+1]
@@ -20,12 +21,11 @@ function draw() {
     	tmp = ord[i] * 20 + 10;
     	rect(i * 50 + 10, 500 - tmp, 20, tmp)
   	}
+  	// End of first sort alg.
   	first = 1
 }
 
-function sort() {
-  
-}
+
 
 
 function mousePressed() {
