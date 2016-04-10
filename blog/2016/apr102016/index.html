@@ -5,7 +5,7 @@
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
 <meta http-equiv="x-ua-compatible" content="IE=9" >
 
-<title>Neo4j Soc Bal</title>
+<title>Record Linkage</title>
 
 
 
@@ -29,11 +29,11 @@
     <header>
       <div class="container">
         <a href="http://darrkj.github.io/blogs" class="btn">Blogs</a>
-        <h1>Simplifying Things with Neo4j</h1>
+        <h1>The Record Linkage Problem</h1>
         <h2></h2>
 
 <h4 class="author"><em>Kenny Darrell</em></h4>
-<h4 class="date"><em>July 4, 2014</em></h4>
+<h4 class="date"><em>April 10, 2016</em></h4>
         </section>
       </div>
     </header>
@@ -43,7 +43,6 @@
 
 
 <div id="the-record-linkage-problem" class="section level2">
-<h2>The Record Linkage Problem</h2>
 <p>The record linkage problem is a nasty beast that pops its head up when you have disperate data sources. If you have ever encountered it yourself then you have shared in my frustrations. It can be a real pain. In all analytics work you get side tracked with cleansing issues, but this one is a real pain becuase it often requires its own modeling process. This can then carry some uncertaininty forward into all of the downstream analysis. As I work with it here and there I want to persist some thoughts, definitions and a few code snippets in this post.</p>
 <p>The problem goes by many different names and depending on the level of rigor can have many phases.</p>
 <p>AKA</p>
@@ -484,14 +483,8 @@ x1 %&gt;% left_join(m, by = c('last', 'f_init')) %&gt;% as.data.frame()</code></
 ## 50        T      Daniels  SG    Daniels      Troy        T</code></pre>
 <p>We get a ton of hits but this is do to the distance allowed being one. If we set it to less than one it turns into an exact match. In this case what we need is a way to have a different distance on each field to join on, or even a hiearchy of how we match on differnt fields. Then we need another method that actually uses the distance between two that we can use to create a link from all of the matches.</p>
 <p>So in no way did I entirely solve this issue, but that was not really my goal. The goal was more to highlight some of the challanges and possible steps to solve them as well as getting aquanted with the intricacies of the problem.</p>
-<p>Slides</p>
-<p><a href="http://www.umiacs.umd.edu/~getoor/Tutorials/ER_VLDB2012.pdf" class="uri">http://www.umiacs.umd.edu/~getoor/Tutorials/ER_VLDB2012.pdf</a></p>
-<p><a href="http://mitiq.mit.edu/IQIS/2010/Addenda/T2A%20-%20JohnTalburt.pdf">http://mitiq.mit.edu/IQIS/2010/Addenda/T2A%20-%20JohnTalburt.pdf</a></p>
+
 </div>
-
-
-
-
 </div>
 
 
