@@ -113,30 +113,12 @@
 # Load libraries
 library(httr)
 library(XML)
-library(dplyr)</code></pre>
-<pre><code>## 
-## Attaching package: 'dplyr'</code></pre>
-<pre><code>## The following objects are masked from 'package:stats':
-## 
-##     filter, lag</code></pre>
-<pre><code>## The following objects are masked from 'package:base':
-## 
-##     intersect, setdiff, setequal, union</code></pre>
-<pre class="r"><code>library(rvest)</code></pre>
-<pre><code>## Loading required package: xml2</code></pre>
-<pre><code>## 
-## Attaching package: 'rvest'</code></pre>
-<pre><code>## The following object is masked from 'package:XML':
-## 
-##     xml</code></pre>
-<pre class="r"><code>library(lubridate)
-library(purrr)</code></pre>
-<pre><code>## 
-## Attaching package: 'purrr'</code></pre>
-<pre><code>## The following object is masked from 'package:dplyr':
-## 
-##     order_by</code></pre>
-<pre class="r"><code>library(fuzzyjoin)</code></pre>
+library(dplyr)
+library(rvest)
+library(lubridate)
+library(purrr)
+library(fuzzyjoin)</code></pre>
+
 <p>This gets a full set of all NBA players. We can consider this to be a full set of identities. It has already been deduplicated, but it won’t be fully canonicalized.</p>
 <pre class="r"><code>'http://www.basketball-reference.com/players/' %&gt;%
   paste0(letters[-24]) %&gt;%
