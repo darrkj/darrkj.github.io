@@ -1,0 +1,296 @@
+---
+title: "Untitled"
+author: "Kenny Darrell"
+date: "April 2, 2016"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## The Record Linkage Problem
+
+The record linkage problem is a nasty beast that pops its head up when you have disparate data sources. If you have ever encountered it yourself then you have shared in my frustrations. It can be a real pain. In all analytics work you get side tracked with cleansing issues, but this one is a real pain because it often requires its own modeling process. This can then carry some uncertainty forward into all of the downstream analysis. As I work with it here and there I want to persist some thoughts, definitions and a few code snippets in this post.
+
+The problem goes by many different names and depending on the level of rigor can have many phases.
+
+AKA
+
+* Merge purge
+* List washing
+* Data matching
+* Entity resolution
+* Many others
+
+Some ground can be made by defining some of the terms in this area.
+
+Entity - A real world object. This can be a person, place or anything else. It does not need to be a physical thing.
+
+Attributes - An entity has various types of data that can be attached to it. A person has a first name a last and a birth date.
+
+Reference - Data contains observations that are filled with attributes that refer to real world entities.
+
+When we create a database we spend some time ensuring that we know what entities exist and we clearly define them and have the ability to add a uniqueness constraint. Then we create a key for each entity and then instead of ever using the entity we use the key so we are using a reference to the entity. When data comes from disparate sources we no longer have a key that clearly and uniquely shows the reference entity. There is more than just one challenge here.
+
+
+
+[Deduplication](https://en.wikipedia.org/wiki/Deduplication) - Remove redundant references to the same entity in one data source. This normalization will mean that we have a unique set of entities. This was mentioned previously as the part of creating a key in a database.
+
+[Canonicalization](https://en.wikipedia.org/wiki/Canonicalization) - This creates the most complete record. This is similar to deduplication except that the duplicate versions may have more or less information than others, and the goal is to create the fullest form of the entity.
+
+
+[Record Linkage](https://en.wikipedia.org/wiki/Record_linkage) - When we have two different sources of of deduplicated and canonicalized data sets and we need determine which observations in one set should be linked to that in another.
+
+Disambiguation or Referencing - To match a noisy set to a deduplicated set. This can also add extra information to contribute to a more complete reference entity.
+
+
+
+This [source](http://www.slideshare.net/BenjaminBengfort/a-primer-on-entity-resolution) has more information all on all of these but the highlight is the that it provides this great image.
+![](a-primer-on-entity-resolution-9-638.jpg)
+
+
+In data science the problem is more often called entity resolution. This term can mean many things. [This](http://mitiq.mit.edu/IQIS/2010/Addenda/T2A%20-%20JohnTalburt.pdf) source lays out this larger overall process. I have often thought that all of this was more [Master Data Management](https://en.wikipedia.org/wiki/Master_data_management).
+
+1. Entity Reference Extraction
+2. Entity Reference Preparation
+3. Entity Reference Resolution
+4. Entity Identity Management
+5. Entity Relationship Analysis
+
+The first one is often related to text mining, where you have to extract a reference to an entity from some form of free text. If you work with disparate structured data sets this one may be less common. The next is the data preparation phase. This will be tasks similar to the above deduplication and canonicalization. The entity reference phase is the part that is commonly called record linkage, where we match references that share similar attributes. What we hope to do is find to references to the same entity and link them. The next phase is the identity management; this is where we resolve and maintain the real world entities as encoded data. 
+
+One item to note is identity resolution is different than entity resolution.
+
+We can determine if two sets of fingerprints are for the same or different suspect without ever knowing the identity. Thus we can say that two crimes scenes are the same criminal or not but have no idea who the criminal really is. This is entity resolution.
+
+If we have a fingerprint from a crime scene and get a hit in a database of previously incarcerated entities, then we know the identity. This is identity resolution.
+
+
+How we resolve the entities is based on Linking which can be done in a few different ways:
+
+* Direct Matching
+* Transitive Linking
+* Linking by Association
+* Asserted Linking
+
+
+Direct matching means to compare attributes and can be done via
+
+* Deterministic matching - all attributes agree
+* Probabilistic matching - certain combinations agree
+* Fuzzy matching - agree can really be approximate
+
+Transitive Linking is similar to the mathematical notion, if A links to B and B links to C, then transitive linking implies that A also links to C.
+
+Association is when we have multiple types of entities, say people and houses. If we know only one person lives at a house we can say that two sources with people and there homes, that if the home is resolved and linked then the people attached to those houses are linked as well.
+
+Assertion is done by a person and can be also be called knowledge based.
+
+
+Some other terms you will here.
+
+* [Edit Distance](https://en.wikipedia.org/wiki/Edit_distance)
+* [Levenshtein Distance](https://en.wikipedia.org/wiki/Levenshtein_distance)
+* [Jaro-Winkler Distance](https://en.wikipedia.org/wiki/Jaro%E2%80%93Winkler_distance)
+* Fellegi-Sunter Model
+* [Swoosh Algorithm](http://infolab.stanford.edu/serf/swoosh_vldbj.pdf)
+
+
+
+No matter which problem we are solving we have a few basic parameters to keep in mind.
+
+R - The number of records
+M - The set of matches
+N - The set of non-matches
+E - The set of entities
+L - The set of links
+
+We also need to recognize what problem we are solving. If we are doing record linkage it really means we have two deduplicated and canonical sources so we could at most have on link per entity, but we may have many matches. In other problems such as deduplication we may have many valid matches. It is common though that we have few real links, this is because for any set of data we have some number of observations in one set, call it A and a similar count in the second, call it B. We have A * B possible matches, but most should not be matched. We can take the true matches as true positives and similar for each of the other supervised learning outcomes, false positive, false negative and true negatives and create all the same performance measures.
+
+
+## Example
+
+
+```{r}
+options(stringsAsFactors = FALSE)
+
+# Load libraries
+library(httr)
+library(XML)
+library(dplyr)
+library(rvest)
+library(lubridate)
+library(purrr)
+library(fuzzyjoin)
+```
+
+
+
+
+This gets a full set of all NBA players. We can consider this to be a full set of identities. It has already been deduplicated, but it won't be fully canonicalized.
+```{r, cache = TRUE}
+'http://www.basketball-reference.com/players/' %>%
+  paste0(letters[-24]) %>%
+  map_df(~readHTMLTable(.)[[1]]) -> players
+head(players)
+```
+
+Now we need to do some data preparation on the table to make it more usable. I am also going to remove a dew fields that we are not going to use, but in reality you would keep these for complete canonicalization.
+```{r}
+players %>% 
+  mutate(From = as.numeric(From),
+         To = as.numeric(To)) %>%
+  rename(name = Player) %>%
+  select(-`Birth Date`, -College, -Ht, -Wt) -> players
+
+# This denotes players that are in the Hall of Fame.
+players$name <- gsub('*', '', players$name, fixed = T)
+head(players)
+```
+
+
+Now we need to acquire a dataset to match against.
+```{r}
+'http://espn.go.com/nba/boxscore?gameId=290324004' %>%
+  read_html %>%
+  html_nodes('table') %>% 
+  html_nodes('.name') %>% 
+  html_text -> game
+head(game)
+```
+
+
+We obviously have to do some data preparation on this as well! This is really turning the list into a data.frame and removing things that are not names and rows that are really just spaces.
+```{r}
+game %>% 
+  data.frame(game = .) %>% 
+  filter(!game %in% c('starters', 'bench', 'TEAM')) %>%
+  filter(nchar(game) > 1) -> game
+head(game)
+```
+
+We need to separate all of the text into its own fields. We must also create fields that exist in the set we are trying to match against.
+```{r}
+game$f_init <- sapply(strsplit(game$game, '. ', fixed = T), `[[`, 1)
+game$name <- sapply(strsplit(game$game, '. ', fixed = T), `[[`, 2)
+
+game$pos <- NA
+
+for (i in c('PG$', 'SG$', 'G$', 'PF$', 'SF$', 'C$')) {
+  game$pos <- ifelse(grepl(i, game$name), i, game$pos)
+  game$name <- gsub(i, '', game$name)
+}
+
+game$pos <- gsub('$', '', game$pos, fixed = T)
+
+game %>% mutate(year = 2009) %>% 
+  select(-game) %>% 
+  rename(last = name) -> game
+head(game)
+```
+
+
+
+
+Now we need to add to the original data the fields which are needed to match against.
+```{r}
+# 'last, first' -> 'last', 'first'
+players$first <- sapply(strsplit(players$name, ' ', fixed = T), `[[`, 1)
+players$last <- sapply(strsplit(players$name, ' ', fixed = T), `[[`, 2)
+players$f_init <- substr(players$first, 1, 1)
+head(players)
+```
+
+
+Now we can try to resolve who played in this game against all NBA players. Is this entity resolution or identity resolution? Since we considered the set of all NBA players as the reference list this is more of an identity resolution problem, we need to match each observation to the real reference entity. This also adds a constraint that we cannot create multiple links for any reference entity.
+```{r}
+m <- players %>% select(name, Pos, last, first, f_init, From, To)
+
+game %>% left_join(m) %>% as.data.frame()
+```
+
+We are getting back more players than we would expect. This means we have more matches than links that we need to create. Or in data science speak we have some things in , the set of matches that should be in N, the non-matches, so a few false positives. We can take additional steps to remove these false positives, but this can also contribute to more false negatives. We can see that we are not fully utilizing all of the information. Arnie Johnson played from 1949 to 1953, so it is not a valid match for this game. We can utilize the time of the game alongside the career window of a player to help reduce the false positives. Since we considered this to be Identity resolution because the the first list is the authoritative list of NBA players. We also know that we can only have one player from the game that should be matched to this list. This is not a canonicalization problem where we may have the same entity many times with different information that we want to pull together. We also know that we need a link for each.
+
+
+```{r}
+m <- players %>% filter(From <= 2009, To >= 2009) %>%
+  select(name, Pos, last, first, f_init)
+
+game %>% left_join(m) %>% as.data.frame()
+```
+
+This helped clear away a lot of the false matches. Since this was done in a deterministic way there is no way to take the most likely, high probability match. It was rule driven so we needed to refine the rules.
+
+One thing we see here is that we have a few matches that occur many times. This is because our input was not unique.
+
+```{r}
+game[duplicated(game), ]
+```
+So this guy appears twice. Really one is named Tim and the other Tyrus. There is no way to resolve this given this data frame. We could add further info if we had further sets of data that denote which team each person played for or even the height and weight. We have position here, which in other cases could work but these players are both point guards.
+
+```{r}
+game %>% left_join(m) %>% as.data.frame() %>% distinct
+```
+
+There is another similar collision with A Johnson, but this one we could use the position to resolve. We also have another that gets no match. This is because a different name is used. We can see all sorts of problems here. We can obviously do some things to make this work in this case but in the reality of the problem we would see new sets of data coming in that we may have similar issues, but nobody to use Wikipedia or ESPN to figure out what to do. This is the point that we think about probabilistic links. We need to qualify the strength of a match then link the highest. This will have errors, but all data science has errors. All models are wrong, but some are useful! 
+
+
+```{r}
+get_pl <- function(game, year) {
+  game %>%
+    paste0('http://espn.go.com/nba/boxscore?gameId=', .) %>%
+    read_html %>%
+    html_nodes('table') %>% 
+    html_nodes('.name') %>% 
+    html_text %>% 
+    data.frame(game = .) %>% 
+    filter(!game %in% c('starters', 'bench', 'TEAM')) %>%
+    filter(nchar(game) > 1) -> game
+  
+  
+  game$f_init <- sapply(strsplit(game$game, '. ', fixed = T), `[[`, 1)
+  game$name <- sapply(strsplit(game$game, '. ', fixed = T), `[[`, 2)
+  
+  game$pos <- NA
+  
+  for (i in c('PG$', 'SG$', 'G$', 'PF$', 'SF$', 'C$')) {
+    game$pos <- ifelse(grepl(i, game$name), i, game$pos)
+    game$name <- gsub(i, '', game$name)
+  }
+  
+  game$pos <- gsub('$', '', game$pos, fixed = T)
+  
+  game %>% mutate(year = year) %>% select(-game) %>% rename(last = name)
+}
+```
+
+```{r}
+
+x1 <- get_pl('400829015', 2016)
+
+m <- players %>% filter(From <= 2016, To >= 2016) %>%
+  select(name, last, first, f_init)
+
+x1 %>% left_join(m, by = c('last', 'f_init')) %>% as.data.frame()
+```
+
+The fuzzyjoin package can help some here but still needs a few features to get us all the way to where we need to be. 
+```{r}
+x1 %>%
+  stringdist_left_join(m, max_dist = 1, by = c('last', 'f_init')) %>% 
+  select(-year, -name) %>%
+  as.data.frame()
+```
+We get a ton of hits but this is due to the distance allowed being one. If we set it to less than one it turns into an exact match. In this case what we need is a way to have a different distance on each field to join on, or even a hierarchy of how we match on different fields. Then we need another method that actually uses the distance between two that we can use to create a link from all of the matches. 
+
+So in no way did I entirely solve this issue, but that was not really my goal. The goal was more to highlight some of the challenges and possible steps to solve them as well as getting acquainted with the intricacies of the problem.
+
+
+Slides
+
+
+http://www.umiacs.umd.edu/~getoor/Tutorials/ER_VLDB2012.pdf
+
+http://mitiq.mit.edu/IQIS/2010/Addenda/T2A%20-%20JohnTalburt.pdf
+
