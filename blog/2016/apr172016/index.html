@@ -57,26 +57,9 @@ library(readr)
 library(data.table)
 library(tibble)
 library(dplyr)</code></pre>
-<pre><code>## 
-## Attaching package: 'dplyr'</code></pre>
-<pre><code>## The following objects are masked from 'package:tibble':
-## 
-##     as_data_frame, data_frame, data_frame_, frame_data, glimpse,
-##     knit_print.trunc_mat, tbl_df, tibble, trunc_mat, type_sum</code></pre>
-<pre><code>## The following objects are masked from 'package:data.table':
-## 
-##     between, last</code></pre>
-<pre><code>## The following objects are masked from 'package:stats':
-## 
-##     filter, lag</code></pre>
-<pre><code>## The following objects are masked from 'package:base':
-## 
-##     intersect, setdiff, setequal, union</code></pre>
-<p>This data can be found <a href="https://datahub.io/dataset/us-airline-on-time-performance/resource/37834910-8634-45a9-aed4-9d59dac7f1d6">here</a>.</p>
-<pre class="r"><code># data source
-# 
 
-system.time(x &lt;- read.csv('2008.csv'))
+<p>This data can be found <a href="https://datahub.io/dataset/us-airline-on-time-performance/resource/37834910-8634-45a9-aed4-9d59dac7f1d6">here</a>.</p>
+<pre class="r"><code>system.time(x &lt;- read.csv('2008.csv'))
 #   user  system elapsed
 # 96.721   2.850  99.914
 
