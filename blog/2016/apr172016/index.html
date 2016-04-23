@@ -122,64 +122,6 @@ str(throw_away)</code></pre>
   &quot;b&quot;, 1,  8.5,
   &quot;c&quot;, 1,  8.5,
   &quot;D&quot;, 1,  8.5)</code></pre>
-<p>What if I wanted to join this data onto another set.</p>
-<pre class="r"><code>a %&gt;% select(x) %&gt;%
-  stringdist_inner_join(., ., max_dist = .5, by = 'x') %&gt;%
-  filter(x.x != x.y)</code></pre>
-<pre><code>## Source: local data frame [0 x 2]
-## 
-## Variables not shown: x.x &lt;chr&gt;, x.y &lt;chr&gt;.</code></pre>
-<pre class="r"><code>a %&gt;% select(x) %&gt;%
-  stringdist_inner_join(., ., max_dist = .5, by = 'x') %&gt;%
-  filter(x.x != x.y)</code></pre>
-<pre><code>## Source: local data frame [0 x 2]
-## 
-## Variables not shown: x.x &lt;chr&gt;, x.y &lt;chr&gt;.</code></pre>
-<pre class="r"><code>head(iris)</code></pre>
-<pre><code>##   Sepal.Length Sepal.Width Petal.Length Petal.Width Species
-## 1          5.1         3.5          1.4         0.2  setosa
-## 2          4.9         3.0          1.4         0.2  setosa
-## 3          4.7         3.2          1.3         0.2  setosa
-## 4          4.6         3.1          1.5         0.2  setosa
-## 5          5.0         3.6          1.4         0.2  setosa
-## 6          5.4         3.9          1.7         0.4  setosa</code></pre>
-<pre class="r"><code>sepal_lengths &lt;- data_frame(Sepal.Length = c(5, 6, 7), Type = 1:3)
-
-iris %&gt;%
-  difference_inner_join(sepal_lengths, max_dist = .5)</code></pre>
-<pre><code>## Joining by: &quot;Sepal.Length&quot;</code></pre>
-<pre><code>## Source: local data frame [152 x 7]
-## 
-##    Sepal.Length.x Sepal.Width Petal.Length Petal.Width Species
-##             &lt;dbl&gt;       &lt;dbl&gt;        &lt;dbl&gt;       &lt;dbl&gt;  &lt;fctr&gt;
-## 1             5.1         3.5          1.4         0.2  setosa
-## 2             4.9         3.0          1.4         0.2  setosa
-## 3             4.7         3.2          1.3         0.2  setosa
-## 4             4.6         3.1          1.5         0.2  setosa
-## 5             5.0         3.6          1.4         0.2  setosa
-## 6             5.4         3.9          1.7         0.4  setosa
-## 7             4.6         3.4          1.4         0.3  setosa
-## 8             5.0         3.4          1.5         0.2  setosa
-## 9             4.9         3.1          1.5         0.1  setosa
-## 10            5.4         3.7          1.5         0.2  setosa
-## ..            ...         ...          ...         ...     ...
-## Variables not shown: Sepal.Length.y &lt;dbl&gt;, Type &lt;int&gt;.</code></pre>
-<pre class="r"><code>#library(prompt)
-#set_prompt(prompt_fancy)
-5</code></pre>
-<pre><code>## [1] 5</code></pre>
-<pre class="r"><code>4</code></pre>
-<pre><code>## [1] 4</code></pre>
-<pre class="r"><code>library(alexr)
-alex(file(&quot;blog.Rmd&quot;))</code></pre>
-<pre><code>## * blog.Rmd  0 messages (0 errors, 0 warnings)
-## ---------------------------------------------</code></pre>
-<pre class="r"><code>alex(file(&quot;https://raw.githubusercontent.com/darrkj/darrkj.github.io/master/blog/2015/dec012015/index.html&quot;))</code></pre>
-<pre><code>## * https://raw.githubusercontent.com/darrkj/darrkj.github.io/master/blog/2015/dec012015/index.html  0 messages (0 errors, 0 warnings)
-## ------------------------------------------------------------------------------------------------------------------------------------</code></pre>
-<p><a href="https://github.com/gaborcsardi/ask" class="uri">https://github.com/gaborcsardi/ask</a> <a href="https://github.com/gaborcsardi/tamper" class="uri">https://github.com/gaborcsardi/tamper</a> <a href="https://github.com/gaborcsardi/alexr" class="uri">https://github.com/gaborcsardi/alexr</a> <a href="https://github.com/gaborcsardi/covr" class="uri">https://github.com/gaborcsardi/covr</a> <a href="https://github.com/ropensci/testdat" class="uri">https://github.com/ropensci/testdat</a> <a href="https://github.com/gaborcsardi/keypress" class="uri">https://github.com/gaborcsardi/keypress</a> <a href="https://github.com/jimhester/monads" class="uri">https://github.com/jimhester/monads</a> <a href="https://github.com/smbache/loggr" class="uri">https://github.com/smbache/loggr</a> <a href="https://github.com/krlmlr/R-functional/blob/master/R/functional.R" class="uri">https://github.com/krlmlr/R-functional/blob/master/R/functional.R</a> <a href="https://github.com/krlmlr/condition" class="uri">https://github.com/krlmlr/condition</a> <a href="https://github.com/krlmlr/Dmisc/blob/master/R/getArgs.R" class="uri">https://github.com/krlmlr/Dmisc/blob/master/R/getArgs.R</a> lintr <a href="https://github.com/trestletech/plumber" class="uri">https://github.com/trestletech/plumber</a></p>
-
-
 
 
 </div>
