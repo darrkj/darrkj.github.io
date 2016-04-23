@@ -1,0 +1,143 @@
+---
+title: "Untitled"
+author: "Kenny Darrell"
+date: "April 17, 2016"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+A few interesting packages that are newish to me.
+
+The first of which is called feather.
+It stems from the [Apache Arrow](https://arrow.apache.org/) project and makes it super fast to read datafiles in R.
+
+
+The process which this uses seems rather intutive as to why it works better.
+
+![](simd.png)
+
+
+```{r}
+# devtools::install_github("dgrtwo/fuzzyjoin")
+# devtools::install_github("hadley/tibble")
+# devtools::install_github("wesm/feather/R")
+# devtools::install_github("hadley/readr")
+
+library(feather)
+library(readr)
+library(data.table)
+library(fuzzyjoin)
+library(tibble)
+library(dplyr)
+```
+
+This data can be found [here](https://datahub.io/dataset/us-airline-on-time-performance/resource/37834910-8634-45a9-aed4-9d59dac7f1d6).
+```{r eval = F}
+
+# data source
+# 
+
+system.time(x <- read.csv('2008.csv'))
+#   user  system elapsed
+# 96.721   2.850  99.914
+
+write_feather(x, '2008.feather')
+
+rm(x);gc();
+system.time(x <- read_feather('2008.feather'))
+#   user  system elapsed
+# 0.765   0.396   1.162
+
+rm(x);gc();
+system.time(x <- read_csv('2008.csv'))
+#  user  system elapsed 
+# 15.345   1.413  18.642
+
+rm(x);gc();
+system.time(x <- fread('2008.csv'))
+#  user  system elapsed 
+# 6.923   0.374   7.302
+
+```
+
+
+
+
+
+
+Another useful package is tibble. Normally I start all of my code with by turning strings to factors as FALSE, becuase if I don't 15 minutes later I have to figure out why something that should be easy is not working. I modify this option then re-reun everything I am good to go, except that my train of thought was derailed pretty hard.
+
+I have also never been a fan of the odd process of creating a throw away data.frame.
+
+```{r}
+throw_away <- data.frame(a = c(1, 2, 3), b = c('a', 'b', 'c'))
+str(throw_away)
+
+rbind(throw_away, c(1, 'd'))
+```
+That was in no way what you would expect to happen.
+
+The tibble method to construct a dataset is very similar to SAS or Matlab, whcih is clean. And most of all it does not make anything into a factor for me.
+```{r}
+a <- tibble::frame_data(
+  ~x, ~y,  ~z,
+  "a", 2,  3.6,
+  "b", 1,  8.5,
+  "c", 1,  8.5,
+  "D", 1,  8.5)
+
+```
+
+
+What if I wanted to join this data onto another set.
+```{r fuzzy}
+a %>% select(x) %>%
+  stringdist_inner_join(., ., max_dist = .5, by = 'x') %>%
+  filter(x.x != x.y)
+
+a %>% select(x) %>%
+  stringdist_inner_join(., ., max_dist = .5, by = 'x') %>%
+  filter(x.x != x.y)
+
+head(iris)
+sepal_lengths <- data_frame(Sepal.Length = c(5, 6, 7), Type = 1:3)
+
+iris %>%
+  difference_inner_join(sepal_lengths, max_dist = .5)
+```
+
+
+
+```{r}
+#library(prompt)
+#set_prompt(prompt_fancy)
+5
+4
+
+```
+
+```{r}
+library(alexr)
+alex(file("blog.Rmd"))
+
+alex(file("https://raw.githubusercontent.com/darrkj/darrkj.github.io/master/blog/2015/dec012015/index.html"))
+
+```
+
+
+https://github.com/gaborcsardi/ask
+https://github.com/gaborcsardi/tamper
+https://github.com/gaborcsardi/alexr
+https://github.com/gaborcsardi/covr
+https://github.com/ropensci/testdat
+https://github.com/gaborcsardi/keypress
+https://github.com/jimhester/monads
+https://github.com/smbache/loggr
+https://github.com/krlmlr/R-functional/blob/master/R/functional.R
+https://github.com/krlmlr/condition
+https://github.com/krlmlr/Dmisc/blob/master/R/getArgs.R
+lintr
+https://github.com/trestletech/plumber

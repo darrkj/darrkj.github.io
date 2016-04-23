@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<!-- saved from url=(0014)about:internet -->
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+<meta http-equiv="x-ua-compatible" content="IE=9" >
+
+<title>Neo4j Soc Bal</title>
+
+
+
+    <link rel="stylesheet" type="text/css" href="../../../stylesheets/blog.css">
+<!-- Styles for R syntax highlighter -->
+    <link rel="stylesheet" type="text/css" href="../../../stylesheets/blog2.css">
+    <link rel="stylesheet" type="text/css" href="../../../stylesheets/stylesheet.css" media="screen" />
+    <link rel="stylesheet" type="text/css" href="../../../stylesheets/pygment_trac.css" media="screen" />
+    <link rel="stylesheet" type="text/css" href="../../../stylesheets/print.css" media="print" />
+<!-- R syntax highlighter -->
+    <script src="../../../javascripts/r.js"></script>
+
+
+</head>
+
+<body>
+
+<div class="container">
+
+
+    <header>
+      <div class="container">
+        <a href="http://darrkj.github.io/blogs" class="btn">Blogs</a>
+        <h1>Fast Reading</h1>
+        <h2></h2>
+
+<h4 class="author"><em>Kenny Darrell</em></h4>
+<h4 class="date"><em>April 17, 2016</em></h4>
+        </section>
+      </div>
+    </header>
+
+
+
+<p>A few interesting packages that are newish to me.</p>
+<p>The first of which is called feather. It stems from the <a href="https://arrow.apache.org/">Apache Arrow</a> project and makes it super fast to read datafiles in R.</p>
+<p>The process which this uses seems rather intutive as to why it works better.</p>
+
+<div class="separator" style="clear: both; text-align: center;"><img src="simd.png" height="550" width="700"></a></div>
+
+
+
+</div>
+<pre class="r"><code># devtools::install_github(&quot;dgrtwo/fuzzyjoin&quot;)
+# devtools::install_github(&quot;hadley/tibble&quot;)
+# devtools::install_github(&quot;wesm/feather/R&quot;)
+# devtools::install_github(&quot;hadley/readr&quot;)
+
+library(feather)
+library(readr)
+library(data.table)
+library(fuzzyjoin)
+library(tibble)
+library(dplyr)</code></pre>
+<pre><code>## 
+## Attaching package: 'dplyr'</code></pre>
+<pre><code>## The following objects are masked from 'package:tibble':
+## 
+##     as_data_frame, data_frame, data_frame_, frame_data, glimpse,
+##     knit_print.trunc_mat, tbl_df, tibble, trunc_mat, type_sum</code></pre>
+<pre><code>## The following objects are masked from 'package:data.table':
+## 
+##     between, last</code></pre>
+<pre><code>## The following objects are masked from 'package:stats':
+## 
+##     filter, lag</code></pre>
+<pre><code>## The following objects are masked from 'package:base':
+## 
+##     intersect, setdiff, setequal, union</code></pre>
+<p>This data can be found <a href="https://datahub.io/dataset/us-airline-on-time-performance/resource/37834910-8634-45a9-aed4-9d59dac7f1d6">here</a>.</p>
+<pre class="r"><code># data source
+# 
+
+system.time(x &lt;- read.csv('2008.csv'))
+#   user  system elapsed
+# 96.721   2.850  99.914
+
+write_feather(x, '2008.feather')
+
+rm(x);gc();
+system.time(x &lt;- read_feather('2008.feather'))
+#   user  system elapsed
+# 0.765   0.396   1.162
+
+rm(x);gc();
+system.time(x &lt;- read_csv('2008.csv'))
+#  user  system elapsed 
+# 15.345   1.413  18.642
+
+rm(x);gc();
+system.time(x &lt;- fread('2008.csv'))
+#  user  system elapsed 
+# 6.923   0.374   7.302</code></pre>
+<p>Another useful package is tibble. Normally I start all of my code with by turning strings to factors as FALSE, becuase if I don’t 15 minutes later I have to figure out why something that should be easy is not working. I modify this option then re-reun everything I am good to go, except that my train of thought was derailed pretty hard.</p>
+<p>I have also never been a fan of the odd process of creating a throw away data.frame.</p>
+<pre class="r"><code>throw_away &lt;- data.frame(a = c(1, 2, 3), b = c('a', 'b', 'c'))
+str(throw_away)</code></pre>
+<pre><code>## 'data.frame':    3 obs. of  2 variables:
+##  $ a: num  1 2 3
+##  $ b: Factor w/ 3 levels &quot;a&quot;,&quot;b&quot;,&quot;c&quot;: 1 2 3</code></pre>
+<pre class="r"><code>rbind(throw_away, c(1, 'd'))</code></pre>
+<pre><code>## Warning in `[&lt;-.factor`(`*tmp*`, ri, value = structure(c(1L, 2L, 3L,
+## NA), .Label = c(&quot;a&quot;, : invalid factor level, NA generated</code></pre>
+<pre><code>##   a    b
+## 1 1    a
+## 2 2    b
+## 3 3    c
+## 4 1 &lt;NA&gt;</code></pre>
+<p>That was in no way what you would expect to happen.</p>
+<p>The tibble method to construct a dataset is very similar to SAS or Matlab, whcih is clean. And most of all it does not make anything into a factor for me.</p>
+<pre class="r"><code>a &lt;- tibble::frame_data(
+  ~x, ~y,  ~z,
+  &quot;a&quot;, 2,  3.6,
+  &quot;b&quot;, 1,  8.5,
+  &quot;c&quot;, 1,  8.5,
+  &quot;D&quot;, 1,  8.5)</code></pre>
+<p>What if I wanted to join this data onto another set.</p>
+<pre class="r"><code>a %&gt;% select(x) %&gt;%
+  stringdist_inner_join(., ., max_dist = .5, by = 'x') %&gt;%
+  filter(x.x != x.y)</code></pre>
+<pre><code>## Source: local data frame [0 x 2]
+## 
+## Variables not shown: x.x &lt;chr&gt;, x.y &lt;chr&gt;.</code></pre>
+<pre class="r"><code>a %&gt;% select(x) %&gt;%
+  stringdist_inner_join(., ., max_dist = .5, by = 'x') %&gt;%
+  filter(x.x != x.y)</code></pre>
+<pre><code>## Source: local data frame [0 x 2]
+## 
+## Variables not shown: x.x &lt;chr&gt;, x.y &lt;chr&gt;.</code></pre>
+<pre class="r"><code>head(iris)</code></pre>
+<pre><code>##   Sepal.Length Sepal.Width Petal.Length Petal.Width Species
+## 1          5.1         3.5          1.4         0.2  setosa
+## 2          4.9         3.0          1.4         0.2  setosa
+## 3          4.7         3.2          1.3         0.2  setosa
+## 4          4.6         3.1          1.5         0.2  setosa
+## 5          5.0         3.6          1.4         0.2  setosa
+## 6          5.4         3.9          1.7         0.4  setosa</code></pre>
+<pre class="r"><code>sepal_lengths &lt;- data_frame(Sepal.Length = c(5, 6, 7), Type = 1:3)
+
+iris %&gt;%
+  difference_inner_join(sepal_lengths, max_dist = .5)</code></pre>
+<pre><code>## Joining by: &quot;Sepal.Length&quot;</code></pre>
+<pre><code>## Source: local data frame [152 x 7]
+## 
+##    Sepal.Length.x Sepal.Width Petal.Length Petal.Width Species
+##             &lt;dbl&gt;       &lt;dbl&gt;        &lt;dbl&gt;       &lt;dbl&gt;  &lt;fctr&gt;
+## 1             5.1         3.5          1.4         0.2  setosa
+## 2             4.9         3.0          1.4         0.2  setosa
+## 3             4.7         3.2          1.3         0.2  setosa
+## 4             4.6         3.1          1.5         0.2  setosa
+## 5             5.0         3.6          1.4         0.2  setosa
+## 6             5.4         3.9          1.7         0.4  setosa
+## 7             4.6         3.4          1.4         0.3  setosa
+## 8             5.0         3.4          1.5         0.2  setosa
+## 9             4.9         3.1          1.5         0.1  setosa
+## 10            5.4         3.7          1.5         0.2  setosa
+## ..            ...         ...          ...         ...     ...
+## Variables not shown: Sepal.Length.y &lt;dbl&gt;, Type &lt;int&gt;.</code></pre>
+<pre class="r"><code>#library(prompt)
+#set_prompt(prompt_fancy)
+5</code></pre>
+<pre><code>## [1] 5</code></pre>
+<pre class="r"><code>4</code></pre>
+<pre><code>## [1] 4</code></pre>
+<pre class="r"><code>library(alexr)
+alex(file(&quot;blog.Rmd&quot;))</code></pre>
+<pre><code>## * blog.Rmd  0 messages (0 errors, 0 warnings)
+## ---------------------------------------------</code></pre>
+<pre class="r"><code>alex(file(&quot;https://raw.githubusercontent.com/darrkj/darrkj.github.io/master/blog/2015/dec012015/index.html&quot;))</code></pre>
+<pre><code>## * https://raw.githubusercontent.com/darrkj/darrkj.github.io/master/blog/2015/dec012015/index.html  0 messages (0 errors, 0 warnings)
+## ------------------------------------------------------------------------------------------------------------------------------------</code></pre>
+<p><a href="https://github.com/gaborcsardi/ask" class="uri">https://github.com/gaborcsardi/ask</a> <a href="https://github.com/gaborcsardi/tamper" class="uri">https://github.com/gaborcsardi/tamper</a> <a href="https://github.com/gaborcsardi/alexr" class="uri">https://github.com/gaborcsardi/alexr</a> <a href="https://github.com/gaborcsardi/covr" class="uri">https://github.com/gaborcsardi/covr</a> <a href="https://github.com/ropensci/testdat" class="uri">https://github.com/ropensci/testdat</a> <a href="https://github.com/gaborcsardi/keypress" class="uri">https://github.com/gaborcsardi/keypress</a> <a href="https://github.com/jimhester/monads" class="uri">https://github.com/jimhester/monads</a> <a href="https://github.com/smbache/loggr" class="uri">https://github.com/smbache/loggr</a> <a href="https://github.com/krlmlr/R-functional/blob/master/R/functional.R" class="uri">https://github.com/krlmlr/R-functional/blob/master/R/functional.R</a> <a href="https://github.com/krlmlr/condition" class="uri">https://github.com/krlmlr/condition</a> <a href="https://github.com/krlmlr/Dmisc/blob/master/R/getArgs.R" class="uri">https://github.com/krlmlr/Dmisc/blob/master/R/getArgs.R</a> lintr <a href="https://github.com/trestletech/plumber" class="uri">https://github.com/trestletech/plumber</a></p>
+
+
+
+
+</div>
+
+
+
+
+
+<script>
+
+// add bootstrap table styles to pandoc tables
+$(document).ready(function () {
+  $('tr.header').parent('thead').parent('table').addClass('table table-condensed');
+});
+
+</script>
+
+<!-- dynamically load mathjax for compatibility with --self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://c328740.ssl.cf1.rackcdn.com/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>
+
