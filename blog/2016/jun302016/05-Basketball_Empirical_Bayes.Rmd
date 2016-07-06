@@ -1,0 +1,284 @@
+---
+title: "Untitled"
+author: "Kenny Darrell"
+date: "June 26, 2016"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, message=FALSE, echo = F}
+options(stringsAsFactors = FALSE)
+
+# Load libraries
+library(lubridate)
+library(dplyr)
+library(ggplot2)
+```
+
+
+How would you classify who is the best three point shooter in the NBA? Is it the same as the best two point shooter or the best free throw shooter, etc. There is a three point competition but that is a little different from what this question is asking. One of two next steps are commonly persued to answer a question of this sort. Each has its own pitfalls. Lets look at them to see what potential pitfalls will arise.
+
+
+
+```{r, echo = FALSE}
+load("pl_emp_bayes.RData")
+names(details)[4] <- 'pos'
+details %>% 
+  select(name = Player, birth = `Birth Date`, season = Season,
+         three_made = `3P`, three_attempt = `3PA`,
+         two_made = `2P`, two_attempt = `2PA`,
+         ft_made = FT, ft_attempt = FTA,
+         rebounds = TRB, assist = AST, steal = STL, block = BLK,
+         turnover = TOV) %>%
+    mutate(three_made = as.numeric(three_made), 
+         three_attempt = as.numeric(three_attempt),
+         two_made = as.numeric(two_made), 
+         two_attempt = as.numeric(two_attempt),
+         ft_made = as.numeric(ft_made), 
+         ft_attempt = as.numeric(ft_attempt),
+         rebounds = as.numeric(rebounds), 
+         assist = as.numeric(assist),
+         steal = as.numeric(steal),
+         block = as.numeric(block), 
+         turnover = as.numeric(turnover)) -> details
+```
+
+We will NBA season statstics. It is basically the season totals for each player. The first method we are going to use is to calculate the average, that is shots made divided by attempts.
+
+```{r}
+head(details)
+```
+
+Lets first focus on just three point shooting. We first group by player, which is uniquely defined by the name and birthday, then we sum over the number of shots made and attempted and divide. Then we sort on the average we should be able to see who is the best three point shooter?
+
+```{r}
+details %>% 
+  group_by(name, birth) %>%
+  summarise(three_made = sum(three_made), 
+            three_attempt = sum(three_attempt)) %>%
+  select(-birth) %>% 
+  ungroup %>%
+  mutate(three_avg = three_made / three_attempt) %>% 
+  arrange(desc(three_avg)) -> threes
+
+head(threes)
+```
+
+
+
+This is obviously flawed. These are really just people that only made a few attemtps, they may be good but they may also just be lucky. It is unlikely this is true, we are seeing that people who have shot very few times are the best.
+
+
+```{r}
+threes %>% filter(three_avg == 1) %>%
+  arrange(desc(three_made))
+```
+
+
+We can also see what would be the result if we were to ask the question who is the worst three point shooter. This method produces just as bad of an error.
+
+```{r}
+threes %>% filter(three_avg == 0) %>%
+  arrange(desc(three_made))
+```
+
+So this method does not work.  There has been a lot of discussion of this problem. It is talked about in the book Thinking Fast and Slow. There is a very interesting example of rural counties having both the highest and lowest cancer rates, one dicsussion of that can be found [here](http://dataremixed.com/2015/01/avoiding-data-pitfalls-part-2/). What is happening is that in the cases with fewer observations have more room for variance, thus just a few flips in either direction will really skew things. As a player takes more shots the average will start to approach the true average. We can see that effect here in this plot.
+
+
+```{r}
+threes %>%
+  ggplot(aes(three_attempt, three_avg)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE) +
+  scale_x_log10()
+
+```
+
+
+What if we just looked at it by who made the most?
+
+```{r}
+threes %>% arrange(desc(three_made)) %>% head
+```
+
+This may look more valid but Jason Terry made one more than Jason Kidd but it took 454 less tries also. Vince Carter made eleven more shots than Jason Terry but he also took 99 more shots. Since Jason Terry has an average of around 37%  if he was to take 99 more shots he would most likely have amde at least eleven of them.
+
+To get over this issue we can use what is known as Emprirical Bayes Estimation. You can see the inspirational example [here](http://varianceexplained.org/r/empirical_bayes_baseball/) What this method does is that it creates a baseline for the distribution and then adjusts it based on the number of shots made and attempted.
+
+We need to fit a beta distribution to our data. But first we need to remove some of the crazy observations so as to not taint the empirical prior.
+
+
+```{r}
+threes %>%
+  filter(three_attempt >= 500) -> three_filt
+
+m <- suppressWarnings(MASS::fitdistr(three_filt$three_avg, dbeta,
+                    start = list(shape1 = 1, shape2 = 10)))
+
+(alpha0 <- m$estimate[1])
+(beta0 <- m$estimate[2])
+
+
+ggplot(three_filt) +
+  geom_histogram(aes(three_avg, y = ..density..), binwidth = .005) +
+  stat_function(fun = function(x) dbeta(x, alpha0, beta0), color = "red", size = 1) +
+  xlab("Three Point Percentage")
+```
+
+
+Now to construct the new estimate using the players data and this beta distribution we apply a couple of additions.
+
+
+```{r}
+threes %>% 
+  filter(three_attempt > 0) %>%
+  mutate(est = (three_made + alpha0) / (three_attempt + alpha0 + beta0)) -> threes
+```
+
+And now we can see more practical results.
+```{r}
+threes %>% arrange(est) %>% head
+threes %>% arrange(est) %>% tail
+```
+
+This plot is also borrowed from the above mentioned blog. It does a great job at showing the shrinkage to baseline. When you have very shots attempted you are pulled further to the mean. Points are pulled down if they are above and pulled up if they are below. The amount of the pull depends on the number of shots, so the lighter blue do not get shrunken nearly as much.
+
+```{r}
+ggplot(threes, aes(three_avg, est, color = three_attempt)) +
+  geom_hline(yintercept = alpha0 / (alpha0 + beta0), color = "red", lty = 2) +
+  geom_point() +
+  geom_abline(color = "red") +
+  scale_colour_gradient(trans = "log", breaks = 10 ^ (1:5)) +
+  xlab("Field Goal Percentage") +
+  ylab("Empirical Bayes Field Goal Percentage")
+```
+
+
+Some issues to think about here though. If you were pretty bad in first few games you may not play for long. We may also see some impact from players who stayed in the NBA beyond there prime. Thus at one point in there career they may have been the best ever, but earlier and later seasons may weaken this. We could try to get around this by asking what is the best season average.
+
+```{r}
+details %>% 
+  select(name, birth,
+         three_made, three_attempt, season) -> threes_season
+head(threes_season)
+
+
+threes_season %>% 
+  group_by(name, birth, season) %>%
+  summarise(three_made = sum(three_made), three_attempt = sum(three_attempt)) %>% 
+  ungroup %>% 
+  filter(three_attempt > 0) %>% 
+  mutate(three_avg = three_made / three_attempt) %>% 
+  arrange(desc(three_avg)) -> threes_season
+
+threes_season %>%
+  ggplot(aes(three_attempt, three_avg)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE) +
+  scale_x_log10()
+```
+
+This is very similar
+
+```{r}
+threes_season %>%
+  filter(three_attempt >= 200) -> threes_season_filt
+
+m <- suppressWarnings(MASS::fitdistr(threes_season_filt$three_avg, dbeta,
+                                     start = list(shape1 = 1, shape2 = 10)))
+
+alpha0 <- m$estimate[1]
+beta0 <- m$estimate[2]
+
+ggplot(threes_season_filt) +
+  geom_histogram(aes(three_avg, y = ..density..), binwidth = .005) +
+  stat_function(fun = function(x) dbeta(x, alpha0, beta0), color = "red", size = 1) +
+  xlab("Seasonal Three Point Percentage")
+
+
+threes_season %>%
+   filter(three_attempt > 0) %>%
+  mutate(est = (three_made + alpha0) / (three_attempt + alpha0 + beta0)) -> threes_season
+
+threes_season %>% select(-birth) -> threes_season
+
+
+threes_season %>% arrange(desc(est)) %>% select(-three_made, -three_attempt) %>% head(20)
+```
+
+It is a little reassuring to see the stars next to the season which indicates that this player was an all star that year.
+
+
+```{r}
+ggplot(threes_season, aes(three_avg, est, color = three_attempt)) +
+  geom_hline(yintercept = alpha0 / (alpha0 + beta0), color = "red", lty = 2) +
+  geom_point() +
+  geom_abline(color = "red") +
+  scale_colour_gradient(trans = "log", breaks = 10 ^ (1:5)) +
+  xlab("Seasonal Three Point Percentage") +
+  ylab("Empirical Bayes Seasonal Three Point Percentage")
+```
+
+
+
+Another interesting thing to do is apply this to free throws and two pointers.
+
+```{r}
+details %>% 
+  group_by(name, birth) %>%
+  summarise(two_made = sum(two_made), 
+            two_attempt = sum(two_attempt),
+            ft_made = sum(ft_made), 
+            ft_attempt = sum(ft_attempt)) %>%
+  select(-birth) %>% ungroup -> totals
+
+head(totals)
+
+totals %>% 
+  mutate(two_avg = two_made / two_attempt,
+         ft_avg = ft_made / ft_attempt) -> totals
+
+```
+
+It is very interesting to note that we see the same effect but it is just shifted around this shot types true mean.
+
+
+```{r}
+totals %>%
+  ggplot(aes(ft_attempt, ft_avg)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE) +
+  scale_x_log10()
+
+totals %>%
+  ggplot(aes(two_attempt, two_avg)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE) +
+  scale_x_log10()
+
+
+totals %>% filter(ft_attempt >= 1000) -> filt1
+totals %>% filter(two_attempt >= 1000) -> filt2
+
+m1 <- suppressWarnings(MASS::fitdistr(filt1$ft_avg, dbeta,
+                    start = list(shape1 = 1, shape2 = 10)))
+m2 <- suppressWarnings(MASS::fitdistr(filt2$two_avg, dbeta,
+                    start = list(shape1 = 1, shape2 = 10)))
+
+
+totals %>% 
+  mutate(est_1 = (ft_made + m1$estimate[1]) / 
+           (ft_attempt + m1$estimate[1] + m1$estimate[2]),
+         est_2 = (two_made + m2$estimate[1]) / 
+           (two_attempt + m2$estimate[1] + m2$estimate[2])) %>% na.omit %>% ungroup -> totals
+
+totals %>% select(name, ft_made, ft_attempt, est_1) %>% arrange(desc(est_1)) %>% head
+
+totals %>% select(name, two_made, two_attempt, est_2) %>% arrange(desc(est_2)) %>% head
+
+```
+
+It is interesting that we see Stephen Curry in a couple of all nut one of these tables. This brings up the question of who is the best all overall shooter? Or even more interesting who is the best overall player. I want to cover that next, but that is a task for another day.
