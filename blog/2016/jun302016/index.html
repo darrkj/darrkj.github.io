@@ -42,9 +42,11 @@
 
 
 
-<p>How would you classify who is the best three-point shooter in the NBA? Is it the same as the best two point-shooter or the best free throw shooter, etc. There is a three-point competition but that is a little different from what this question is asking. One of two next steps are commonly pursued to answer a question of this sort. Each has its own pitfalls. Let's look at them to see what potential pitfalls will arise.</p>
+<p>How would you determine who is the best three-point shooter in the NBA? Is it the same as the best two point-shooter or the best free throw shooter. There is a three-point competition but that is a little different from what this question is asking. One of two next steps are commonly pursued to answer a question of this sort. Each has its own pitfalls. By trying to answer this question we can see how both of them fall apart.</p>
 
-<p>We will NBA season statistics. It is basically the season totals for each player. The first method we are going to use is to calculate the average, that is shots made divided by attempts.</p>
+<p>We will use some NBA player statistics. It is basically the season totals for each player. Here is roughly what it looks like.</p>
+
+
 <pre class="r"><code>head(details)</code></pre>
 <pre><code>## Source: local data frame [6 x 14]
 ## 
@@ -58,7 +60,9 @@
 ## 6 Alaa Abdelnaby June 24, 1968 1993-94          0             0       24
 ## Variables not shown: two_attempt (dbl), ft_made (dbl), ft_attempt (dbl),
 ##   rebounds (dbl), assist (dbl), steal (dbl), block (dbl), turnover (dbl)</code></pre>
-<p>Lets first focus on just three-point shooting. We first group by player, which is uniquely defined by the name and birthday, then we sum over the number of shots made and attempted and divide. Then we sort on the average we should be able to see who is the best three-point shooter?</p>
+
+<p>For the first method, we are going to calculate the average, that is shots made divided by attempts. First we will focus on just three-point shooting. We first group by player, which is uniquely defined by the name and birthday, then we sum over the number of shots made and attempted. We then divide the total number of shots made by the total number shots attempted. If we then sort on the average we should be able to see who is the best three-point shooter?</p>
+
 <pre class="r"><code>details %&gt;% 
   group_by(name, birth) %&gt;%
   summarise(three_made = sum(three_made), 
@@ -79,7 +83,7 @@ head(threes)</code></pre>
 ## 4 Carroll Hooser          1             1         1
 ## 5    Coty Clarke          2             2         1
 ## 6   David Gaines          1             1         1</code></pre>
-<p>This is obviously flawed. These are really just people that only made a few attempts, they may be good but they may also just be lucky. It is unlikely this is true, we are seeing that people who have shot very few times are the best.</p>
+<p>Clearly this did not work. This method is obviously flawed since we know the best three-point shooters should have taken more than only a couple of shots. These are really just people that only made a few attempts, they may be good but they may also just be lucky.</p>
 <pre class="r"><code>threes %&gt;% filter(three_avg == 1) %&gt;%
   arrange(desc(three_made))</code></pre>
 <pre><code>## Source: local data frame [21 x 4]
@@ -115,7 +119,7 @@ head(threes)</code></pre>
 ## 9         Alan Ogg          0             2         0
 ## 10  Alex Blackwell          0             3         0
 ## ..             ...        ...           ...       ...</code></pre>
-<p>So this method does not work. There has been a lot of discussion  of this problem. It is talked about in the book Thinking Fast and Slow. There is a very interesting example of rural counties having both the highest and lowest cancer rates, one dicsussion of that can be found <a href="http://dataremixed.com/2015/01/avoiding-data-pitfalls-part-2/">here</a>. What is happening is that in the cases with fewer observations have more room for variance, thus just a few flips in either direction will really skew things. As a player takes more shots the average will start to approach the true average. We can see that effect here in this plot.</p>
+<p>So this method does not work. There has been a lot of discussion of this problem. It is talked about in the book Thinking Fast and Slow. There is a very interesting example of rural counties having both the highest and lowest cancer rates, one dicsussion of that can be found <a href="http://dataremixed.com/2015/01/avoiding-data-pitfalls-part-2/">here</a>. What is happening is that in the cases with fewer observations have more room for variance, thus just a few flips in either direction will really skew things. As a player takes more shots the average will start to approach the true average. We can see that effect here in this plot.</p>
 <pre class="r"><code>threes %&gt;%
   ggplot(aes(three_attempt, three_avg)) +
   geom_point() +
