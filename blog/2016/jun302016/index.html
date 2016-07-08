@@ -5,7 +5,7 @@
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
 <meta http-equiv="x-ua-compatible" content="IE=9" >
 
-<title>Neo4j Soc Bal</title>
+<title>Empirical Bayes</title>
 
 
 
@@ -29,11 +29,11 @@
     <header>
       <div class="container">
         <a href="http://darrkj.github.io/blogs" class="btn">Blogs</a>
-        <h1>Simplifying Things with Neo4j</h1>
+        <h1>Empirical Bayesian Estimation</h1>
         <h2></h2>
 
 <h4 class="author"><em>Kenny Darrell</em></h4>
-<h4 class="date"><em>July 4, 2014</em></h4>
+<h4 class="date"><em>June 30, 2016</em></h4>
         </section>
       </div>
     </header>
@@ -42,8 +42,9 @@
 
 
 
-<p>How would you classify who is the best three point shooter in the NBA? Is it the same as the best two point shooter or the best free throw shooter, etc. There is a three point competition but that is a little different from what this question is asking. One of two next steps are commonly persued to answer a question of this sort. Each has its own pitfalls. Lets look at them to see what potential pitfalls will arise.</p>
-<p>We will NBA season statstics. It is basically the season totals for each player. The first method we are going to use is to calculate the average, that is shots made divided by attempts.</p>
+<p>How would you classify who is the best three-point shooter in the NBA? Is it the same as the best two point-shooter or the best free throw shooter, etc. There is a three-point competition but that is a little different from what this question is asking. One of two next steps are commonly pursued to answer a question of this sort. Each has its own pitfalls. Let's look at them to see what potential pitfalls will arise.</p>
+
+<p>We will NBA season statistics. It is basically the season totals for each player. The first method we are going to use is to calculate the average, that is shots made divided by attempts.</p>
 <pre class="r"><code>head(details)</code></pre>
 <pre><code>## Source: local data frame [6 x 14]
 ## 
@@ -57,7 +58,7 @@
 ## 6 Alaa Abdelnaby June 24, 1968 1993-94          0             0       24
 ## Variables not shown: two_attempt (dbl), ft_made (dbl), ft_attempt (dbl),
 ##   rebounds (dbl), assist (dbl), steal (dbl), block (dbl), turnover (dbl)</code></pre>
-<p>Lets first focus on just three point shooting. We first group by player, which is uniquely defined by the name and birthday, then we sum over the number of shots made and attempted and divide. Then we sort on the average we should be able to see who is the best three point shooter?</p>
+<p>Lets first focus on just three-point shooting. We first group by player, which is uniquely defined by the name and birthday, then we sum over the number of shots made and attempted and divide. Then we sort on the average we should be able to see who is the best three-point shooter?</p>
 <pre class="r"><code>details %&gt;% 
   group_by(name, birth) %&gt;%
   summarise(three_made = sum(three_made), 
@@ -78,7 +79,7 @@ head(threes)</code></pre>
 ## 4 Carroll Hooser          1             1         1
 ## 5    Coty Clarke          2             2         1
 ## 6   David Gaines          1             1         1</code></pre>
-<p>This is obviously flawed. These are really just people that only made a few attemtps, they may be good but they may also just be lucky. It is unlikely this is true, we are seeing that people who have shot very few times are the best.</p>
+<p>This is obviously flawed. These are really just people that only made a few attempts, they may be good but they may also just be lucky. It is unlikely this is true, we are seeing that people who have shot very few times are the best.</p>
 <pre class="r"><code>threes %&gt;% filter(three_avg == 1) %&gt;%
   arrange(desc(three_made))</code></pre>
 <pre><code>## Source: local data frame [21 x 4]
@@ -96,7 +97,7 @@ head(threes)</code></pre>
 ## 9    David Gaines          1             1         1
 ## 10     Eric White          1             1         1
 ## ..            ...        ...           ...       ...</code></pre>
-<p>We can also see what would be the result if we were to ask the question who is the worst three point shooter. This method produces just as bad of an error.</p>
+<p>We can also see what would be the result if we were to ask the question who is the worst three-point shooter. This method produces just as bad of an error.</p>
 <pre class="r"><code>threes %&gt;% filter(three_avg == 0) %&gt;%
   arrange(desc(three_made))</code></pre>
 <pre><code>## Source: local data frame [480 x 4]
@@ -114,17 +115,16 @@ head(threes)</code></pre>
 ## 9         Alan Ogg          0             2         0
 ## 10  Alex Blackwell          0             3         0
 ## ..             ...        ...           ...       ...</code></pre>
-<p>So this method does not work. There has been a lot of discussion of this problem. It is talked about in the book Thinking Fast and Slow. There is a very interesting example of rural counties having both the highest and lowest cancer rates, one dicsussion of that can be found <a href="http://dataremixed.com/2015/01/avoiding-data-pitfalls-part-2/">here</a>. What is happening is that in the cases with fewer observations have more room for variance, thus just a few flips in either direction will really skew things. As a player takes more shots the average will start to approach the true average. We can see that effect here in this plot.</p>
+<p>So this method does not work. There has been a lot of discussion  of this problem. It is talked about in the book Thinking Fast and Slow. There is a very interesting example of rural counties having both the highest and lowest cancer rates, one dicsussion of that can be found <a href="http://dataremixed.com/2015/01/avoiding-data-pitfalls-part-2/">here</a>. What is happening is that in the cases with fewer observations have more room for variance, thus just a few flips in either direction will really skew things. As a player takes more shots the average will start to approach the true average. We can see that effect here in this plot.</p>
 <pre class="r"><code>threes %&gt;%
   ggplot(aes(three_attempt, three_avg)) +
   geom_point() +
   geom_smooth(method = &quot;lm&quot;, se = FALSE) +
   scale_x_log10()</code></pre>
-<pre><code>## Warning: Removed 1950 rows containing non-finite values (stat_smooth).</code></pre>
-<pre><code>## Warning: Removed 1950 rows containing missing values (geom_point).</code></pre>
 
 
-<div class="separator" style="clear: both; text-align: center;"><img src="three_hist.png" height="550" width="700"></a></div>
+
+<div class="separator" style="clear: both; text-align: center;"><img src="three_var.png" height="550" width="700"></a></div>
 
 
 <p>What if we just looked at it by who made the most?</p>
@@ -139,8 +139,8 @@ head(threes)</code></pre>
 ## 4     Vince Carter       2180          5823 0.3743775
 ## 5      Jason Terry       2169          5724 0.3789308
 ## 6       Jason Kidd       2168          6178 0.3509226</code></pre>
-<p>This may look more valid but Jason Terry made one more than Jason Kidd but it took 454 less tries also. Vince Carter made eleven more shots than Jason Terry but he also took 99 more shots. Since Jason Terry has an average of around 37% if he was to take 99 more shots he would most likely have amde at least eleven of them.</p>
-<p>To get over this issue we can use what is known as Emprirical Bayes Estimation. You can see the inspirational example <a href="http://varianceexplained.org/r/empirical_bayes_baseball/">here</a> What this method does is that it creates a baseline for the distribution and then adjusts it based on the number of shots made and attempted.</p>
+<p>This may look more valid but Jason Terry made one more than Jason Kidd but it took 454 less tries also. Vince Carter made eleven more shots than Jason Terry but he also took 99 more shots. Since Jason Terry has an average of around 37% if he was to take 99 more shots he would most likely have made at least eleven of them.</p>
+<p>To get over this issue we can use what is known as Empirical  Bayes Estimation. You can see the inspirational example <a href="http://varianceexplained.org/r/empirical_bayes_baseball/">here</a> What this method does is that it creates a baseline for the distribution and then adjusts it based on the number of shots made and attempted.</p>
 <p>We need to fit a beta distribution to our data. But first we need to remove some of the crazy observations so as to not taint the empirical prior.</p>
 <pre class="r"><code>threes %&gt;%
   filter(three_attempt &gt;= 500) -&gt; three_filt
@@ -164,7 +164,7 @@ m &lt;- suppressWarnings(MASS::fitdistr(three_filt$three_avg, dbeta,
 <div class="separator" style="clear: both; text-align: center;"><img src="three_hist.png" height="550" width="700"></a></div>
 
 
-<p>Now to construct the new estimate using the players data and this beta distribution we apply a couple of additions.</p>
+<p>Now to construct the new estimate using the players' data and this beta distribution we apply a couple of additions.</p>
 <pre class="r"><code>threes %&gt;% 
   filter(three_attempt &gt; 0) %&gt;%
   mutate(est = (three_made + alpha0) / (three_attempt + alpha0 + beta0)) -&gt; threes</code></pre>
@@ -201,11 +201,11 @@ m &lt;- suppressWarnings(MASS::fitdistr(three_filt$three_avg, dbeta,
   ylab(&quot;Empirical Bayes Field Goal Percentage&quot;)</code></pre>
 
 
-<div class="separator" style="clear: both; text-align: center;"><img src="three_hist.png" height="550" width="700"></a></div>
+<div class="separator" style="clear: both; text-align: center;"><img src="three_shrink.png" height="550" width="700"></a></div>
 
 
 
-<p>Some issues to think about here though. If you were pretty bad in first few games you may not play for long. We may also see some impact from players who stayed in the NBA beyond there prime. Thus at one point in there career they may have been the best ever, but earlier and later seasons may weaken this. We could try to get around this by asking what is the best season average.</p>
+<p>Some issues to think about here though. If you were pretty bad in first few games, you may not play for long. We may also see some impact from players who stayed in the NBA beyond there prime. Thus at one point in there career they may have been the best ever, but earlier and later seasons may weaken this. We could try to get around this by asking what is the best season average.</p>
 <pre class="r"><code>details %&gt;% 
   select(name, birth,
          three_made, three_attempt, season) -&gt; threes_season
@@ -234,7 +234,7 @@ threes_season %&gt;%
   geom_smooth(method = &quot;lm&quot;, se = FALSE) +
   scale_x_log10()</code></pre>
 
-<div class="separator" style="clear: both; text-align: center;"><img src="three_hist.png" height="550" width="700"></a></div>
+<div class="separator" style="clear: both; text-align: center;"><img src="season_var.png" height="550" width="700"></a></div>
 
 
 
@@ -255,7 +255,7 @@ ggplot(threes_season_filt) +
   xlab(&quot;Seasonal Three Point Percentage&quot;)</code></pre>
 
 
-<div class="separator" style="clear: both; text-align: center;"><img src="three_hist.png" height="550" width="700"></a></div>
+<div class="separator" style="clear: both; text-align: center;"><img src="season_hist.png" height="550" width="700"></a></div>
 
 
 
@@ -302,7 +302,7 @@ threes_season %&gt;% arrange(desc(est)) %&gt;% select(-three_made, -three_attemp
 
 
 
-<div class="separator" style="clear: both; text-align: center;"><img src="three_hist.png" height="550" width="700"></a></div>
+<div class="separator" style="clear: both; text-align: center;"><img src="season_shrink.png" height="550" width="700"></a></div>
 
 
 <p>Another interesting thing to do is apply this to free throws and two pointers.</p>
@@ -334,11 +334,10 @@ head(totals)</code></pre>
   geom_point() +
   geom_smooth(method = &quot;lm&quot;, se = FALSE) +
   scale_x_log10()</code></pre>
-<pre><code>## Warning: Removed 203 rows containing non-finite values (stat_smooth).</code></pre>
-<pre><code>## Warning: Removed 203 rows containing missing values (geom_point).</code></pre>
 
 
-<div class="separator" style="clear: both; text-align: center;"><img src="three_hist.png" height="550" width="700"></a></div>
+
+<div class="separator" style="clear: both; text-align: center;"><img src="ft_var.png" height="550" width="700"></a></div>
 
 
 <pre class="r"><code>totals %&gt;%
@@ -346,11 +345,10 @@ head(totals)</code></pre>
   geom_point() +
   geom_smooth(method = &quot;lm&quot;, se = FALSE) +
   scale_x_log10()</code></pre>
-<pre><code>## Warning: Removed 52 rows containing non-finite values (stat_smooth).</code></pre>
-<pre><code>## Warning: Removed 52 rows containing missing values (geom_point).</code></pre>
 
 
-<div class="separator" style="clear: both; text-align: center;"><img src="three_hist.png" height="550" width="700"></a></div>
+
+<div class="separator" style="clear: both; text-align: center;"><img src="two_var.png" height="550" width="700"></a></div>
 
 
 <pre class="r"><code>totals %&gt;% filter(ft_attempt &gt;= 1000) -&gt; filt1
