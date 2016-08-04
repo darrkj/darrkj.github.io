@@ -5,7 +5,7 @@
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
 <meta http-equiv="x-ua-compatible" content="IE=9" >
 
-<title>Neo4j Soc Bal</title>
+<title>Bayes Pokemon</title>
 
 
 
@@ -29,7 +29,7 @@
     <header>
       <div class="container">
         <a href="http://darrkj.github.io/blogs" class="btn">Blogs</a>
-        <h1>Bayesian Pokomon</h1>
+        <h1>Bayesian Pokemon</h1>
         <h2></h2>
 
 <h4 class="author"><em>Kenny Darrell</em></h4>
@@ -41,11 +41,11 @@
 
 
 
-<div id="bayesian-pokomon" class="section level2">
-<h2>Bayesian Pokomon</h2>
-<p>Something very interesting occured to me recently. In most places you look there is some system that exists outside of what we can know. We use statistics to help explain these systems. In video games this is a littel different. In reality we collecte data and it has some error in the collection process but in games the randomness is just programmed. A recent game that is pretty interesting in its use of AR called Pokomon GO, has many such examples. There are lots places where the rules are truely random numbers because they were programmed that way. It is similar to the System ID work I used to do as an engineer, trying to determine the rules of a system by collecting data about it under different circumstances.</p>
-<p>In Pokomon GO all Pokomon have a stat called CP which stands fro combat points, roughly how strong they ar ein an attack. The case that I want to look into here is when you evolve a pokomon, the Pokomon you are going to evolve has an initial CP while the evolved Pokomon will have a CP that is much higher. How can you determine what the CP will be before you evolve it?</p>
-<p>I collected a couple of cases of the evolution process for a Pidgey. This will evolve into a Pidgeotto. This is a convience sample though, as it was the easist Pokomon to catch a lot of. I may try to see if the rule for this Pokomon is the same for all of them as well.</p>
+<div id="bayesian-pokemon" class="section level2">
+<h2>Bayesian Pokemon</h2>
+<p>Something very interesting occured to me recently. In most places you look there is some system that exists outside of what we can know. We use statistics to help explain these systems. In video games this is a littel different. In reality we collecte data and it has some error in the collection process but in games the randomness is just programmed. A recent game that is pretty interesting in its use of AR called Pokemon GO, has many such examples. There are lots places where the rules are truely random numbers because they were programmed that way. It is similar to the System ID work I used to do as an engineer, trying to determine the rules of a system by collecting data about it under different circumstances.</p>
+<p>In Pokemon GO all Pokemon have a stat called CP which stands fro combat points, roughly how strong they ar ein an attack. The case that I want to look into here is when you evolve a pokemon, the Pokemon you are going to evolve has an initial CP while the evolved Pokemon will have a CP that is much higher. How can you determine what the CP will be before you evolve it?</p>
+<p>I collected a couple of cases of the evolution process for a Pidgey. This will evolve into a Pidgeotto. This is a convience sample though, as it was the easist Pokemon to catch a lot of. I may try to see if the rule for this Pokemon is the same for all of them as well.</p>
 
 
 <div class="separator" style="clear: both; text-align: center;"><img src="pidgey.png" height="550" width="700"></a></div>
@@ -221,7 +221,7 @@ summary(mod)</code></pre>
 ## Multiple R-squared:  0.9995, Adjusted R-squared:  0.9995 
 ## F-statistic: 4.769e+04 on 1 and 22 DF,  p-value: &lt; 2.2e-16</code></pre>
 <p>The y-intercept has moved closer to zero I dont have many data points bunched up which could be an issue. I am very interested in an online or even active approach. The online appraoch would give me new model after each evolution that took place, perhaps even indicating when you could stop with the training. An active appraoch would have model that would indicate which observation it would like to realize next, so it may converge faster.</p>
-<p>There is also a calculator <a href="http://pokemonevolutioncalculator.com/?">here</a>, and it does all Pokomon. I added the ones that were predicted.</p>
+<p>There is also a calculator <a href="http://pokemonevolutioncalculator.com/?">here</a>, and it does all Pokemon. I added the ones that were predicted.</p>
 <pre class="r"><code>evo$site &lt;- c(628, 622, 597, 353, 300, 246, 175, 148, 541, 540, 513, 419, 411, 46)
 
 
