@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<!-- saved from url=(0014)about:internet -->
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+<meta http-equiv="x-ua-compatible" content="IE=9" >
+
+<title>Neo4j Soc Bal</title>
+
+
+
+    <link rel="stylesheet" type="text/css" href="../../../stylesheets/blog.css">
+<!-- Styles for R syntax highlighter -->
+    <link rel="stylesheet" type="text/css" href="../../../stylesheets/blog2.css">
+    <link rel="stylesheet" type="text/css" href="../../../stylesheets/stylesheet.css" media="screen" />
+    <link rel="stylesheet" type="text/css" href="../../../stylesheets/pygment_trac.css" media="screen" />
+    <link rel="stylesheet" type="text/css" href="../../../stylesheets/print.css" media="print" />
+<!-- R syntax highlighter -->
+    <script src="../../../javascripts/r.js"></script>
+
+
+</head>
+
+<body>
+
+<div class="container">
+
+
+    <header>
+      <div class="container">
+        <a href="http://darrkj.github.io/blogs" class="btn">Blogs</a>
+        <h1>Simplifying Things with Neo4j</h1>
+        <h2></h2>
+
+<h4 class="author"><em>Kenny Darrell</em></h4>
+<h4 class="date"><em>July 4, 2014</em></h4>
+        </section>
+      </div>
+    </header>
+
+
+
+
+<div id="bayesian-pokomon" class="section level2">
+<h2>Bayesian Pokomon</h2>
+<p>Something very interesting occured to me recently. In most places you look there is some system that exists outside of what we can know. We use statistics to help explain these systems. In video games this is a littel different. In reality we collecte data and it has some error in the collection process but in games the randomness is just programmed. A recent game that is pretty interesting in its use of AR called Pokomon GO, has many such examples. There are lots places where the rules are truely random numbers because they were programmed that way. It is similar to the System ID work I used to do as an engineer, trying to determine the rules of a system by collecting data about it under different circumstances.</p>
+<p>In Pokomon GO all Pokomon have a stat called CP which stands fro combat points, roughly how strong they ar ein an attack. The case that I want to look into here is when you evolve a pokomon, the Pokomon you are going to evolve has an initial CP while the evolved Pokomon will have a CP that is much higher. How can you determine what the CP will be before you evolve it?</p>
+<p>I collected a couple of cases of the evolution process for a Pidgey. This will evolve into a Pidgeotto. This is a convience sample though, as it was the easist Pokomon to catch a lot of. I may try to see if the rule for this Pokomon is the same for all of them as well.</p>
+<p>()[pidgey.png] ()[pidgeotto.png]</p>
+<pre class="r"><code>data &lt;- data.frame(cp = c(237, 241, 254, 305, 254, 212, 207, 175, 10, 10),
+                   cp2 = c(452, 457, 483, 577, 482, 401, 391, 333, 15, 15))</code></pre>
+<p>We can do this from a frequentist perspective by using the <code>lm</code> linear model function found in R. We can look at the relationship to see if this will be a wise direction.</p>
+<pre class="r"><code>ggplot(data, aes(cp, cp2)) + geom_point()</code></pre>
+
+
+<div class="separator" style="clear: both; text-align: center;"><img src="a-primer-on-entity-resolution-9-638.jpg" height="550" width="700"></a></div>
+
+<p>It does look there is a linear relationship, so that is promising. We will start by doing a simple linear regression, a very common task in statistics and data science.</p>
+
+
+<pre class="r"><code>mod &lt;- lm(cp2 ~ cp, data = data)
+summary(mod)</code></pre>
+<pre><code>## 
+## Call:
+## lm(formula = cp2 ~ cp, data = data)
+## 
+## Residuals:
+##     Min      1Q  Median      3Q     Max 
+## -2.5115 -0.6552 -0.3271  0.7449  2.4971 
+## 
+## Coefficients:
+##              Estimate Std. Error t value Pr(&gt;|t|)    
+## (Intercept) -3.615257   1.112079  -3.251   0.0117 *  
+## cp           1.911891   0.005214 366.689   &lt;2e-16 ***
+## ---
+## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+## 
+## Residual standard error: 1.582 on 8 degrees of freedom
+## Multiple R-squared:  0.9999, Adjusted R-squared:  0.9999 
+## F-statistic: 1.345e+05 on 1 and 8 DF,  p-value: &lt; 2.2e-16</code></pre>
+<p>So it is close to double, and there is slight offset from running through the origin. What would we predict on some new cases.</p>
+<pre class="r"><code>evo &lt;- data.frame(cp = c(327, 324, 311, 184, 156, 128, 91, 77, 282, 281, 267, 218, 214, 24))
+
+evo$f_cp2 &lt;- predict(mod, evo)
+evo</code></pre>
+<pre><code>##     cp     f_cp2
+## 1  327 621.57314
+## 2  324 615.83746
+## 3  311 590.98288
+## 4  184 348.17271
+## 5  156 294.63976
+## 6  128 241.10681
+## 7   91 170.36683
+## 8   77 143.60036
+## 9  282 535.53804
+## 10 281 533.62615
+## 11 267 506.85967
+## 12 218 413.17701
+## 13 214 405.52944
+## 14  24  42.27013</code></pre>
+<p>We can’t say much just by having these values. WE can either evolve them and check or try another method to see how it contrasts to these results. What if we wanted to use a Bayesian appraoch? We could use something like Stan.</p>
+<pre class="r"><code>X &lt;- model.matrix(~cp ,data)
+
+#a matrix to get the predicted y values
+new_X &lt;- model.matrix(~cp, evo)</code></pre>
+<p>Once we have the imputs in the correct matrix forms we need to construct the model. To do this using <a href="http://mc-stan.org/">Stan</a> we have a seperate text file that has its own syntax. It is very similar to optimzation toolkits like AMPL where you code your model in a DSL.</p>
+<pre><code>data {
+  int N;
+  int N2;
+  real y[N];
+  matrix[N, 2] X;
+  matrix[N2, 2] new_X;
+}
+parameters {
+  vector[2] beta; 
+  real sigma; 
+}
+transformed parameters {
+  vector[N] linpred;
+  linpred &lt;- X * beta;
+}
+model {  
+  beta[1] ~ uniform(-10, 10);
+  beta[2] ~ uniform(0, 10);
+  
+  y ~ normal(linpred, sigma);
+}
+generated quantities {
+  vector[N2] y_pred;
+  y_pred &lt;- new_X*beta;
+}</code></pre>
+<p>The way we call this is by giving the <code>stan</code> function the text file as an arguemt and then each of the input we declared need values.</p>
+<pre class="r"><code>b_pok &lt;- stan(file = &quot;poke.stan&quot;,
+               data = list(N = nrow(data), N2 = nrow(new_X), 
+                           K = 2, y = data$cp2, X = X, 
+                           new_X = new_X),
+               pars = c(&quot;beta&quot;,&quot;sigma&quot;,&quot;y_pred&quot;))</code></pre>
+<pre><code>## 
+## SAMPLING FOR MODEL 'poke' NOW (CHAIN 1).
+## 
+## Chain 1, Iteration:    1 / 2000 [  0%]  (Warmup)
+## Chain 1, Iteration:  200 / 2000 [ 10%]  (Warmup)
+## Chain 1, Iteration:  400 / 2000 [ 20%]  (Warmup)
+## Chain 1, Iteration:  600 / 2000 [ 30%]  (Warmup)
+## Chain 1, Iteration:  800 / 2000 [ 40%]  (Warmup)
+## Chain 1, Iteration: 1000 / 2000 [ 50%]  (Warmup)
+## Chain 1, Iteration: 1001 / 2000 [ 50%]  (Sampling)
+## Chain 1, Iteration: 1200 / 2000 [ 60%]  (Sampling)
+## Chain 1, Iteration: 1400 / 2000 [ 70%]  (Sampling)
+## Chain 1, Iteration: 1600 / 2000 [ 80%]  (Sampling)
+## Chain 1, Iteration: 1800 / 2000 [ 90%]  (Sampling)
+## Chain 1, Iteration: 2000 / 2000 [100%]  (Sampling)# 
+## #  Elapsed Time: 0.15743 seconds (Warm-up)
+## #                0.046994 seconds (Sampling)
+## #                0.204424 seconds (Total)
+## #</code></pre>
+<pre><code>## The following numerical problems occured the indicated number of times after warmup on chain 1</code></pre>
+<pre><code>##                                                                                        count
+## Exception thrown at line 20: normal_log: Scale parameter is -3.36824, but must be &gt; 0!     1
+## Exception thrown at line 20: normal_log: Scale parameter is -4.17844, but must be &gt; 0!     1</code></pre>
+<pre><code>## When a numerical problem occurs, the Metropolis proposal gets rejected.</code></pre>
+<pre><code>## However, by design Metropolis proposals sometimes get rejected even when there are no numerical problems.</code></pre>
+<pre><code>## Thus, if the number in the 'count' column is small, do not ask about this message on stan-users.</code></pre>
+<pre><code>## 
+## SAMPLING FOR MODEL 'poke' NOW (CHAIN 2).
+## 
+## Chain 2, Iteration:    1 / 2000 [  0%]  (Warmup)
+## Chain 2, Iteration:  200 / 2000 [ 10%]  (Warmup)
+## Chain 2, Iteration:  400 / 2000 [ 20%]  (Warmup)
+## Chain 2, Iteration:  600 / 2000 [ 30%]  (Warmup)
+## Chain 2, Iteration:  800 / 2000 [ 40%]  (Warmup)
+## Chain 2, Iteration: 1000 / 2000 [ 50%]  (Warmup)
+## Chain 2, Iteration: 1001 / 2000 [ 50%]  (Sampling)
+## Chain 2, Iteration: 1200 / 2000 [ 60%]  (Sampling)
+## Chain 2, Iteration: 1400 / 2000 [ 70%]  (Sampling)
+## Chain 2, Iteration: 1600 / 2000 [ 80%]  (Sampling)
+## Chain 2, Iteration: 1800 / 2000 [ 90%]  (Sampling)
+## Chain 2, Iteration: 2000 / 2000 [100%]  (Sampling)# 
+## #  Elapsed Time: 0.284018 seconds (Warm-up)
+## #                0.044923 seconds (Sampling)
+## #                0.328941 seconds (Total)
+## # 
+## 
+## SAMPLING FOR MODEL 'poke' NOW (CHAIN 3).
+## 
+## Chain 3, Iteration:    1 / 2000 [  0%]  (Warmup)
+## Chain 3, Iteration:  200 / 2000 [ 10%]  (Warmup)
+## Chain 3, Iteration:  400 / 2000 [ 20%]  (Warmup)
+## Chain 3, Iteration:  600 / 2000 [ 30%]  (Warmup)
+## Chain 3, Iteration:  800 / 2000 [ 40%]  (Warmup)
+## Chain 3, Iteration: 1000 / 2000 [ 50%]  (Warmup)
+## Chain 3, Iteration: 1001 / 2000 [ 50%]  (Sampling)
+## Chain 3, Iteration: 1200 / 2000 [ 60%]  (Sampling)
+## Chain 3, Iteration: 1400 / 2000 [ 70%]  (Sampling)
+## Chain 3, Iteration: 1600 / 2000 [ 80%]  (Sampling)
+## Chain 3, Iteration: 1800 / 2000 [ 90%]  (Sampling)
+## Chain 3, Iteration: 2000 / 2000 [100%]  (Sampling)# 
+## #  Elapsed Time: 0.236871 seconds (Warm-up)
+## #                0.047378 seconds (Sampling)
+## #                0.284249 seconds (Total)
+## # 
+## 
+## SAMPLING FOR MODEL 'poke' NOW (CHAIN 4).
+## 
+## Chain 4, Iteration:    1 / 2000 [  0%]  (Warmup)
+## Chain 4, Iteration:  200 / 2000 [ 10%]  (Warmup)
+## Chain 4, Iteration:  400 / 2000 [ 20%]  (Warmup)
+## Chain 4, Iteration:  600 / 2000 [ 30%]  (Warmup)
+## Chain 4, Iteration:  800 / 2000 [ 40%]  (Warmup)
+## Chain 4, Iteration: 1000 / 2000 [ 50%]  (Warmup)
+## Chain 4, Iteration: 1001 / 2000 [ 50%]  (Sampling)
+## Chain 4, Iteration: 1200 / 2000 [ 60%]  (Sampling)
+## Chain 4, Iteration: 1400 / 2000 [ 70%]  (Sampling)
+## Chain 4, Iteration: 1600 / 2000 [ 80%]  (Sampling)
+## Chain 4, Iteration: 1800 / 2000 [ 90%]  (Sampling)
+## Chain 4, Iteration: 2000 / 2000 [100%]  (Sampling)# 
+## #  Elapsed Time: 0.260499 seconds (Warm-up)
+## #                0.050919 seconds (Sampling)
+## #                0.311418 seconds (Total)
+## #</code></pre>
+<pre><code>## The following numerical problems occured the indicated number of times after warmup on chain 4</code></pre>
+<pre><code>##                                                                                        count
+## Exception thrown at line 20: normal_log: Scale parameter is -6.39832, but must be &gt; 0!     1</code></pre>
+<pre><code>## When a numerical problem occurs, the Metropolis proposal gets rejected.</code></pre>
+<pre><code>## However, by design Metropolis proposals sometimes get rejected even when there are no numerical problems.</code></pre>
+<pre><code>## Thus, if the number in the 'count' column is small, do not ask about this message on stan-users.</code></pre>
+<p>We can create and check the trace plots, which is a common practice in any Bayesian approach.</p>
+<pre class="r"><code>post_beta &lt;- As.mcmc.list(b_pok, pars = &quot;beta&quot;)
+plot(post_beta)</code></pre>
+
+<div class="separator" style="clear: both; text-align: center;"><img src="a-primer-on-entity-resolution-9-638.jpg" height="550" width="700"></a></div>
+
+<p>They seem pretty similar to the other appraoch.</p>
+<pre class="r"><code>summary(b_pok)$summary[1:2, 1]</code></pre>
+<pre><code>##   beta[1]   beta[2] 
+## -3.565664  1.911700</code></pre>
+<pre class="r"><code>mod$coefficients</code></pre>
+<pre><code>## (Intercept)          cp 
+##   -3.615257    1.911891</code></pre>
+<p>What about the predictions?</p>
+<pre class="r"><code>evo$b_cp2 &lt;- summary(b_pok)$summary[4:(3 + nrow(evo)), 1]</code></pre>
+<p>Now for the real values!</p>
+<pre class="r"><code>evo$cp2 &lt;-  c(625, 612, 576, 344, 299, 242, 174, 145, 538, 528, 500, 408, 402, 46)</code></pre>
+<p>This is pretty much the same result, that gives me some confidence that it will be accurate.</p>
+<p>Between looking at this plot the standard deviation are somewhat interesting.</p>
+<pre class="r"><code>summary(b_pok)$summary[4:(3 + nrow(evo)), 3, drop = F]</code></pre>
+<pre><code>##                   sd
+## y_pred[1]  1.1060263
+## y_pred[2]  1.0898468
+## y_pred[3]  1.0211542
+## y_pred[4]  0.6250458
+## y_pred[5]  0.6584406
+## y_pred[6]  0.7374497
+## y_pred[7]  0.8904989
+## y_pred[8]  0.9581057
+## y_pred[9]  0.8784345
+## y_pred[10] 0.8738356
+## y_pred[11] 0.8122804
+## y_pred[12] 0.6551967
+## y_pred[13] 0.6477509
+## y_pred[14] 1.2424962</code></pre>
+<pre class="r"><code>plot(evo$cp, summary(b_pok)$summary[4:(3 + nrow(evo)), 3])</code></pre>
+
+
+<div class="separator" style="clear: both; text-align: center;"><img src="a-primer-on-entity-resolution-9-638.jpg" height="550" width="700"></a></div>
+
+
+<p>We have a huge gap in our data. It is easy to miss that when you look at the scatter plot, you are so quickly drawn to the linear relationship you glance over this issue.</p>
+<pre class="r"><code>plot(data$cp2, seq(data$cp2))</code></pre>
+
+
+<div class="separator" style="clear: both; text-align: center;"><img src="a-primer-on-entity-resolution-9-638.jpg" height="550" width="700"></a></div>
+
+<p>A few things come to mind here. Maybe it would help if this was done in an online manner. I don’t know if just having one value in the gap when would suffice or if I need many points.</p>
+<p>What if we built a model on all of this data, now that we have fewer gaps in the input domain would our beta coefficiaients move any?</p>
+<pre class="r"><code>data2 &lt;- rbind(data, evo[, c('cp', 'cp2')])
+
+ggplot(data2, aes(cp, cp2)) + geom_point()</code></pre>
+
+
+<div class="separator" style="clear: both; text-align: center;"><img src="a-primer-on-entity-resolution-9-638.jpg" height="550" width="700"></a></div>
+
+
+<pre class="r"><code>mod &lt;- lm(cp2 ~ cp, data = data2)
+summary(mod)</code></pre>
+<pre><code>## 
+## Call:
+## lm(formula = cp2 ~ cp, data = data2)
+## 
+## Residuals:
+##      Min       1Q   Median       3Q      Max 
+## -11.9560  -2.9189   0.4691   2.6223   6.7430 
+## 
+## Coefficients:
+##              Estimate Std. Error t value Pr(&gt;|t|)    
+## (Intercept) -1.019178   1.919705  -0.531    0.601    
+## cp           1.893811   0.008672 218.374   &lt;2e-16 ***
+## ---
+## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+## 
+## Residual standard error: 4.071 on 22 degrees of freedom
+## Multiple R-squared:  0.9995, Adjusted R-squared:  0.9995 
+## F-statistic: 4.769e+04 on 1 and 22 DF,  p-value: &lt; 2.2e-16</code></pre>
+<p>The y-intercept has moved closer to zero I dont have many data points bunched up which could be an issue. I am very interested in an online or even active approach. The online appraoch would give me new model after each evolution that took place, perhaps even indicating when you could stop with the training. An active appraoch would have model that would indicate which observation it would like to realize next, so it may converge faster.</p>
+<p>There is also a calculator <a href="http://pokemonevolutioncalculator.com/?">here</a>, and it does all Pokomon. I added the ones that were predicted.</p>
+<pre class="r"><code>evo$site &lt;- c(628, 622, 597, 353, 300, 246, 175, 148, 541, 540, 513, 419, 411, 46)
+
+
+sum(sqrt((evo$b_cp2 - evo$cp2)^2))</code></pre>
+<pre><code>## [1] 63.9539</code></pre>
+<pre class="r"><code>sum(sqrt((evo$site - evo$cp2)^2))</code></pre>
+<pre><code>## [1] 100</code></pre>
+<p>It looks like the Bayesian appraoch does a little better than this site. We can do a System ID on the site as well.</p>
+<pre class="r"><code>m2 &lt;- lm(site ~ cp, data = evo)
+
+round(predict(m2, data.frame(cp = 200)))</code></pre>
+<pre><code>##   1 
+## 384</code></pre>
+<pre class="r"><code>round(predict(m2, data.frame(cp = 400)))</code></pre>
+<pre><code>##   1 
+## 768</code></pre>
+<pre class="r"><code>round(predict(m2, data.frame(cp = 600)))</code></pre>
+<pre><code>##    1 
+## 1152</code></pre>
+<p>And we get the same answer they do, so this must be roughly the equation they are using to make predictions.</p>
+</div>
+
+
+
+<script>
+
+// add bootstrap table styles to pandoc tables
+$(document).ready(function () {
+  $('tr.header').parent('thead').parent('table').addClass('table table-condensed');
+});
+
+</script>
+
+<!-- dynamically load mathjax for compatibility with --self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://c328740.ssl.cf1.rackcdn.com/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>
+
