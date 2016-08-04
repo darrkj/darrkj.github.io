@@ -29,11 +29,11 @@
     <header>
       <div class="container">
         <a href="http://darrkj.github.io/blogs" class="btn">Blogs</a>
-        <h1>Simplifying Things with Neo4j</h1>
+        <h1>Bayesian Pokomon</h1>
         <h2></h2>
 
 <h4 class="author"><em>Kenny Darrell</em></h4>
-<h4 class="date"><em>July 4, 2014</em></h4>
+<h4 class="date"><em>August 2, 2016</em></h4>
         </section>
       </div>
     </header>
@@ -46,14 +46,19 @@
 <p>Something very interesting occured to me recently. In most places you look there is some system that exists outside of what we can know. We use statistics to help explain these systems. In video games this is a littel different. In reality we collecte data and it has some error in the collection process but in games the randomness is just programmed. A recent game that is pretty interesting in its use of AR called Pokomon GO, has many such examples. There are lots places where the rules are truely random numbers because they were programmed that way. It is similar to the System ID work I used to do as an engineer, trying to determine the rules of a system by collecting data about it under different circumstances.</p>
 <p>In Pokomon GO all Pokomon have a stat called CP which stands fro combat points, roughly how strong they ar ein an attack. The case that I want to look into here is when you evolve a pokomon, the Pokomon you are going to evolve has an initial CP while the evolved Pokomon will have a CP that is much higher. How can you determine what the CP will be before you evolve it?</p>
 <p>I collected a couple of cases of the evolution process for a Pidgey. This will evolve into a Pidgeotto. This is a convience sample though, as it was the easist Pokomon to catch a lot of. I may try to see if the rule for this Pokomon is the same for all of them as well.</p>
-<p>()[pidgey.png] ()[pidgeotto.png]</p>
+
+
+<div class="separator" style="clear: both; text-align: center;"><img src="pidgey.png" height="550" width="700"></a></div>
+
+<div class="separator" style="clear: both; text-align: center;"><img src="pidgeotto.jpeg" height="550" width="700"></a></div>
+
 <pre class="r"><code>data &lt;- data.frame(cp = c(237, 241, 254, 305, 254, 212, 207, 175, 10, 10),
                    cp2 = c(452, 457, 483, 577, 482, 401, 391, 333, 15, 15))</code></pre>
 <p>We can do this from a frequentist perspective by using the <code>lm</code> linear model function found in R. We can look at the relationship to see if this will be a wise direction.</p>
 <pre class="r"><code>ggplot(data, aes(cp, cp2)) + geom_point()</code></pre>
 
 
-<div class="separator" style="clear: both; text-align: center;"><img src="a-primer-on-entity-resolution-9-638.jpg" height="550" width="700"></a></div>
+<div class="separator" style="clear: both; text-align: center;"><img src="first_trend.png" height="550" width="700"></a></div>
 
 <p>It does look there is a linear relationship, so that is promising. We will start by doing a simple linear regression, a very common task in statistics and data science.</p>
 
@@ -135,100 +140,14 @@ generated quantities {
                            K = 2, y = data$cp2, X = X, 
                            new_X = new_X),
                pars = c(&quot;beta&quot;,&quot;sigma&quot;,&quot;y_pred&quot;))</code></pre>
-<pre><code>## 
-## SAMPLING FOR MODEL 'poke' NOW (CHAIN 1).
-## 
-## Chain 1, Iteration:    1 / 2000 [  0%]  (Warmup)
-## Chain 1, Iteration:  200 / 2000 [ 10%]  (Warmup)
-## Chain 1, Iteration:  400 / 2000 [ 20%]  (Warmup)
-## Chain 1, Iteration:  600 / 2000 [ 30%]  (Warmup)
-## Chain 1, Iteration:  800 / 2000 [ 40%]  (Warmup)
-## Chain 1, Iteration: 1000 / 2000 [ 50%]  (Warmup)
-## Chain 1, Iteration: 1001 / 2000 [ 50%]  (Sampling)
-## Chain 1, Iteration: 1200 / 2000 [ 60%]  (Sampling)
-## Chain 1, Iteration: 1400 / 2000 [ 70%]  (Sampling)
-## Chain 1, Iteration: 1600 / 2000 [ 80%]  (Sampling)
-## Chain 1, Iteration: 1800 / 2000 [ 90%]  (Sampling)
-## Chain 1, Iteration: 2000 / 2000 [100%]  (Sampling)# 
-## #  Elapsed Time: 0.15743 seconds (Warm-up)
-## #                0.046994 seconds (Sampling)
-## #                0.204424 seconds (Total)
-## #</code></pre>
-<pre><code>## The following numerical problems occured the indicated number of times after warmup on chain 1</code></pre>
-<pre><code>##                                                                                        count
-## Exception thrown at line 20: normal_log: Scale parameter is -3.36824, but must be &gt; 0!     1
-## Exception thrown at line 20: normal_log: Scale parameter is -4.17844, but must be &gt; 0!     1</code></pre>
-<pre><code>## When a numerical problem occurs, the Metropolis proposal gets rejected.</code></pre>
-<pre><code>## However, by design Metropolis proposals sometimes get rejected even when there are no numerical problems.</code></pre>
-<pre><code>## Thus, if the number in the 'count' column is small, do not ask about this message on stan-users.</code></pre>
-<pre><code>## 
-## SAMPLING FOR MODEL 'poke' NOW (CHAIN 2).
-## 
-## Chain 2, Iteration:    1 / 2000 [  0%]  (Warmup)
-## Chain 2, Iteration:  200 / 2000 [ 10%]  (Warmup)
-## Chain 2, Iteration:  400 / 2000 [ 20%]  (Warmup)
-## Chain 2, Iteration:  600 / 2000 [ 30%]  (Warmup)
-## Chain 2, Iteration:  800 / 2000 [ 40%]  (Warmup)
-## Chain 2, Iteration: 1000 / 2000 [ 50%]  (Warmup)
-## Chain 2, Iteration: 1001 / 2000 [ 50%]  (Sampling)
-## Chain 2, Iteration: 1200 / 2000 [ 60%]  (Sampling)
-## Chain 2, Iteration: 1400 / 2000 [ 70%]  (Sampling)
-## Chain 2, Iteration: 1600 / 2000 [ 80%]  (Sampling)
-## Chain 2, Iteration: 1800 / 2000 [ 90%]  (Sampling)
-## Chain 2, Iteration: 2000 / 2000 [100%]  (Sampling)# 
-## #  Elapsed Time: 0.284018 seconds (Warm-up)
-## #                0.044923 seconds (Sampling)
-## #                0.328941 seconds (Total)
-## # 
-## 
-## SAMPLING FOR MODEL 'poke' NOW (CHAIN 3).
-## 
-## Chain 3, Iteration:    1 / 2000 [  0%]  (Warmup)
-## Chain 3, Iteration:  200 / 2000 [ 10%]  (Warmup)
-## Chain 3, Iteration:  400 / 2000 [ 20%]  (Warmup)
-## Chain 3, Iteration:  600 / 2000 [ 30%]  (Warmup)
-## Chain 3, Iteration:  800 / 2000 [ 40%]  (Warmup)
-## Chain 3, Iteration: 1000 / 2000 [ 50%]  (Warmup)
-## Chain 3, Iteration: 1001 / 2000 [ 50%]  (Sampling)
-## Chain 3, Iteration: 1200 / 2000 [ 60%]  (Sampling)
-## Chain 3, Iteration: 1400 / 2000 [ 70%]  (Sampling)
-## Chain 3, Iteration: 1600 / 2000 [ 80%]  (Sampling)
-## Chain 3, Iteration: 1800 / 2000 [ 90%]  (Sampling)
-## Chain 3, Iteration: 2000 / 2000 [100%]  (Sampling)# 
-## #  Elapsed Time: 0.236871 seconds (Warm-up)
-## #                0.047378 seconds (Sampling)
-## #                0.284249 seconds (Total)
-## # 
-## 
-## SAMPLING FOR MODEL 'poke' NOW (CHAIN 4).
-## 
-## Chain 4, Iteration:    1 / 2000 [  0%]  (Warmup)
-## Chain 4, Iteration:  200 / 2000 [ 10%]  (Warmup)
-## Chain 4, Iteration:  400 / 2000 [ 20%]  (Warmup)
-## Chain 4, Iteration:  600 / 2000 [ 30%]  (Warmup)
-## Chain 4, Iteration:  800 / 2000 [ 40%]  (Warmup)
-## Chain 4, Iteration: 1000 / 2000 [ 50%]  (Warmup)
-## Chain 4, Iteration: 1001 / 2000 [ 50%]  (Sampling)
-## Chain 4, Iteration: 1200 / 2000 [ 60%]  (Sampling)
-## Chain 4, Iteration: 1400 / 2000 [ 70%]  (Sampling)
-## Chain 4, Iteration: 1600 / 2000 [ 80%]  (Sampling)
-## Chain 4, Iteration: 1800 / 2000 [ 90%]  (Sampling)
-## Chain 4, Iteration: 2000 / 2000 [100%]  (Sampling)# 
-## #  Elapsed Time: 0.260499 seconds (Warm-up)
-## #                0.050919 seconds (Sampling)
-## #                0.311418 seconds (Total)
-## #</code></pre>
-<pre><code>## The following numerical problems occured the indicated number of times after warmup on chain 4</code></pre>
-<pre><code>##                                                                                        count
-## Exception thrown at line 20: normal_log: Scale parameter is -6.39832, but must be &gt; 0!     1</code></pre>
-<pre><code>## When a numerical problem occurs, the Metropolis proposal gets rejected.</code></pre>
-<pre><code>## However, by design Metropolis proposals sometimes get rejected even when there are no numerical problems.</code></pre>
-<pre><code>## Thus, if the number in the 'count' column is small, do not ask about this message on stan-users.</code></pre>
+
+
+
 <p>We can create and check the trace plots, which is a common practice in any Bayesian approach.</p>
 <pre class="r"><code>post_beta &lt;- As.mcmc.list(b_pok, pars = &quot;beta&quot;)
 plot(post_beta)</code></pre>
 
-<div class="separator" style="clear: both; text-align: center;"><img src="a-primer-on-entity-resolution-9-638.jpg" height="550" width="700"></a></div>
+<div class="separator" style="clear: both; text-align: center;"><img src="trace.png" height="550" width="700"></a></div>
 
 <p>They seem pretty similar to the other appraoch.</p>
 <pre class="r"><code>summary(b_pok)$summary[1:2, 1]</code></pre>
@@ -259,17 +178,17 @@ plot(post_beta)</code></pre>
 ## y_pred[12] 0.6551967
 ## y_pred[13] 0.6477509
 ## y_pred[14] 1.2424962</code></pre>
-<pre class="r"><code>plot(evo$cp, summary(b_pok)$summary[4:(3 + nrow(evo)), 3])</code></pre>
+<pre class="r"><code>plot(evo$cp, summary(b_pok)$summary[4:(3 + nrow(evo)), 3], ylab = 'Residual')</code></pre>
 
 
-<div class="separator" style="clear: both; text-align: center;"><img src="a-primer-on-entity-resolution-9-638.jpg" height="550" width="700"></a></div>
+<div class="separator" style="clear: both; text-align: center;"><img src="resid.png" height="550" width="700"></a></div>
 
 
 <p>We have a huge gap in our data. It is easy to miss that when you look at the scatter plot, you are so quickly drawn to the linear relationship you glance over this issue.</p>
 <pre class="r"><code>plot(data$cp2, seq(data$cp2))</code></pre>
 
 
-<div class="separator" style="clear: both; text-align: center;"><img src="a-primer-on-entity-resolution-9-638.jpg" height="550" width="700"></a></div>
+<div class="separator" style="clear: both; text-align: center;"><img src="dist.png" height="550" width="700"></a></div>
 
 <p>A few things come to mind here. Maybe it would help if this was done in an online manner. I don’t know if just having one value in the gap when would suffice or if I need many points.</p>
 <p>What if we built a model on all of this data, now that we have fewer gaps in the input domain would our beta coefficiaients move any?</p>
@@ -278,7 +197,7 @@ plot(post_beta)</code></pre>
 ggplot(data2, aes(cp, cp2)) + geom_point()</code></pre>
 
 
-<div class="separator" style="clear: both; text-align: center;"><img src="a-primer-on-entity-resolution-9-638.jpg" height="550" width="700"></a></div>
+<div class="separator" style="clear: both; text-align: center;"><img src="trend2.png" height="550" width="700"></a></div>
 
 
 <pre class="r"><code>mod &lt;- lm(cp2 ~ cp, data = data2)
