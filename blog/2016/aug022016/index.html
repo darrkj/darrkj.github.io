@@ -156,11 +156,28 @@ plot(post_beta)</code></pre>
 <pre class="r"><code>mod$coefficients</code></pre>
 <pre><code>## (Intercept)          cp 
 ##   -3.615257    1.911891</code></pre>
+
 <p>What about the predictions?</p>
 <pre class="r"><code>evo$b_cp2 &lt;- summary(b_pok)$summary[4:(3 + nrow(evo)), 1]</code></pre>
 <p>Now for the real values!</p>
-<pre class="r"><code>evo$cp2 &lt;-  c(625, 612, 576, 344, 299, 242, 174, 145, 538, 528, 500, 408, 402, 46)</code></pre>
-<p>This is pretty much the same result, that gives me some confidence that it will be accurate.</p>
+<pre class="r"><code>evo$cp2 &lt;-  c(625, 612, 576, 344, 299, 242, 174, 145, 538, 528, 500, 408, 402, 46)evo</code></pre>
+<pre><code>##     cp     f_cp2     b_cp2 cp2
+## 1  327 621.57314 621.56028 625
+## 2  324 615.83746 615.82518 612
+## 3  311 590.98288 590.97308 576
+## 4  184 348.17271 348.18716 344
+## 5  156 294.63976 294.65956 299
+## 6  128 241.10681 241.13195 242
+## 7   91 170.36683 170.39905 174
+## 8   77 143.60036 143.63525 145
+## 9  282 535.53804 535.53378 538
+## 10 281 533.62615 533.62208 528
+## 11 267 506.85967 506.85827 500
+## 12 218 413.17701 413.18497 408
+## 13 214 405.52944 405.53817 402
+## 14  24  42.27013  42.31514  46</code></pre>
+
+
 <p>Between looking at this plot the standard deviation are somewhat interesting.</p>
 <pre class="r"><code>summary(b_pok)$summary[4:(3 + nrow(evo)), 3, drop = F]</code></pre>
 <pre><code>##                   sd
