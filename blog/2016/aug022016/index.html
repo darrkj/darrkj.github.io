@@ -43,14 +43,16 @@
 
 <div id="bayesian-pokemon" class="section level2">
 <h2>Bayesian Pokemon</h2>
-<p>Something very interesting occured to me recently. In most places you look there is some system that exists outside of what we can know. We use statistics to help explain these systems. In video games this is a littel different. In reality we collecte data and it has some error in the collection process but in games the randomness is just programmed. A recent game that is pretty interesting in its use of AR called Pokemon GO, has many such examples. There are lots places where the rules are truely random numbers because they were programmed that way. It is similar to the System ID work I used to do as an engineer, trying to determine the rules of a system by collecting data about it under different circumstances.</p>
-<p>In Pokemon GO all Pokemon have a stat called CP which stands fro combat points, roughly how strong they ar ein an attack. The case that I want to look into here is when you evolve a pokemon, the Pokemon you are going to evolve has an initial CP while the evolved Pokemon will have a CP that is much higher. How can you determine what the CP will be before you evolve it?</p>
-<p>I collected a couple of cases of the evolution process for a Pidgey. This will evolve into a Pidgeotto. This is a convience sample though, as it was the easist Pokemon to catch a lot of. I may try to see if the rule for this Pokemon is the same for all of them as well.</p>
+<p>Something very interesting occured to me recently. In most places you look there is some system that exists outside of what we can fully know. We use statistics to help explain these systems, and how much we can say about them. In some systems like video games this is a little different. In reality we collect data and it has some error in the collection process but in video games the randomness is just programmed to be draws from a random number generator. A recent game that is pretty interesting in its use of AR called Pokemon GO, has many such examples. There are lots places where the rules are truely random numbers because they were programmed that way. It is similar to the System ID work I used to do as an engineer, trying to determine the rules of a system by collecting data about it under different circumstances.</p>
+
+<p>In Pokemon GO all Pokemon have a stat called CP which stands for combat points, roughly how strong they are in an attack. The case that I want to look into here is when you evolve a pokemon, the Pokemon you are going to evolve has an initial CP and the evolved Pokemon will have a CP that is potentially much higher. Can you determine what the CP will be before you evolve it? If so you have basically determined how the game draws its random numbers.</p>
+
+<p>I collected a couple of cases of the evolution process for a Pidgey, a Pokemon that will evolve into a Pidgeotto. This is a convience sample though, as it was the easist Pokemon to catch a lot of.</p>
 
 
-<div class="separator" style="clear: both; text-align: center;"><img src="pidgey.png" height="550" width="700"></a></div>
+<div class="separator" style="clear: both; text-align: center;"><img src="pidgey.png" height="250" width="400"></a></div>
 
-<div class="separator" style="clear: both; text-align: center;"><img src="pidgeotto.jpeg" height="550" width="700"></a></div>
+<div class="separator" style="clear: both; text-align: center;"><img src="pidgeotto.jpeg" height="350" width="400"></a></div>
 
 <pre class="r"><code>data &lt;- data.frame(cp = c(237, 241, 254, 305, 254, 212, 207, 175, 10, 10),
                    cp2 = c(452, 457, 483, 577, 482, 401, 391, 333, 15, 15))</code></pre>
@@ -60,7 +62,7 @@
 
 <div class="separator" style="clear: both; text-align: center;"><img src="first_trend.png" height="550" width="700"></a></div>
 
-<p>It does look there is a linear relationship, so that is promising. We will start by doing a simple linear regression, a very common task in statistics and data science.</p>
+<p>It does look like there is a linear relationship, so that is promising. We will start by doing a simple linear regression, a very common task in statistics and data science.</p>
 
 
 <pre class="r"><code>mod &lt;- lm(cp2 ~ cp, data = data)
@@ -241,12 +243,13 @@ summary(mod)</code></pre>
 <p>There is also a calculator <a href="http://pokemonevolutioncalculator.com/?">here</a>, and it does all Pokemon. I added the ones that were predicted.</p>
 <pre class="r"><code>evo$site &lt;- c(628, 622, 597, 353, 300, 246, 175, 148, 541, 540, 513, 419, 411, 46)
 
-
 sum(sqrt((evo$b_cp2 - evo$cp2)^2))</code></pre>
 <pre><code>## [1] 63.9539</code></pre>
 <pre class="r"><code>sum(sqrt((evo$site - evo$cp2)^2))</code></pre>
 <pre><code>## [1] 100</code></pre>
-<p>It looks like the Bayesian appraoch does a little better than this site. We can do a System ID on the site as well.</p>
+
+<p>It looks like both the Bayesian and Frequentist appraochs do better than this site. We can do a System ID on the site as well to see how they make there predictions.</p>
+
 <pre class="r"><code>m2 &lt;- lm(site ~ cp, data = evo)
 
 round(predict(m2, data.frame(cp = 200)))</code></pre>
