@@ -88,6 +88,9 @@ summary(mod)</code></pre>
 ## F-statistic: 1.345e+05 on 1 and 8 DF,  p-value: &lt; 2.2e-16</code></pre>
 <p>So it is close to double, and there is slight offset from running through the origin. It does look like a godd fit.</p>
 
+<pre class="r"><code>plot(data$cp, data$cp2)
+abline(mod)</code></pre>
+
 <div class="separator" style="clear: both; text-align: center;"><img src="reg_dat.png" height="550" width="700"></a></div>
 
 <p>What would we predict on some new cases?</p>
