@@ -56,6 +56,7 @@
 
 <pre class="r"><code>data &lt;- data.frame(cp = c(237, 241, 254, 305, 254, 212, 207, 175, 10, 10),
                    cp2 = c(452, 457, 483, 577, 482, 401, 391, 333, 15, 15))</code></pre>
+                   
 <p>We can do this from a frequentist perspective by using the <code>lm</code> linear model function found in R. We can look at the relationship to see if this will be a wise direction.</p>
 <pre class="r"><code>ggplot(data, aes(cp, cp2)) + geom_point()</code></pre>
 
@@ -85,7 +86,12 @@ summary(mod)</code></pre>
 ## Residual standard error: 1.582 on 8 degrees of freedom
 ## Multiple R-squared:  0.9999, Adjusted R-squared:  0.9999 
 ## F-statistic: 1.345e+05 on 1 and 8 DF,  p-value: &lt; 2.2e-16</code></pre>
-<p>So it is close to double, and there is slight offset from running through the origin. What would we predict on some new cases.</p>
+<p>So it is close to double, and there is slight offset from running through the origin. It does look like a godd fit.</p>
+
+<div class="separator" style="clear: both; text-align: center;"><img src="reg_dat.png" height="550" width="700"></a></div>
+
+<p>What would we predict on some new cases?</p>
+
 <pre class="r"><code>evo &lt;- data.frame(cp = c(327, 324, 311, 184, 156, 128, 91, 77, 282, 281, 267, 218, 214, 24))
 
 evo$f_cp2 &lt;- predict(mod, evo)
@@ -105,12 +111,12 @@ evo</code></pre>
 ## 12 218 413.17701
 ## 13 214 405.52944
 ## 14  24  42.27013</code></pre>
-<p>We can’t say much just by having these values. WE can either evolve them and check or try another method to see how it contrasts to these results. What if we wanted to use a Bayesian appraoch? We could use something like Stan.</p>
+<p>We can’t say much just by having these values. We can either evolve them and check or try another method to see how it contrasts to these results. What if we wanted to use a Bayesian appraoch? We could use something like Stan.</p>
 <pre class="r"><code>X &lt;- model.matrix(~cp ,data)
 
-#a matrix to get the predicted y values
 new_X &lt;- model.matrix(~cp, evo)</code></pre>
-<p>Once we have the imputs in the correct matrix forms we need to construct the model. To do this using <a href="http://mc-stan.org/">Stan</a> we have a seperate text file that has its own syntax. It is very similar to optimzation toolkits like AMPL where you code your model in a DSL.</p>
+<p>Once we have the inputs in the correct matrix form we need to construct the model. To do this using <a href="http://mc-stan.org/">Stan</a> we have a seperate text file that has its own syntax. It is very similar to optimzation toolkits like AMPL where you code your model in a DSL. Here we are using R as the interface to run call the stan compiler and run the model.</p>
+
 <pre><code>data {
   int N;
   int N2;
@@ -180,7 +186,7 @@ plot(post_beta)</code></pre>
 ## 14  24  42.27013  42.31514  46</code></pre>
 
 
-<p>Between looking at this plot the standard deviation are somewhat interesting.</p>
+<p>These look pretty good, they are close. But looking at the standard deviation of each prediction is somewhat interesting!</p>
 <pre class="r"><code>summary(b_pok)$summary[4:(3 + nrow(evo)), 3, drop = F]</code></pre>
 <pre><code>##                   sd
 ## y_pred[1]  1.1060263
@@ -209,8 +215,7 @@ plot(post_beta)</code></pre>
 
 <div class="separator" style="clear: both; text-align: center;"><img src="dist.png" height="550" width="700"></a></div>
 
-<p>A few things come to mind here. Maybe it would help if this was done in an online manner. I don’t know if just having one value in the gap when would suffice or if I need many points.</p>
-<p>What if we built a model on all of this data, now that we have fewer gaps in the input domain would our beta coefficiaients move any?</p>
+<p>A few things come to mind here. Maybe it would help if this was done in an online manner. I don’t know if just having one value in the gap when would suffice or if I need many points. We could build a model on all of the data, since it would have fewer gaps in the input domain. Would our beta coefficiaients move any?</p>
 <pre class="r"><code>data2 &lt;- rbind(data, evo[, c('cp', 'cp2')])
 
 ggplot(data2, aes(cp, cp2)) + geom_point()</code></pre>
@@ -239,8 +244,8 @@ summary(mod)</code></pre>
 ## Residual standard error: 4.071 on 22 degrees of freedom
 ## Multiple R-squared:  0.9995, Adjusted R-squared:  0.9995 
 ## F-statistic: 4.769e+04 on 1 and 22 DF,  p-value: &lt; 2.2e-16</code></pre>
-<p>The y-intercept has moved closer to zero I dont have many data points bunched up which could be an issue. I am very interested in an online or even active approach. The online appraoch would give me new model after each evolution that took place, perhaps even indicating when you could stop with the training. An active appraoch would have model that would indicate which observation it would like to realize next, so it may converge faster.</p>
-<p>There is also a calculator <a href="http://pokemonevolutioncalculator.com/?">here</a>, and it does all Pokemon. I added the ones that were predicted.</p>
+<p>The y-intercept has moved closer to zero. I dont have many data points bunched up which could be an issue. I am very interested in an online or even active approach. The online appraoch would give me a new model after each evolution that took place, perhaps even indicating when you could stop with the training. An active appraoch would indicate which observation it would like to realize next, so it may converge faster.</p>
+<p>There is also a calculator <a href="http://pokemonevolutioncalculator.com/?">here</a>, and it does all Pokemon. I added the ones that were predicted to our data.frame. We can use a typical evaluation strategy called root mean sqaure error (RMSE).</p>
 <pre class="r"><code>evo$site &lt;- c(628, 622, 597, 353, 300, 246, 175, 148, 541, 540, 513, 419, 411, 46)
 
 sum(sqrt((evo$b_cp2 - evo$cp2)^2))</code></pre>
@@ -248,7 +253,7 @@ sum(sqrt((evo$b_cp2 - evo$cp2)^2))</code></pre>
 <pre class="r"><code>sum(sqrt((evo$site - evo$cp2)^2))</code></pre>
 <pre><code>## [1] 100</code></pre>
 
-<p>It looks like both the Bayesian and Frequentist appraochs do better than this site. We can do a System ID on the site as well to see how they make there predictions.</p>
+<p>It looks like both the Bayesian and Frequentist approaches do better than this site. We can do a System ID on the site as well to see how they make their predictions.</p>
 
 <pre class="r"><code>m2 &lt;- lm(site ~ cp, data = evo)
 
