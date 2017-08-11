@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<!-- saved from url=(0014)about:internet -->
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+<meta http-equiv="x-ua-compatible" content="IE=9" >
+
+<title>Generators</title>
+
+
+
+    <link rel="stylesheet" type="text/css" href="../../../stylesheets/blog.css">
+<!-- Styles for R syntax highlighter -->
+    <link rel="stylesheet" type="text/css" href="../../../stylesheets/blog2.css">
+    <link rel="stylesheet" type="text/css" href="../../../stylesheets/stylesheet.css" media="screen" />
+    <link rel="stylesheet" type="text/css" href="../../../stylesheets/pygment_trac.css" media="screen" />
+    <link rel="stylesheet" type="text/css" href="../../../stylesheets/print.css" media="print" />
+<!-- R syntax highlighter -->
+    <script src="../../../javascripts/r.js"></script>
+
+
+</head>
+
+<body>
+
+
+    <header>
+      <div class="container">
+        <a href="http://darrkj.github.io/blogs" class="btn">Blogs</a>
+        <h1>Simplifying Things with Neo4j</h1>
+        <h2></h2>
+
+<h4 class="author"><em>Generators and Random Variables</em></h4>
+<h4 class="date"><em>August 11, 2017</em></h4>
+        </section>
+      </div>
+    </header>
+
+
+
+<p>I have been using Python more lately and something I find cool that is missing from R is the notion of <a href="https://wiki.python.org/moin/Generators">Generator</a>. In Python, generators are functions that act like iterators. In R you have iterartors but they are coupled with the for loop (or while). In R you can loop over things with and index.</p>
+<pre class="r"><code>for (i in 1:ncol(iris)) print(names(iris)[i])</code></pre>
+<pre><code>## [1] &quot;Sepal.Length&quot;
+## [1] &quot;Sepal.Width&quot;
+## [1] &quot;Petal.Length&quot;
+## [1] &quot;Petal.Width&quot;
+## [1] &quot;Species&quot;</code></pre>
+<p>We can also do this by just using the thing iteself.</p>
+<pre class="r"><code>for (i in names(iris)) print(i)</code></pre>
+<pre><code>## [1] &quot;Sepal.Length&quot;
+## [1] &quot;Sepal.Width&quot;
+## [1] &quot;Petal.Length&quot;
+## [1] &quot;Petal.Width&quot;
+## [1] &quot;Species&quot;</code></pre>
+<p>You are tied to using the for construct. There are other looping constructs in R as well such as the apply family and the map family from the <a href="http://purrr.tidyverse.org/">purrr</a> pacakge.</p>
+<p>In Python creating a generator is basically the same as creating a function. You just add yield to return the current iteration and set the next value of the generator.</p>
+<pre class="python"><code>def firstn(n):
+    num = 0
+    while num &lt; n:
+        yield num
+        num += 1
+
+print(sum(firstn(1000)))</code></pre>
+<pre><code>## 499500</code></pre>
+<p>Since R is functional you can have it create the function for you. For the first case lets do something like the case in Python with a known list. Also note whats below is a pretty quickly thrown together implementation. I would not be surprised if there was already a clean version out there. My intent was not making production grade code here.</p>
+<pre class="r"><code>firstn &lt;- function(n) {
+  .seq &lt;&lt;- 1:n
+  function() {
+    tmp &lt;- .seq[1]
+    .seq &lt;&lt;- .seq[-1]
+    if (is.na(tmp)) simpleError('fully consumed') else tmp
+  }
+}</code></pre>
+<p>We can use it like so!</p>
+<pre class="r"><code>x &lt;- firstn(2)
+x()</code></pre>
+<pre><code>## [1] 1</code></pre>
+<pre class="r"><code>x()</code></pre>
+<pre><code>## [1] 2</code></pre>
+<pre class="r"><code>x()</code></pre>
+<pre><code>## &lt;simpleError: fully consumed&gt;</code></pre>
+<p>You could make it cleaner by letting it know how many it has left, but again this is not a full implementation of anything.</p>
+<p>In Python there are really two things at work with most uses of generators, the other being iterators. This is like the <code>for</code> usage in R. In Python the generator will be called to crate the sequence and if you loop over it you are using it as an interable, part of the duck typing notion. What about infinite generators. If you don’t know the upper bound, which also means you probably are not using it in a for loop, you can’t instantiate the sequence. Something that is pretty cool in Haskell is the infinite sequence.</p>
+<pre><code>take 5 [1,2..]</code></pre>
+<p>This is actually pretty similar to what happened in Python as far as a result goes, you still provide the upper bound. However the two dots are very different, this is an infinite list of numbers, using take just pulls out how many you ask for. Since Haskell uses lazy evaluation it never calculates the inifinite list, just up to 5 in this case, which is good because otherwise it might be a bit slow (not sure what the run time is for ininity). We would not do it this way in R though, we could however remove the notion of purity and introduce some side effects, or add state. If we want to make it generic we can have an argument as to how the sequence is created.</p>
+<pre class="r"><code>gen_inf &lt;- function(init, op, by) {
+  .val &lt;&lt;- init
+  function() {
+    tmp &lt;- `op`(.val, by)
+    .val &lt;&lt;- tmp
+    tmp
+  }
+}</code></pre>
+<p>So we can give it mathematical operators like so.</p>
+<pre class="r"><code>x &lt;- gen_inf(0, `+`, 1)
+x()</code></pre>
+<pre><code>## [1] 1</code></pre>
+<pre class="r"><code>x()</code></pre>
+<pre><code>## [1] 2</code></pre>
+<pre class="r"><code>x &lt;- gen_inf(1, `*`, 2)
+x()</code></pre>
+<pre><code>## [1] 2</code></pre>
+<pre class="r"><code>x()</code></pre>
+<pre><code>## [1] 4</code></pre>
+<pre class="r"><code>x &lt;- gen_inf(10, `/`, 2)
+x()</code></pre>
+<pre><code>## [1] 5</code></pre>
+<pre class="r"><code>x()</code></pre>
+<pre><code>## [1] 2.5</code></pre>
+<p>I made the variable that gets mutated here hidden so that it is less likely to have wierd bugs from interacting with other variables. We can also make it a little cleaner and remove side effects from the global scope, by using a closure. So now we are not changing state in the global environment.</p>
+<p>Borrowing and some code and modifying it a bit from the very interesting <a href="http://www.win-vector.com/blog/2015/03/using-closures-as-objects-in-r/">Win Vector Blog</a>.</p>
+<pre class="r"><code>gen1 &lt;- function() {
+  i &lt;- 0
+  function() { 
+    i &lt;&lt;- i + 1
+    i
+  }
+}
+
+x &lt;- gen1()
+x()</code></pre>
+<pre><code>## [1] 1</code></pre>
+<pre class="r"><code>x()</code></pre>
+<pre><code>## [1] 2</code></pre>
+<p>So now the state changes inside the closure. We can also borrow from an answer to this <a href="https://stackoverflow.com/questions/36146146/r-create-a-closure-counter">Stack Overflow Question</a> and do the assignment in one go.</p>
+<pre class="r"><code>gen2 &lt;- (function() {
+  i &lt;- 0
+  function() { 
+    i &lt;&lt;- i + 1
+    i
+  }
+})()
+
+gen2()</code></pre>
+<pre><code>## [1] 1</code></pre>
+<pre class="r"><code>gen2()</code></pre>
+<pre><code>## [1] 2</code></pre>
+<p>This has another use, when other more complicated ways to calculate subsequent numbers are needed giving it as an argument is more difficult (maybe you can be cleaver and give it an anonymous function but who knows). This took the Python approach and created an explicit generator for the type of operation we needed opposed to a generator factory (which seems to meta).</p>
+<p>What if we don’t even want to iterate, we may just want a draw from a random number generator, which is already a generator, but the implementation is somewhat hidden.</p>
+<pre class="r"><code>gen_rand &lt;- function(rand, ...) {
+  function() {
+    rand(1, ...)
+  }
+}</code></pre>
+<pre class="r"><code>x &lt;- gen_rand(runif)
+x()</code></pre>
+<pre><code>## [1] 0.2716148</code></pre>
+<pre class="r"><code>x()</code></pre>
+<pre><code>## [1] 0.6871177</code></pre>
+<pre class="r"><code>x()</code></pre>
+<pre><code>## [1] 0.6364619</code></pre>
+<pre class="r"><code>x &lt;- gen_rand(runif, 15, 20)
+x()</code></pre>
+<pre><code>## [1] 18.19208</code></pre>
+<pre class="r"><code>x()</code></pre>
+<pre><code>## [1] 15.53267</code></pre>
+<pre class="r"><code>x()</code></pre>
+<pre><code>## [1] 19.62515</code></pre>
+<pre class="r"><code>x &lt;- gen_rand(rpois, 10)
+x()</code></pre>
+<pre><code>## [1] 11</code></pre>
+<pre class="r"><code>x()</code></pre>
+<pre><code>## [1] 15</code></pre>
+<pre class="r"><code>x()</code></pre>
+<pre><code>## [1] 14</code></pre>
+<p>We can couple this with something you have probably never used in R to do something pretty cool.</p>
+<pre class="r"><code>makeActiveBinding('poisson', gen_rand(rpois, 10), env = globalenv())
+
+poisson</code></pre>
+<pre><code>## [1] 11</code></pre>
+<pre class="r"><code>poisson</code></pre>
+<pre><code>## [1] 11</code></pre>
+<pre class="r"><code>poisson</code></pre>
+<pre><code>## [1] 8</code></pre>
+<p>You could use this to write programs that are stochastic, or have some notion of probabilstic programming. Not the full Bayesian inference which usually comes with those but you have variables that are random draws from a distribution. Not really variables though, the variable is a function, or really a function that returns a fucntion to mimimc a generator that has had some syntactic sugar added by using the bindings to make the call not need parenthesis so it looks like a variable (thats a mouthful).</p>
+
+
+
+
+
+
+<script>
+
+// add bootstrap table styles to pandoc tables
+$(document).ready(function () {
+  $('tr.header').parent('thead').parent('table').addClass('table table-condensed');
+});
+
+</script>
+
+<!-- dynamically load mathjax for compatibility with --self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://c328740.ssl.cf1.rackcdn.com/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>
+
