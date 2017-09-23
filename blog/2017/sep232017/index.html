@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<!-- saved from url=(0014)about:internet -->
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+<meta http-equiv="x-ua-compatible" content="IE=9" >
+
+<title>Tacit Scraping</title>
+
+
+
+    <link rel="stylesheet" type="text/css" href="../../../stylesheets/blog.css">
+<!-- Styles for R syntax highlighter -->
+    <link rel="stylesheet" type="text/css" href="../../../stylesheets/blog2.css">
+    <link rel="stylesheet" type="text/css" href="../../../stylesheets/stylesheet.css" media="screen" />
+    <link rel="stylesheet" type="text/css" href="../../../stylesheets/pygment_trac.css" media="screen" />
+    <link rel="stylesheet" type="text/css" href="../../../stylesheets/print.css" media="print" />
+<!-- R syntax highlighter -->
+    <script src="../../../javascripts/r.js"></script>
+
+
+</head>
+
+<body>
+
+<div class="container">
+
+
+    <header>
+      <div class="container">
+        <a href="http://darrkj.github.io/blogs" class="btn">Blogs</a>
+        <h1>Tacit Web Crawlers</h1>
+        <h2></h2>
+
+<h4 class="author"><em>Kenny Darrell</em></h4>
+<h4 class="date"><em>September 23, 2017</em></h4>
+        </section>
+      </div>
+    </header>
+
+
+
+
+
+<div id="tacit-programming" class="section level2">
+<h2>Tacit Programming</h2>
+<p>Like all paradigms of programming there is no way to say some peece of code is representative or not of the given type. Some peice may be more functional than another or less object oriented than another but in both cases, both could be valid of the respective paradigm. This is partly because the paradigms do not offer strict guidance, which may not be bad, as to what conform and what does not.</p>
+<p><a href="https://en.wikipedia.org/wiki/Tacit_programming">Tacit programming</a> or point-free programming is similar, it roughly means that functions do not explicitly refer to arguments. The first question this should raise would be whether this is in realtion to function definition, function usage, or function composition. I think it could mean all three. I have written a lot of code to crawl and scrape data from webpages. I have really come to like using magrittr pipes and rvest for such tasks. Over time I seemed to develop a paradigm that I think is tacit programming. Here are a few more resources about <a href="https://www.youtube.com/watch?v=seVSlKazsNk">tacit</a> <a href="https://www.infoq.com/presentations/tacit-programming">programming</a>.</p>
+<p>The following code is the part about function definition. The input argument is never mentioned. I can tell from either the first function that is being composed like in the case of <code>read_html</code>, that this takes in a url, but this information is also contained in the function name. You never really say how that input argument is used.</p>
+<pre class="r"><code># Function to take a url and return all of its links.
+. %&gt;% read_html %&gt;% html_nodes('a') %&gt;% html_attr('href') -&gt; url_2_links</code></pre>
+<p>This may not be real tacit programming because I am using subsequent arguments to later functions but the way Wikipedia states Unix pipes are a type of tacit programming it seems this would be as well.</p>
+<pre class="r"><code># get the tags for each 
+. %&gt;% html_nodes('.characteristic') %&gt;% 
+  html_text %&gt;% grep(':', ., value = T, invert = T) -&gt; get_tag
+
+# and the number of stars
+. %&gt;% html_nodes('.star') %&gt;% html_text -&gt; get_score
+
+# and the type of 
+. %&gt;% html_nodes('.inside-box') %&gt;% .[2] %&gt;% 
+  html_text %&gt;% 
+  str_split('Dog Breed Group: ') %&gt;% { .[[1]][2] } %&gt;% 
+  str_split('Height: ') %&gt;% { .[[1]][1] } -&gt; get_type
+
+# turn the breed page into a tibble
+. %&gt;% read_html %&gt;% 
+  { tibble(  tag = get_tag(.), 
+           score = get_score(.),
+            type = get_type(.) ) } -&gt; url_2_data</code></pre>
+<p>If it was not clear we are collecting info about dog breeds. Now we can run these functions to collect the data.</p>
+<pre class="r"><code>'http://dogtime.com/dog-breeds/groups/' %&gt;% 
+  url_2_links %&gt;% 
+  grep('breeds/', ., value = T) %&gt;% 
+  grep('dog-breeds/groups/', ., value = T, invert = T) -&gt; breeds</code></pre>
+<p>So that essentially did some web crawling and scraping, and filtered out the items for which we do not have any interest. Now we can use the map function to turn each URL into data, or a tibble.</p>
+<pre class="r"><code>breeds %&gt;% map(url_2_data) -&gt; df</code></pre>
+<pre class="r"><code>df[[1]]</code></pre>
+<pre><code>## # A tibble: 31 x 3
+##                                tag score           type
+##                              &lt;chr&gt; &lt;chr&gt;          &lt;chr&gt;
+##  1                    Adaptability       Companion Dogs
+##  2 Adapts Well to Apartment Living     5 Companion Dogs
+##  3          Good For Novice Owners     4 Companion Dogs
+##  4               Sensitivity Level     3 Companion Dogs
+##  5           Tolerates Being Alone     1 Companion Dogs
+##  6          Tolerates Cold Weather     3 Companion Dogs
+##  7           Tolerates Hot Weather     3 Companion Dogs
+##  8         All Around Friendliness       Companion Dogs
+##  9        Affectionate with Family     5 Companion Dogs
+## 10    Incredibly Kid Friendly Dogs     1 Companion Dogs
+## # ... with 21 more rows</code></pre>
+<p>I think a lot of people I have worked with at first see code like this and think it looks odd, which it might if you are not used to it. I have noticed though that I can come back to web crawling/scraping code that is written in this format after not seeing it for a while and I can easily discern what is happening. Other idioms I have used have always forced me to look back at some of the actual pages and relearn what was trying to happen, it almost reminded me of writing perl code.</p>
+<p>The following is an ugly way to add the breed info into each item in the list.</p>
+<pre class="r"><code>breed &lt;- breeds %&gt;% str_split('/') %&gt;% map_chr(tail, 1)
+
+for (i in 1:length(df)) df[[i]]$breed &lt;- breed[i]</code></pre>
+<p>Now we can turn the list of tibbles into just one piece of data. We can also remove the items where that do not have scores, which are the high-level groups. This data is also in a tall format, we can use spread to put it into a wide format so that each dog breed has each characteristic as a variable.</p>
+<pre class="r"><code>df %&gt;% bind_rows %&gt;% 
+  filter(score != ' ') %&gt;% 
+  mutate(score = as.numeric(score)) %&gt;%
+  spread(key = tag, value = score) -&gt; df</code></pre>
+<p>There a few other odds and ends that could be cleaned up as well.</p>
+<pre class="r"><code># The names are pretty rough.
+df %&gt;% set_names(c(names(.)[1:2], paste0('x', 1:(ncol(.)-2)))) -&gt; df
+
+# Remove mutts, hybrids and NA's
+df %&gt;% filter(breed != 'mutt', type != 'Hybrid Dogs') %&gt;% na.omit -&gt; dfx</code></pre>
+<p>I wonder if these were made in a way that similar breeds fall into the same group. Could either supervised or unsupervised learning shed some light on this. If a supervised model could predict a holdout set or if an unsupervised model placed them all into the same group it could add some strength this.</p>
+<p>First we can try a supervised approach.</p>
+<pre class="r"><code>dfx %&gt;% group_by(type) %&gt;% mutate(obs = row_number()) -&gt; dfx
+
+train &lt;- dfx %&gt;% filter(obs &lt;= 25) 
+test &lt;- dfx %&gt;% filter(obs &gt; 25) 
+  
+mod &lt;- randomForest(factor(type) ~ ., data = select(train, -breed, -obs))
+
+test$pred &lt;- as.character(predict(mod, newdata = test))
+
+sum(test$type == test$pred)</code></pre>
+<pre><code>## [1] 19</code></pre>
+<pre class="r"><code>sum(test$type != test$pred)</code></pre>
+<pre><code>## [1] 17</code></pre>
+<p>Not great, let’s try unsupervised.</p>
+<pre class="r"><code>dfx %&gt;% select(type, breed, obs, everything()) -&gt; dfx
+
+a &lt;- kmeans(dfx[, -c(1:3)], 6)
+
+dfx$clus &lt;- a$cluster
+table(dfx$type, dfx$clus)</code></pre>
+<pre><code>##                 
+##                   1  2  3  4  5  6
+##   Companion Dogs  9  1 14 11  0  1
+##   Herding Dogs    1 10  0  8  1  8
+##   Hound Dogs     10  2  4  1  1 13
+##   Sporting Dogs   2  4  1  4  1 21
+##   Terrier Dogs    6  8  2  7  1  2
+##   Working Dogs    2  3  1  1 17  8</code></pre>
+<p>A little bit more coherent. Perhaps there are just too many variables. We can do a quick bit of dimensionality reduction.</p>
+<pre class="r"><code>dfx$clus &lt;- NULL
+dfx %&gt;% select(type, breed, obs, everything()) -&gt; dfx
+
+b &lt;- prcomp(dfx[, -c(1:4)])
+screeplot(b)</code></pre>
+
+
+  <div class="separator" style="clear: both; text-align: center; background:white"><img src="scree.png" height="550" width="700"></div>
+
+<pre class="r"><code>dfx %&gt;% select(type, breed, obs) %&gt;% bind_cols(as_tibble(b$x[, 1:5])) -&gt; dfx2 
+
+train &lt;- dfx2 %&gt;% filter(obs &lt;= 25) %&gt;% select(-breed, -obs)
+test &lt;- dfx2 %&gt;% filter(obs &gt; 25) 
+  
+mod &lt;- randomForest(factor(type) ~ ., data = train, ntree = 1000)
+
+test$pred &lt;- as.character(predict(mod, newdata = test))
+
+sum(test$type == test$pred)</code></pre>
+<pre><code>## [1] 15</code></pre>
+<pre class="r"><code>sum(test$type != test$pred)</code></pre>
+<pre><code>## [1] 21</code></pre>
+<pre class="r"><code>c &lt;- kmeans(b$x[, 1:5], 6)
+
+dfx$clus &lt;- c$cluster
+table(dfx$type, dfx$clus)</code></pre>
+<pre><code>##                 
+##                   1  2  3  4  5  6
+##   Companion Dogs  3  0 15  7  8  3
+##   Herding Dogs    1  1  0 13  6  7
+##   Hound Dogs     17  0  2  3  2  7
+##   Sporting Dogs   8  0  0  6  4 15
+##   Terrier Dogs    3  1  2  9  3  8
+##   Working Dogs    2 18  0  4  1  7</code></pre>
+<p>The supervised method seemed to work far worse while the unsupervised seems to be a little better. That last statement is also far from precise or rigorous. I really wanted to talk about rvest, web crawling and scraping and tacit programming. The last bit was just a rough method to discern something about the grouping of dog breeds. I bet I could spend more effort and be able to predict them or group them better but I think one of two things is happening. It is possible there is a strict method to group them but these features are more useful for people looking into acquiring a dog. It is also possible that the groupings are not coherent so the methods to group them is more subjective. I have used this approach before as a method to determine whether there is a latent rule under some data and when I know there is it does seem to work, so long as the latent rule is not overly complicated. Still a random forest would be the thing to root out complicated.</p>
+</div>
+
+
+
+
+
+
+
+<script>
+
+// add bootstrap table styles to pandoc tables
+$(document).ready(function () {
+  $('tr.header').parent('thead').parent('table').addClass('table table-condensed');
+});
+
+</script>
+
+<!-- dynamically load mathjax for compatibility with --self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://c328740.ssl.cf1.rackcdn.com/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>
+
