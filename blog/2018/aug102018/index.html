@@ -243,14 +243,6 @@ head(df)</code></pre>
       (&lt;*&gt;) :: f (a -&gt; b) -&gt; f a -&gt; f b</code></pre>
 
 
-<pre><code>class Monad m where
-      return :: a -&gt; m a
-      (&gt;&gt;=) :: m a -&gt; (a -&gt; m b) -&gt; m b
-      (&gt;&gt;) :: m a -&gt; m b -&gt; m b
-      x &gt;&gt; y = x &gt;&gt;= \_ -&gt; y
-      fail :: String -&gt; m a
-      fail msg = error msg</code></pre>
-
 <p>So we can make more functions associated to graphs. This deviates a bit from the first image unless we change our thought on waht is what. The list of functions is the second argument and function application is the function.</p>
 
 <pre class="r"><code>fns &lt;- list(f1 = centr_betw_tmax,
@@ -295,6 +287,14 @@ head(df)</code></pre>
 <div class="figure">
   <img src="pic_monad.JPG" />
 </div>
+
+<pre><code>class Monad m where
+      return :: a -&gt; m a
+      (&gt;&gt;=) :: m a -&gt; (a -&gt; m b) -&gt; m b
+      (&gt;&gt;) :: m a -&gt; m b -&gt; m b
+      x &gt;&gt; y = x &gt;&gt;= \_ -&gt; y
+      fail :: String -&gt; m a
+      fail msg = error msg</code></pre>
 
 <pre class="r"><code>df %&gt;% mutate(d = lapply(c, function(x) fns %&gt;% invoke_map_df(graph = x)))</code></pre>
 <pre><code>## # A tibble: 10 x 5
