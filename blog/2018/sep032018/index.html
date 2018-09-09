@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<!-- saved from url=(0014)about:internet -->
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+<meta http-equiv="x-ua-compatible" content="IE=9" >
+
+<title>Recall Est</title>
+
+
+
+    <link rel="stylesheet" type="text/css" href="../../../stylesheets/blog.css">
+<!-- Styles for R syntax highlighter -->
+    <link rel="stylesheet" type="text/css" href="../../../stylesheets/blog2.css">
+    <link rel="stylesheet" type="text/css" href="../../../stylesheets/stylesheet.css" media="screen" />
+    <link rel="stylesheet" type="text/css" href="../../../stylesheets/pygment_trac.css" media="screen" />
+    <link rel="stylesheet" type="text/css" href="../../../stylesheets/print.css" media="print" />
+<!-- R syntax highlighter -->
+    <script src="../../../javascripts/r.js"></script>
+
+
+</head>
+
+<body>
+
+<div class="container">
+
+
+    <header>
+      <div class="container">
+        <a href="http://darrkj.github.io/blogs" class="btn">Blogs</a>
+        <h1>Difficulty of Recall Estimation</h1>
+        <h2></h2>
+
+<h4 class="author"><em>Kenny Darrell</em></h4>
+<h4 class="date"><em>September 3, 2018</em></h4>
+    
+      </div>
+    </header>
+
+
+
+<p>In the world of eDiscovery knowing what your recall is fairly important. Not just the recall of a trained model on a known test set but also on the actual population of documents that have been classified. This task is non trivial and can be fairly laborious.</p>
+
+
+
+<p>The adequacy of an eDiscovery production has traditionally been established by using random sampling to estimate recall, but that requires reviewing approximately 400/prevalence documents, which can be burdensome when prevalence is low.</p>
+
+<p>Let's say we have a corpus of 1000 documents.</p>
+
+<pre class="r"><code>library(tidyverse)
+library(binom)
+num_docs &lt;- 1000</code></pre>
+
+<p>Prevalence is the actual number of responsive documents in the corpus. It is a number from 0 to 1, which is also known as richness or yield.</p>
+
+<pre class="r"><code>prevalence &lt;- .1</code></pre>
+
+<p>Responsive documents are those that are relavent to a particular request. Recall is the percentage of found responsive items.</p>
+
+<pre><code>tp / (tp + fn)</code></pre>
+
+<p>Precision is the percentage of found items that are responsive.</p>
+
+<pre><code>tp / (tp + fp)</code></pre>
+
+<p>The discard set or negatives are the items that have not been reviewed. The proportion of the discard set that is responsive is known as elusion or the false omission rate. This can be confirmed to be below a certain level by reviewing a random set and having none of them actually being responsive.</p>
+
+<p>recall (R), elusion (E) and prevalence (P) relationshiop</p>
+
+<pre><code>Elusion = Prevalence * (1 - Recall) / (1 - (Prevalence / Precision) * Recall)</code></pre>
+
+<p>For a more complete look into this problem have a look at this <a href="https://e-discoveryteam.com/tag/recall/">link</a>.</p>
+
+<p>Some process will return a collection of documents, these are the responsive docs. We can generate a random sample that is close to prevalence</p>
+
+<pre class="r"><code>doc &lt;- sample(c(0, 1), num_docs, replace = T, prob = c(1 - prevalence, prevalence))</code></pre>
+
+<p>But we actually want to force this to be exact.</p>
+
+<pre class="r"><code>doc &lt;- c(rep(1, num_docs * prevalence), rep(0, num_docs * (1 - prevalence)))</code></pre>
+
+<p>We also dont want them to have all the ones in begining followed by all of the zeros. We can shuffle them around to overcome this issue.</p>
+
+
+<pre class="r"><code>doc &lt;- sample(doc)</code></pre>
+
+<p>Just check that it is what we think it is.</p>
+
+<pre class="r"><code>mean(doc) == prevalence</code></pre>
+<pre><code>## [1] TRUE</code></pre>
+
+<p>Iterate over number pulled</p>
+<pre class="r"><code># Function to sample docs.
+gen_set &lt;- function(n) sample(doc, n)
+
+df &lt;- tibble(size = numeric(), mean = numeric(), std = numeric())
+
+for (i in 1:50) {
+  res &lt;- sapply(1:2000, function(x) mean(gen_set(i)))
+  
+  df &lt;- bind_rows(df, tibble(size = i, 
+                             mean = mean(res), 
+                             std = sd(res), 
+                             mx = max(res), 
+                             mn = min(res)))
+}
+
+df %&gt;% mutate(upper = mean + std, lower = mean - std) %&gt;%
+  select(-std) %&gt;% gather(type, val, -size) %&gt;%
+  ggplot(aes(x = size, y = val, colour = type)) + geom_line()</code></pre>
+
+<p><img src="recall_1.png" width="672" /></p>
+
+
+
+<p>We know the actual prevalence. Can we determine how valid this all is.</p>
+<pre class="r"><code>bn &lt;- data.frame(size = numeric(), mean = numeric(), upper = numeric(),
+                 lower = numeric())
+
+for (i in 1:200) {
+
+  x &lt;- gen_set(i)
+  y &lt;- binom.confint(x = sum(x), n = i, tol = 1e-8) %&gt;% 
+    filter(method == 'bayes')
+
+  bn &lt;- bind_rows(bn, tibble(size = i, mean = y$mean, y$upper, y$lower))
+}
+
+bn %&gt;% select(size, mean, upper = 'y$upper', lower = 'y$lower') %&gt;% 
+  gather(type, val, -size) %&gt;%
+  ggplot(aes(x = size, y = val, colour = type)) + geom_line()</code></pre>
+<p><img src="recall_2.png" width="672" /></p>
+
+
+
+
+
+<p>Where does the 400 come from above? Sample size <a href="https://www.qualtrics.com/blog/determining-sample-size/" class="uri">https://www.qualtrics.com/blog/determining-sample-size/</a>.</p>
+
+
+<pre><code>90% – Z Score = 1.645 
+95% – Z Score = 1.96 
+99% – Z Score = 2.576 
+(Z-score)2 * StdDev * (1-StdDev) / (margin of error)2 
+(1.96)^2 .5 * (1 - .5) / (.05)^2
+(1.96)^2 * .25 / (.05)^2 = 384.16</code></pre>
+<p>We would say we need a sample of 385, always round, or go with 400 which is more common.</p>
+
+<p>We can also look at other sources that talk to a different method called eRecall and using a more precise method, the Clopper-Pearson method, <a href="https://blog.cluster-text.com/2014/09/08/erecall-no-free-lunch/" class="uri">https://blog.cluster-text.com/2014/09/08/erecall-no-free-lunch/</a></p>
+
+<pre><code>eRecall = 1 – FractionMissed / Prevalence 
+FractionMissed / Prevalence = 1 - eRecall 
+FractionMissed = (1 - eRecall) * Prevalence</code></pre>
+
+
+<pre class="r"><code>binom.test(300, 400, alternative = &quot;two.sided&quot;, conf.level = 0.95)</code></pre>
+<pre><code>## 
+##  Exact binomial test
+## 
+## data:  300 and 400
+## number of successes = 300, number of trials = 400, p-value &lt;
+## 2.2e-16
+## alternative hypothesis: true probability of success is not equal to 0.5
+## 95 percent confidence interval:
+##  0.7045583 0.7916985
+## sample estimates:
+## probability of success 
+##                   0.75</code></pre>
+
+
+
+
+<p>We can walk through a full example of all of this as well.</p>
+
+<pre class="r"><code># The population of 100k documents
+num_docs &lt;- 100000
+prevalence &lt;- .1
+
+# Which means there are really this many true responsive documents.
+num_docs * prevalence</code></pre>
+
+<pre><code>## [1] 10000</code></pre>
+
+<p>We create the actual corpus here.</p>
+<pre class="r"><code>doc &lt;- tibble(doc_id = 1:num_docs, 
+              res = c(rep(1, num_docs * prevalence), 
+                      rep(0, num_docs * (1 - prevalence))))
+              
+# And shuffle it around for good measure.
+doc &lt;- doc[sample(num_docs), ]</code></pre>
+
+
+<p>By taking a sample we can see how decent of an estimate can we get for prevalence.</p>
+
+<pre class="r"><code>samp_size &lt;- 400
+prev_samp &lt;- sapply(1:100, function(x) sum(sample_n(doc, samp_size)$res) / samp_size)
+mean(prev_samp)</code></pre>
+<pre><code>## [1] 0.1004</code></pre>
+<pre class="r"><code>sd(prev_samp)</code></pre>
+<pre><code>## [1] 0.01372401</code></pre>
+<pre class="r"><code>hist(prev_samp)</code></pre>
+<p><img src="recall_3.png" width="672" /></p>
+
+
+
+<p>This is an example of a TAR process, it returns a group to code as repsonsive or not. The value that goes into the first sample_frac will specify the Recall of this outcome, while the second one will specify 1 - Specificity</p>
+<pre class="r"><code>tar &lt;- bind_rows(doc %&gt;% filter(res == 1) %&gt;% sample_frac(.75),
+                 doc %&gt;% filter(res == 0) %&gt;% sample_frac(.05))
+
+# Leaving this as the discard set.
+discard &lt;- doc %&gt;% anti_join(tar, by = 'doc_id')
+
+
+Recall &lt;- function(pred, act) {
+  tp &lt;- sum(pred == 1)
+  fn &lt;- sum(act == 1) - sum(pred == 1) 
+  tp / (tp + fn)
+}
+
+# Our recall is ...
+Recall(tar$res, doc$res)</code></pre>
+<pre><code>## [1] 0.75</code></pre>
+
+<p>Which it should be becuase we specified that in the above construction of the Tar set. There are a few methods that allow you to estimate various parameters of interest such as the recall, precision and prevalence. To start with, prevalence usually requires you to find 400 random responsive docs. How hard is that. This would be the process of going through the docs to find 400 responsive documents.</p>
+
+
+<pre class="r"><code>prev_est &lt;- which(cumsum(doc$res) == 400)[1]
+
+y &lt;- c()
+for (i in 1:100) {
+  doc &lt;- doc[sample(nrow(doc)), ] 
+  y &lt;- c(y, which(cumsum(doc$res) == 400)[1])
+}</code></pre>
+
+
+<p><img src="Recall_4.png" width="672" /></p>
+
+
+<p>We can calculate the Kullback-Leibler diverence of these two distributions as follows.</p>
+
+<pre class="r"><code>entropy::KL.plugin(cut(prev_samp, seq(0, 1, .0005), labels = FALSE),
+                   cut(400/y, seq(0, 1, .0005), labels = FALSE))</code></pre>
+<pre><code>## [1] 0.01026286</code></pre>
+
+
+<p>This is what the direct method would look like.</p>
+
+<pre class="r"><code>calc_dir &lt;- function(num = 400) {
+  direct_method &lt;- doc %&gt;% filter(res == 1) %&gt;% sample_n(num)
+  length(intersect(direct_method$doc_id, tar$doc_id))
+}
+
+outcomes &lt;- sapply(1:1000, function(x) calc_dir())
+
+ # Need to accept above this value
+400 * .7045583</code></pre>
+<pre><code>## [1] 281.8233</code></pre>
+<pre class="r"><code>sum(sapply(1:1000, function(x) calc_dir() &gt;= 282))</code></pre>
+<pre><code>## [1] 985</code></pre>
+<pre class="r"><code>mean(sapply(1:1000, function(x) calc_dir()))</code></pre>
+<pre><code>## [1] 300.021</code></pre>
+
+<p>We can see how often this works by looping through it.</p>
+
+<pre class="r"><code>dat &lt;- tibble(recall = numeric(), overlap = numeric(), c1 = numeric(), c2 = numeric())
+
+
+for (i in 60:90) {
+  tar &lt;- bind_rows(doc %&gt;% filter(res == 1) %&gt;% sample_frac(i/100),
+                   doc %&gt;% filter(res == 0) %&gt;% sample_frac(.05))
+  for (j in 1:100) {
+    overlap &lt;- calc_dir()
+    cv &lt;- binom.test(overlap, 400, alternative = &quot;two.sided&quot;, conf.level = 0.95)$conf.int
+    dat &lt;- bind_rows(dat, tibble(recall = i, overlap = overlap, c1 = cv[1], c2 = cv[2]))
+  }
+}
+
+
+dat %&gt;% mutate(recall = recall / 100) %&gt;% group_by(recall) %&gt;%
+  summarise(prop = sum(recall &gt; c1 &amp; recall &lt; c2) / n()) -&gt; d</code></pre>
+
+<p><img src="Recall_5.png" width="672" /></p>
+
+<p>This is correct a mojority of the time.</p>
+
+<p>Another newer method we can look into can be found in this <a href="http://legacydirs.umiacs.umd.edu/~oard/desi7/papers/WD.pdf">paper</a> called the Unbiased multistage acceptance test.</p>
+
+<pre class="r"><code>multi &lt;- function(num = 400) {
+  
+  hits &lt;- cumsum((doc %&gt;% filter(res == 1) %&gt;% sample_n(num))$doc_id %in% tar)
+       if ( hits[25]  &lt;= 14)  0
+  else if ( hits[25]  &gt;= 24)  1
+  else if ( hits[50]  &lt;= 32)  0
+  else if ( hits[50]  &gt;= 43)  1
+  else if ( hits[100] &lt;= 69)  0
+  else if ( hits[100] &gt;= 82)  1
+  else if ( hits[200] &lt;= 145) 0
+  else if ( hits[200] &gt;= 156) 1
+  else if ( hits[400] &lt;= 300) 0
+  else if ( hits[400] &gt;= 301) 1
+}
+
+
+tar &lt;- (doc %&gt;% filter(res == 1) %&gt;% sample_frac(.80))$doc_id
+z &lt;- sapply(1:5000, function(x) multi(400))
+mean(z)</code></pre>
+<pre><code>## [1] 0.979</code></pre>
+
+<pre class="r"><code>tar &lt;- (doc %&gt;% filter(res == 1) %&gt;% sample_frac(.70))$doc_id
+z &lt;- sapply(1:5000, function(x) multi(400))
+mean(z)</code></pre>
+<pre><code>## [1] 0.0238</code></pre>
+
+
+<p>Both of the claims appear to be true. I consider myself a Bayesain, and this method seems like it start to go down a Bayesian path. I thought it would be more useful to just do it this way from the begining. In this appraoch I start reviewing documents and have as a stopping criteria the some widrth of my credible interval. Thus I review until my confidence is reasonably narrow and then I use that as my parameter of interest.</p>
+
+
+
+<pre class="r"><code>tar &lt;- (doc %&gt;% filter(res == 1) %&gt;% sample_frac(.75))$doc_id
+hits &lt;- (doc %&gt;% filter(res == 1) %&gt;% sample_n(400))$doc_id %in% tar</code></pre>
+<pre class="r"><code>a &lt;- 1
+b &lt;- 1
+c &lt;- 1
+dist &lt;- tibble(x = numeric(), y = numeric(), step = numeric())
+for (j in 1:length(hits)) {
+  i &lt;- hits[j]
+  if (i) a &lt;- a + 1 else b &lt;- b + 1
+
+  xx &lt;- tibble(x = dbeta(seq(0, 1, .01), a, b), y = seq(0, 1, .01), step = c)
+  
+  png(filename=paste0(&quot;plts/p&quot;, c, &quot;.png&quot;))
+  
+  range &lt;- qbeta(c(.05, .95), a, b)
+  title &lt;- paste0('Credible Interval: Resp Doc #', j, ' S(', a-1, ') F(', b-1, 
+                  ') Range ', range[2] - range[1])
+  
+  p &lt;- ggplot(xx, aes(y, x)) + geom_line() + 
+    scale_y_continuous(limits = c(0, 25)) + 
+    ggtitle(title) + 
+    geom_vline(xintercept = range, color = &quot;red&quot;)
+  plot(p)
+  c &lt;- c + 1
+  dev.off()
+}
+
+
+base &lt;- 'magick convert -loop 0 -delay 50 '
+for (i in 1:400) {
+  base &lt;- paste0(base, 'plts/p', i, '.png ')
+}
+
+ base &lt;- paste0(base, 'file.gif') 
+system(base)</code></pre>
+
+
+<div class = "cent"><img src="file.gif" width="600" height="400"></div>
+
+
+<p>We can do the same thing for prevalence.</p>
+
+<pre class="r"><code>a &lt;- 1
+b &lt;- 1
+c &lt;- 1
+dist &lt;- tibble(x = numeric(), y = numeric(), step = numeric())
+for (j in 1:300) {
+  i &lt;- doc$res[j]
+  if (i) a &lt;- a + 1 else b &lt;- b + 1
+
+  xx &lt;- tibble(x = dbeta(seq(0, 1, .01), a, b), y = seq(0, 1, .01), step = c)
+  
+  png(filename=paste0(&quot;plts2/p&quot;, c, &quot;.png&quot;))
+  
+  range &lt;- qbeta(c(.05, .95), a, b)
+  
+  title &lt;- paste0('Credible Interval: Resp #', j, ' S(', a-1, ') F(', b-1, 
+                  ') Range ', range[2] - range[1])
+  
+  p &lt;- ggplot(xx, aes(y, x)) + geom_line() + 
+    scale_y_continuous(limits = c(0, 25)) + 
+    ggtitle(title) + 
+    geom_vline(xintercept = range, color = &quot;red&quot;)
+  plot(p)
+  c &lt;- c + 1
+  dev.off()
+}
+
+
+base &lt;- 'magick convert -loop 0 -delay 50 '
+for (i in 1:300) {
+  base &lt;- paste0(base, 'plts2/p', i, '.png ')
+}
+
+ base &lt;- paste0(base, 'file2.gif') 
+system(base)
+</code></pre>
+
+
+<div class = "cent"><img src="file2.gif" width="600" height="400"></div>
+
+
+
+<script>
+
+// add bootstrap table styles to pandoc tables
+$(document).ready(function () {
+  $('tr.header').parent('thead').parent('table').addClass('table table-condensed');
+});
+
+</script>
+
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://c328740.ssl.cf1.rackcdn.com/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>
